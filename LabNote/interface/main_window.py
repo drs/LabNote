@@ -1,8 +1,9 @@
 from PyQt5.QtWidgets import QMainWindow, QWidget, QLabel, QVBoxLayout
 from PyQt5.QtGui import QPixmap
 from PyQt5.QtCore import Qt, QFile, QTextStream
-from ui_mainwindow import Ui_MainWindow
-import resources
+
+from ui.ui_mainwindow import Ui_MainWindow
+import resources.resources
 
 
 class MainWindow(QMainWindow, Ui_MainWindow):
