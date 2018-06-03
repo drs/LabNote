@@ -1,0 +1,25 @@
+QPushButton#btn_add_notebook {
+    /* Border and background color */
+    background-color: none;
+    border: none;
+
+    /* Text color and font */
+    font-family: Al Bayan;
+    font: 20pt;
+    color : rgb(96, 96, 96);
+
+    /* Button height and width */
+    width: 25px;
+    min-width: 25px;
+    max-height: 25px;
+
+    height: 25px;
+    min-height: 25px;
+    max-height: 25px;
+}
+
+QPushButton#btn_add_notebook:pressed {
+    /* Border and background color */
+    background-color: none;
+    border: none;
+}

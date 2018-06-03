@@ -1,0 +1,8 @@
+<RCC>
+    <qresource prefix="/MainWindow/Icons">
+        <file>Resources/Icons/MainWindow/NoEntrySelected.png</file>
+    </qresource>
+    <qresource prefix="/StyleSheet">
+        <file>Resources/StyleSheet/MainWindow.qss</file>
+    </qresource>
+</RCC>
