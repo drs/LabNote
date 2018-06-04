@@ -4,8 +4,8 @@ QPushButton#btn_add_notebook {
     border: none;
 
     /* Text color and font */
-    font-family: "Al Bayan";
-    font: 20pt;
+    font-family: Al Bayan;
+    font: 24pt;
     color : rgb(72, 72, 72);
 
     /* Button height and width */
@@ -25,12 +25,24 @@ QPushButton#btn_add_notebook:pressed {
 }
 
 QLabel#lbl_notebook {
-    color : rgb(129, 129, 129);
+    color: rgb(129, 129, 129);
+    font: bold 12px;
 }
 
 QListWidget#lst_notebook {
     border: none;
     background-color: rgb(246, 246, 246);
+    color: rgb(48, 48, 48);
+    font: 14pt
+}
+
+QListView::item {
+    height: 25px;
+}
+
+QListView::item:selected {
+    background-color: rgb(196, 196, 196);
+    color: black;
 }
 
 QFrame#frame {
