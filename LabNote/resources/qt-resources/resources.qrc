@@ -17,4 +17,7 @@
         <file>icons/new-notebook/1xnotebook.png</file>
         <file>icons/new-notebook/2xnotebook.png</file>
     </qresource>
+    <qresource prefix="/Icons/App">
+        <file>icons/main/appicon.png</file>
+    </qresource>
 </RCC>

@@ -6,6 +6,7 @@ import sys
 # PyQt import
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QIcon
 
 # Project import
 from interface.main_window import MainWindow
@@ -18,9 +19,12 @@ QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps)
 if __name__ == "__main__":
     app = QApplication(sys.argv)
 
+    # Set application icon
+    app.setWindowIcon(QIcon(":/Icons/App/icons/main/appicon.png"))
+
+    # Set application stylesheet
     style.set_style_sheet(app, ":/StyleSheet/style-sheet/application.qss")
 
-    #app.setStyleSheet("QLabel { font: Bold 20pt Arial }")
     # Afficher la fenêtre principale
     main_window = MainWindow()
     main_window.show()
