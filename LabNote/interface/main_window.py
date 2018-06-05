@@ -9,6 +9,7 @@ from PyQt5.QtCore import Qt, QSettings, QByteArray
 
 from ui.ui_mainwindow import Ui_MainWindow
 from common import style
+from common import textbox
 from interface.new_notebook import NewNotebook
 import resources.resources
 
@@ -48,18 +49,28 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         empty_widget_2.setMinimumWidth(90)
         self.data_toolbar.insertWidget(self.act_protocols, empty_widget_2)
 
+        # Disable the notebook and experiment related actions from toolbar
+        self.act_new.setEnabled(False)
+        self.act_new_experiment.setEnabled(False)
+        self.act_share.setEnabled(False)
+        self.act_duplicate.setEnabled(False)
+
         # Remove focus rectangle
         self.lst_notebook.setAttribute(Qt.WA_MacShowFocusRect, 0)
         self.lst_entry.setAttribute(Qt.WA_MacShowFocusRect, 0)
 
         # Set no entry widget as default widget
-        self.set_no_entry_widget()
+        #self.set_no_entry_widget()
+        self.new_experiment()
 
         # Read program settings
         self.read_settings()
 
         # Slots connection
         self.btn_add_notebook.clicked.connect(self.open_new_notebook_dialog)
+        self.lst_notebook.currentItemChanged.connect(self.notebook_changed)
+        self.act_new.triggered.connect(self.new_experiment)
+        self.act_new_experiment.triggered.connect(self.new_experiment)
 
     def read_settings(self):
         """
@@ -117,4 +128,34 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         """
         Add a newly created notebook name to the notebook list.
         """
-        self.lst_notebook.addItem(self.new_notebook.notebook_name)
+        notebook_name = self.new_notebook.notebook_name
+        self.lst_notebook.addItem(notebook_name)
+        self.lst_notebook.sortItems(Qt.AscendingOrder)
+
+        # Select the newly inserted item
+        items = self.lst_notebook.findItems(notebook_name, Qt.MatchExactly)
+        self.lst_notebook.setCurrentItem(items[0])
+
+    def notebook_changed(self, current, previous):
+        """
+        Handle notebook changes :
+            - Change the experiment list
+            - Allow new experiment creation
+        """
+        # Allow new experiment creation
+        self.act_new.setEnabled(True)
+        self.act_new_experiment.setEnabled(True)
+
+    def new_experiment(self):
+        """
+        New exp
+        :return:
+        """
+        #if self.centralWidget().layout().indexOf(self.no_entry_widget) != -1:
+        textbox_widget = textbox.Textbox()
+        #self.centralWidget().layout().removeWidget(self.no_entry_widget)
+        #self.no_entry_widget.deleteLater()
+        #self.no_entry_widget = None
+
+        self.centralWidget().layout().addWidget(textbox_widget)
+        self.centralWidget().layout().setStretch(2, 10)

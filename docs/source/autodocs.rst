@@ -10,6 +10,8 @@ Modules
 -------
 .. automodule:: interface.main_window
     :members:
+.. automodule:: common.textbox
+    :members:
 
 New Notebook dialog
 ===================

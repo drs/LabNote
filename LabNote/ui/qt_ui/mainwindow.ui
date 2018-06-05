@@ -198,7 +198,7 @@
     <property name="title">
      <string>File</string>
     </property>
-    <addaction name="actionNew_experiment"/>
+    <addaction name="act_new_experiment"/>
     <addaction name="separator"/>
     <addaction name="actionExport_as_PDF"/>
    </widget>
@@ -314,7 +314,7 @@
     <string>Share as PDF</string>
    </property>
   </action>
-  <action name="actionNew_experiment">
+  <action name="act_new_experiment">
    <property name="text">
     <string>New experiment</string>
    </property>

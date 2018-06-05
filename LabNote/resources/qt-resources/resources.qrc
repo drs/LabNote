@@ -12,6 +12,7 @@
         <file>style-sheet/main_window.qss</file>
         <file>style-sheet/main-window/no_entry_label.qss</file>
         <file>style-sheet/application.qss</file>
+        <file>style-sheet/textbox.qss</file>
     </qresource>
     <qresource prefix="/Icons/NewNotebook">
         <file>icons/new-notebook/1xnotebook.png</file>
@@ -19,5 +20,8 @@
     </qresource>
     <qresource prefix="/Icons/App">
         <file>icons/main/appicon.png</file>
+    </qresource>
+    <qresource prefix="/Icons/textbox">
+        <file>icons/textbox/down_arrow.png</file>
     </qresource>
 </RCC>
