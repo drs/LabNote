@@ -9,9 +9,9 @@ from PyQt5.QtCore import Qt, QSettings, QByteArray
 
 from ui.ui_mainwindow import Ui_MainWindow
 from common import style
-from common import textbox
+from interface import textbox
 from interface.new_notebook import NewNotebook
-import resources.resources
+from resources import resources
 
 
 class MainWindow(QMainWindow, Ui_MainWindow):

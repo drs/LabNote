@@ -15,6 +15,7 @@ QPushButton[Menu="false"] {
     min-height: 22;
     max-width: 30;
     max-height: 22;
+    icon-size: 16px 16px;
 }
 
 QPushButton[Menu="true"] {
@@ -24,9 +25,25 @@ QPushButton[Menu="true"] {
     max-height: 22;
 }
 
+QPushButton[IconOnly="true"] {
+    min-width: 32;
+    max-width: 32;
+    icon-size: 16px 16px;
+    text-align: center;
+    padding-right: 8px;
+}
+
+QPushButton#btn_list {
+    min-width: 32;
+    max-width: 32;
+    icon-size: 16px 16px;
+    text-align: left;
+    padding-left: 6px;
+}
+
 /* Change in checkable menu color when checked */
 
-QPushButton[Menu="false"]:checked {
+QPushButton:checked {
     background-color: rgb(217, 217, 217);
     border-color: rgb(166, 166, 166);
 }
@@ -103,13 +120,13 @@ QPushButton#btn_subscript {
     border-bottom-right-radius: 4px;
 }
 
-QPushButton#btn_highlight {
+QPushButton#btn_color {
     border-top-left-radius: 4px;
     border-bottom-left-radius: 4px;
     border-right: none;
 }
 
-QPushButton#btn_color {
+QPushButton#btn_highlight {
     border-right: none;
 }
 
@@ -142,13 +159,6 @@ QFrame#icon_frame {
 /* Menu properties */
 
 QPushButton::menu {
-    color: #c7c7c9;
-    background-color: #4d4e51;
-    margin: 2px;
-    border:none;
-}
-
-QMenu {
     color: #c7c7c9;
     background-color: #4d4e51;
     margin: 2px;
