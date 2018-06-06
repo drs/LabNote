@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QWidget, QMenu, QAction
+from PyQt5.QtWidgets import QWidget, QMenu, QAction, QTextEdit
 from PyQt5.QtGui import QTextCharFormat, QFont, QTextDocument, QPixmap, QPainter, QIcon, QPainterPath, QPen, QColor, \
     QTextListFormat, QBrush
 from PyQt5.QtCore import Qt, QRectF
@@ -6,6 +6,14 @@ from PyQt5.QtCore import Qt, QRectF
 from ui.ui_textbox import Ui_TextBox
 from common import stylesheet, color
 from resources import resources
+
+
+class TextEdit(QTextEdit):
+    """ This class is a reimplanted QTextEdit used in the Textbox """
+
+    def insertFromMimeData(self, source):
+        """ Insert text from clipboard as plain text """
+        self.insertPlainText(source.text())
 
 
 class Textbox(QWidget, Ui_TextBox):
@@ -17,6 +25,10 @@ class Textbox(QWidget, Ui_TextBox):
     def __init__(self):
         super(Textbox, self).__init__()
         self.setupUi(self)
+
+        # Insert textedit in layout
+        self.textedit = TextEdit()
+        self.frame.layout().addWidget(self.textedit)
 
         # Set button groups
         self.btn_bold.setProperty("Menu", False)
@@ -206,7 +218,7 @@ class Textbox(QWidget, Ui_TextBox):
         self.color_menu.triggered.connect(self.format_text_color)
         self.highlight_menu.triggered.connect(self.format_highlight)
         self.style_menu.triggered.connect(self.format_style)
-        self.textEdit.cursorPositionChanged.connect(self.update_button)
+        self.textedit.cursorPositionChanged.connect(self.update_button)
 
     def change_list_button_icon(self, action):
         """Change the list button icon to the selected list format
@@ -380,9 +392,9 @@ class Textbox(QWidget, Ui_TextBox):
         The font is changed for the selection or from the cursor position.
         :param fmt: Text format
         """
-        cursor = self.textEdit.textCursor()
+        cursor = self.textedit.textCursor()
         cursor.mergeCharFormat(fmt)
-        self.textEdit.mergeCurrentCharFormat(fmt)
+        self.textedit.mergeCurrentCharFormat(fmt)
 
     def format_bold(self):
         """ Set text format to bold. """
@@ -461,12 +473,12 @@ class Textbox(QWidget, Ui_TextBox):
                 fmt.setStyle(QTextListFormat.ListLowerAlpha)
 
             # Add the list to the the text edit
-            cursor = self.textEdit.textCursor()
+            cursor = self.textedit.textCursor()
             cursor.createList(fmt)
         # Delete an existing list
         elif action == self.act_no_list:
             # Get the current list
-            cursor = self.textEdit.textCursor()
+            cursor = self.textedit.textCursor()
             current_list = cursor.currentList()
             current_block = cursor.block()
 
@@ -479,7 +491,7 @@ class Textbox(QWidget, Ui_TextBox):
             cursor.setBlockFormat(fmt)
         # Change the indent
         else:
-            cursor = self.textEdit.textCursor()
+            cursor = self.textedit.textCursor()
             current_format = cursor.currentList().format()
             current_indent = current_format.indent()
 
@@ -597,7 +609,7 @@ class Textbox(QWidget, Ui_TextBox):
         """ Set the button states to match the selected text format """
 
         # Get text format
-        cfmt = self.textEdit.textCursor().charFormat()
+        cfmt = self.textedit.textCursor().charFormat()
 
         # Bold button
         if cfmt.fontWeight() == 75:
@@ -678,7 +690,7 @@ class Textbox(QWidget, Ui_TextBox):
             self.change_text_color_button_icon(self.act_black_text)
 
         # Get list format
-        if self.textEdit.textCursor().currentList():
+        if self.textedit.textCursor().currentList():
             self.btn_list.setChecked(True)
         else:
             self.btn_list.setChecked(False)

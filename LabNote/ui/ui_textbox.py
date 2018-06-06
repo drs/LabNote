@@ -92,9 +92,6 @@ class Ui_TextBox(object):
         spacerItem = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout.addItem(spacerItem)
         self.verticalLayout.addWidget(self.icon_frame)
-        self.textEdit = QtWidgets.QTextEdit(self.frame)
-        self.textEdit.setObjectName("textEdit")
-        self.verticalLayout.addWidget(self.textEdit)
         self.horizontalLayout_2.addWidget(self.frame)
 
         self.retranslateUi(TextBox)
