@@ -564,7 +564,7 @@ class Textbox(QWidget, Ui_TextBox):
             fmt.setBackground(QBrush(color))
         # Remove the background
         else:
-            fmt.clearBackground()
+            fmt.setBackground(QBrush(Qt.white))
         self.merge_format_on_word_or_selection(fmt=fmt)
 
     def format_style(self, action):
@@ -597,7 +597,7 @@ class Textbox(QWidget, Ui_TextBox):
 
         # Define the format common to every style
         fmt.setForeground(QBrush(Qt.black))
-        fmt.clearBackground()
+        fmt.setBackground(QBrush(Qt.white))
         fmt.setFontItalic(False)
         fmt.setFontUnderline(False)
         fmt.setFontStrikeOut(False)
