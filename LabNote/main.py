@@ -10,7 +10,7 @@ from PyQt5.QtGui import QIcon
 
 # Project import
 from interface.main_window import MainWindow
-from common import style
+from common import stylesheet
 
 # Permettre les écrans High DPI avec PyQt5
 QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
@@ -23,7 +23,7 @@ if __name__ == "__main__":
     app.setWindowIcon(QIcon(":/Icons/App/icons/main/appicon.png"))
 
     # Set application stylesheet
-    style.set_style_sheet(app, ":/StyleSheet/style-sheet/application.qss")
+    stylesheet.set_style_sheet(app, ":/StyleSheet/style-sheet/application.qss")
 
     # Afficher la fenêtre principale
     main_window = MainWindow()

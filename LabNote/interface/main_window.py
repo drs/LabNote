@@ -8,7 +8,7 @@ from PyQt5.QtGui import QPixmap, QIcon
 from PyQt5.QtCore import Qt, QSettings, QByteArray
 
 from ui.ui_mainwindow import Ui_MainWindow
-from common import style
+from common import stylesheet
 from interface import textbox
 from interface.new_notebook import NewNotebook
 from resources import resources
@@ -24,7 +24,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.setupUi(self)
 
         # Set style sheet
-        style.set_style_sheet(self, ":/StyleSheet/style-sheet/main_window.qss")
+        stylesheet.set_style_sheet(self, ":/StyleSheet/style-sheet/main_window.qss")
 
         # Set window title
         self.setWindowTitle("LabNote")

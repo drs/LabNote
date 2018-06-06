@@ -4,7 +4,7 @@ from PyQt5.QtGui import QTextCharFormat, QFont, QTextDocument, QPixmap, QPainter
 from PyQt5.QtCore import Qt, QRectF
 
 from ui.ui_textbox import Ui_TextBox
-from common import style
+from common import stylesheet, color
 from resources import resources
 
 
@@ -61,31 +61,31 @@ class Textbox(QWidget, Ui_TextBox):
         self.act_clear_highlight.setIcon(clear_highlight_icon)
 
         self.act_red_highlight = QAction("Red", self)
-        red_highlight_icon = self.draw_color(QColor(242, 41, 74), QColor(193, 32, 59))
+        red_highlight_icon = self.draw_color(color.HIGHLIGHT_COLOR['red'].color, color.HIGHLIGHT_COLOR['red'].dark_shade)
         self.act_red_highlight.setIcon(red_highlight_icon)
 
         self.act_orange_highlight = QAction("Orange", self)
-        orange_highlight_icon = self.draw_color(QColor(252, 116, 42), QColor(188, 87, 32))
+        orange_highlight_icon = self.draw_color(color.HIGHLIGHT_COLOR['orange'].color, color.HIGHLIGHT_COLOR['orange'].dark_shade)
         self.act_orange_highlight.setIcon(orange_highlight_icon)
 
         self.act_yellow_highlight = QAction("Yellow", self)
-        yellow_highlight_icon = self.draw_color(QColor(255, 251, 45), QColor(186, 183, 33))
+        yellow_highlight_icon = self.draw_color(color.HIGHLIGHT_COLOR['yellow'].color, color.HIGHLIGHT_COLOR['yellow'].dark_shade)
         self.act_yellow_highlight.setIcon(yellow_highlight_icon)
 
         self.act_green_highlight = QAction("Green", self)
-        green_highlight_icon = self.draw_color(QColor(0, 250, 154), QColor(0, 173, 106))
+        green_highlight_icon = self.draw_color(color.HIGHLIGHT_COLOR['green'].color, color.HIGHLIGHT_COLOR['green'].dark_shade)
         self.act_green_highlight.setIcon(green_highlight_icon)
 
         self.act_blue_highlight = QAction("Blue", self)
-        blue_highlight_icon = self.draw_color(QColor(49, 170, 226), QColor(37, 126, 168))
+        blue_highlight_icon = self.draw_color(color.HIGHLIGHT_COLOR['blue'].color, color.HIGHLIGHT_COLOR['blue'].dark_shade)
         self.act_blue_highlight.setIcon(blue_highlight_icon)
 
         self.act_purple_highlight = QAction("Purple", self)
-        purple_highlight_icon = self.draw_color(QColor(155, 71, 229), QColor(111, 52, 163))
+        purple_highlight_icon = self.draw_color(color.HIGHLIGHT_COLOR['purple'].color, color.HIGHLIGHT_COLOR['purple'].dark_shade)
         self.act_purple_highlight.setIcon(purple_highlight_icon)
 
         self.act_gray_highlight = QAction("Gray", self)
-        gray_highlight_icon = self.draw_color(QColor(196, 196, 196), QColor(142, 142, 142))
+        gray_highlight_icon = self.draw_color(color.HIGHLIGHT_COLOR['gray'].color, color.HIGHLIGHT_COLOR['gray'].dark_shade)
         self.act_gray_highlight.setIcon(gray_highlight_icon)
 
         self.highlight_menu = QMenu(self)
@@ -101,35 +101,35 @@ class Textbox(QWidget, Ui_TextBox):
 
         # Text color menu
         self.act_black_text = QAction("Black", self)
-        black_text_icon = self.draw_color(Qt.black, Qt.black)
+        black_text_icon = self.draw_color(color.TEXT_COLOR['black'].color, color.TEXT_COLOR['black'].dark_shade)
         self.act_black_text.setIcon(black_text_icon)
 
         self.act_gray_text = QAction("Gray", self)
-        gray_text_icon = self.draw_color(QColor(196, 196, 196), QColor(142, 142, 142))
+        gray_text_icon = self.draw_color(color.TEXT_COLOR['gray'].color, color.TEXT_COLOR['gray'].dark_shade)
         self.act_gray_text.setIcon(gray_text_icon)
 
         self.act_red_text = QAction("Red", self)
-        red_text_icon = self.draw_color(QColor(150, 16, 16), QColor(109, 12, 12))
+        red_text_icon = self.draw_color(color.TEXT_COLOR['red'].color, color.TEXT_COLOR['red'].dark_shade)
         self.act_red_text.setIcon(red_text_icon)
 
         self.act_orange_text = QAction("Orange", self)
-        orange_text_icon = self.draw_color(QColor(211, 116, 0), QColor(155, 85, 0))
+        orange_text_icon = self.draw_color(color.TEXT_COLOR['orange'].color, color.TEXT_COLOR['orange'].dark_shade)
         self.act_orange_text.setIcon(orange_text_icon)
 
         self.act_yellow_text = QAction("Yellow", self)
-        yellow_text_icon = self.draw_color(QColor(229, 221, 0), QColor(175, 169, 0))
+        yellow_text_icon = self.draw_color(color.TEXT_COLOR['yellow'].color, color.TEXT_COLOR['yellow'].dark_shade)
         self.act_yellow_text.setIcon(yellow_text_icon)
 
         self.act_green_text = QAction("Green", self)
-        green_text_icon = self.draw_color(QColor(34,139,34), QColor(22, 91, 22))
+        green_text_icon = self.draw_color(color.TEXT_COLOR['green'].color, color.TEXT_COLOR['green'].dark_shade)
         self.act_green_text.setIcon(green_text_icon)
 
         self.act_blue_text = QAction("Blue", self)
-        blue_text_icon = self.draw_color(QColor(18, 18, 130), QColor(11, 11, 79))
+        blue_text_icon = self.draw_color(color.TEXT_COLOR['blue'].color, color.TEXT_COLOR['blue'].dark_shade)
         self.act_blue_text.setIcon(blue_text_icon)
 
         self.act_purple_text = QAction("Purple", self)
-        purple_text_icon = self.draw_color(QColor(117, 21, 117), QColor(71, 12, 71))
+        purple_text_icon = self.draw_color(color.TEXT_COLOR['purple'].color, color.TEXT_COLOR['purple'].dark_shade)
         self.act_purple_text.setIcon(purple_text_icon)
 
         self.color_menu = QMenu(self)
@@ -167,7 +167,7 @@ class Textbox(QWidget, Ui_TextBox):
         self.btn_list.setMenu(self.list_menu)
 
         # Set style sheet
-        style.set_style_sheet(self, ":/StyleSheet/style-sheet/textbox.qss")
+        stylesheet.set_style_sheet(self, ":/StyleSheet/style-sheet/textbox.qss")
 
         # Superscript button text
         text = QTextDocument()
@@ -206,6 +206,7 @@ class Textbox(QWidget, Ui_TextBox):
         self.color_menu.triggered.connect(self.format_text_color)
         self.highlight_menu.triggered.connect(self.format_highlight)
         self.style_menu.triggered.connect(self.format_style)
+        self.textEdit.cursorPositionChanged.connect(self.update_button)
 
     def change_list_button_icon(self, action):
         """Change the list button icon to the selected list format
@@ -273,21 +274,21 @@ class Textbox(QWidget, Ui_TextBox):
         :type action: QAction
         """
         if action == self.act_gray_text:
-            icon = self.draw_color(QColor(196, 196, 196), QColor(142, 142, 142))
+            icon = self.draw_color(color.TEXT_COLOR['gray'].color, color.TEXT_COLOR['gray'].dark_shade)
         elif action == self.act_red_text:
-            icon = self.draw_color(QColor(150, 16, 16), QColor(109, 12, 12))
+            icon = self.draw_color(color.TEXT_COLOR['red'].color, color.TEXT_COLOR['red'].dark_shade)
         elif action == self.act_orange_text:
-            icon = self.draw_color(QColor(211, 116, 0), QColor(155, 85, 0))
+            icon = self.draw_color(color.TEXT_COLOR['orange'].color, color.TEXT_COLOR['orange'].dark_shade)
         elif action == self.act_yellow_text:
-            icon = self.draw_color(QColor(229, 221, 0), QColor(175, 169, 0))
+            icon = self.draw_color(color.TEXT_COLOR['yellow'].color, color.TEXT_COLOR['yellow'].dark_shade)
         elif action == self.act_green_text:
-            icon = self.draw_color(QColor(34, 139, 34), QColor(22, 91, 22))
+            icon = self.draw_color(color.TEXT_COLOR['green'].color, color.TEXT_COLOR['green'].dark_shade)
         elif action == self.act_blue_text:
-            icon = self.draw_color(QColor(18, 18, 130), QColor(11, 11, 79))
+            icon = self.draw_color(color.TEXT_COLOR['blue'].color, color.TEXT_COLOR['blue'].dark_shade)
         elif action == self.act_purple_text:
-            icon = self.draw_color(QColor(117, 21, 117), QColor(71, 12, 71))
+            icon = self.draw_color(color.TEXT_COLOR['purple'].color, color.TEXT_COLOR['purple'].dark_shade)
         else:
-            icon = self.draw_color(Qt.black, Qt.black)
+            icon = self.draw_color(color.TEXT_COLOR['black'].color, color.TEXT_COLOR['black'].dark_shade)
         self.btn_color.setIcon(icon)
 
     def change_highlight_button_icon(self, action):
@@ -297,21 +298,21 @@ class Textbox(QWidget, Ui_TextBox):
         :type action: QAction
         """
         if action == self.act_red_highlight:
-            icon = self.draw_color(QColor(242, 41, 74), QColor(193, 32, 59))
+            icon = self.draw_color(color.HIGHLIGHT_COLOR['red'].color, color.HIGHLIGHT_COLOR['red'].dark_shade)
         elif action == self.act_orange_highlight:
-            icon = self.draw_color(QColor(252, 116, 42), QColor(188, 87, 32))
+            icon = self.draw_color(color.HIGHLIGHT_COLOR['orange'].color, color.HIGHLIGHT_COLOR['orange'].dark_shade)
         elif action == self.act_yellow_highlight:
-            icon = self.draw_color(QColor(255, 251, 45), QColor(186, 183, 33))
+            icon = self.draw_color(color.HIGHLIGHT_COLOR['yellow'].color, color.HIGHLIGHT_COLOR['yellow'].dark_shade)
         elif action == self.act_green_highlight:
-            icon = self.draw_color(QColor(0, 250, 154), QColor(0, 173, 106))
+            icon = self.draw_color(color.HIGHLIGHT_COLOR['green'].color, color.HIGHLIGHT_COLOR['green'].dark_shade)
         elif action == self.act_blue_highlight:
-            icon = self.draw_color(QColor(49, 170, 226), QColor(37, 126, 168))
+            icon = self.draw_color(color.HIGHLIGHT_COLOR['blue'].color, color.HIGHLIGHT_COLOR['blue'].dark_shade)
         elif action == self.act_purple_highlight:
-            icon = self.draw_color(QColor(155, 71, 229), QColor(111, 52, 163))
+            icon = self.draw_color(color.HIGHLIGHT_COLOR['purple'].color, color.HIGHLIGHT_COLOR['purple'].dark_shade)
         elif action == self.act_gray_highlight:
-            icon = self.draw_color(QColor(196, 196, 196), QColor(142, 142, 142))
+            icon = self.draw_color(color.HIGHLIGHT_COLOR['gray'].color, color.HIGHLIGHT_COLOR['gray'].dark_shade)
         else:
-            icon = self.draw_color(Qt.white, Qt.lightGray)
+            icon = self.draw_color(color.HIGHLIGHT_COLOR['clear'].color, color.HIGHLIGHT_COLOR['clear'].dark_shade)
         self.btn_highlight.setIcon(icon)
 
     def draw_color(self, fill, border):
@@ -591,3 +592,93 @@ class Textbox(QWidget, Ui_TextBox):
         fmt.setVerticalAlignment(QTextCharFormat.AlignNormal)
 
         self.merge_format_on_word_or_selection(fmt=fmt)
+
+    def update_button(self):
+        """ Set the button states to match the selected text format """
+
+        # Get text format
+        cfmt = self.textEdit.textCursor().charFormat()
+
+        # Bold button
+        if cfmt.fontWeight() == 75:
+            self.btn_bold.setChecked(True)
+        else:
+            self.btn_bold.setChecked(False)
+
+        # Italic button
+        if cfmt.fontItalic():
+            self.btn_italic.setChecked(True)
+        else:
+            self.btn_italic.setChecked(False)
+
+        # Underline button
+        if cfmt.fontUnderline():
+            self.btn_underline.setChecked(True)
+        else:
+            self.btn_underline.setChecked(False)
+
+        # Strikethrough button
+        if cfmt.fontStrikeOut():
+            self.btn_strikethrough.setChecked(True)
+        else:
+            self.btn_strikethrough.setChecked(False)
+
+        # Superscript button
+        if cfmt.verticalAlignment() == QTextCharFormat.AlignSuperScript:
+            self.btn_superscript.setChecked(True)
+        else:
+            self.btn_superscript.setChecked(False)
+
+        # Subscript button
+        if cfmt.verticalAlignment() == QTextCharFormat.AlignSubScript:
+            self.btn_subscript.setChecked(True)
+        else:
+            self.btn_subscript.setChecked(False)
+
+        # Get color format
+        # Background color
+        background_color = cfmt.background().color()
+        if background_color.rgb() == color.HIGHLIGHT_COLOR['red'].color.rgb():
+            self.change_highlight_button_icon(self.act_red_highlight)
+        elif background_color.rgb() == color.HIGHLIGHT_COLOR['orange'].color.rgb():
+            self.change_highlight_button_icon(self.act_orange_highlight)
+        elif background_color.rgb() == color.HIGHLIGHT_COLOR['yellow'].color.rgb():
+            self.change_highlight_button_icon(self.act_yellow_highlight)
+        elif background_color.rgb() == color.HIGHLIGHT_COLOR['green'].color.rgb():
+            self.change_highlight_button_icon(self.act_green_highlight)
+        elif background_color.rgb() == color.HIGHLIGHT_COLOR['blue'].color.rgb():
+            self.change_highlight_button_icon(self.act_blue_highlight)
+        elif background_color.rgb() == color.HIGHLIGHT_COLOR['purple'].color.rgb():
+            self.change_highlight_button_icon(self.act_purple_highlight)
+        elif background_color.rgb() == color.HIGHLIGHT_COLOR['gray'].color.rgb():
+            self.change_highlight_button_icon(self.act_gray_highlight)
+        else:
+            self.change_highlight_button_icon(self.act_clear_highlight)
+
+        # Text color
+        text_color = cfmt.foreground().color()
+
+        if text_color == color.TEXT_COLOR['gray'].color:
+            self.change_text_color_button_icon(self.act_gray_text)
+        elif text_color == color.TEXT_COLOR['red'].color:
+            self.change_text_color_button_icon(self.act_red_text)
+        elif text_color == color.TEXT_COLOR['orange'].color:
+            self.change_text_color_button_icon(self.act_orange_text)
+        elif text_color == color.TEXT_COLOR['yellow'].color:
+            self.change_text_color_button_icon(self.act_yellow_text)
+        elif text_color == color.TEXT_COLOR['gray'].color:
+            self.change_text_color_button_icon(self.act_gray_text)
+        elif text_color == color.TEXT_COLOR['green'].color:
+            self.change_text_color_button_icon(self.act_green_text)
+        elif text_color == color.TEXT_COLOR['blue'].color:
+            self.change_text_color_button_icon(self.act_blue_text)
+        elif text_color == color.TEXT_COLOR['purple'].color:
+            self.change_text_color_button_icon(self.act_purple_text)
+        else:
+            self.change_text_color_button_icon(self.act_black_text)
+
+        # Get list format
+        if self.textEdit.textCursor().currentList():
+            self.btn_list.setChecked(True)
+        else:
+            self.btn_list.setChecked(False)
