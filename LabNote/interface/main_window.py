@@ -2,13 +2,18 @@
 This module contain the classes responsible for launching and managing the LabNote MainWindow.
 """
 
+# Python import
+import uuid
 
-from PyQt5.QtWidgets import QMainWindow, QWidget, QLabel, QVBoxLayout
+# PyQt import
+from PyQt5.QtWidgets import QMainWindow, QWidget, QLabel, QVBoxLayout, QListWidgetItem
 from PyQt5.QtGui import QPixmap, QIcon
 from PyQt5.QtCore import Qt, QSettings, QByteArray
 
+# Project import
 from ui.ui_mainwindow import Ui_MainWindow
 from common import stylesheet
+from data_management import integrity, database, directory
 from interface import textbox
 from interface.new_notebook import NewNotebook
 from resources import resources
@@ -60,11 +65,16 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.lst_entry.setAttribute(Qt.WA_MacShowFocusRect, 0)
 
         # Set no entry widget as default widget
-        #self.set_no_entry_widget()
-        self.new_experiment()
+        self.set_no_entry_widget()
 
         # Read program settings
         self.read_settings()
+
+        # Check files integrity
+        integrity.check_folder_integrity()
+
+        # Get existing notebook list
+        self.show_notebook_list()
 
         # Slots connection
         self.btn_add_notebook.clicked.connect(self.open_new_notebook_dialog)
@@ -72,10 +82,27 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.act_new.triggered.connect(self.new_experiment)
         self.act_new_experiment.triggered.connect(self.new_experiment)
 
+    def show_notebook_list(self):
+        """ Show the existing notebooks in the notebook list """
+
+        # Clear the existing list
+        self.lst_notebook.clear()
+
+        # Get the notebook list from the database
+        notebook_list = database.get_notebook_list()
+
+        # Add items to the list
+        for notebook in notebook_list:
+            item = QListWidgetItem(notebook['name'])
+            item.setData(Qt.UserRole, notebook['id'])
+            self.lst_notebook.addItem(item)
+
+        # Order the list
+        self.lst_notebook.sortItems(Qt.AscendingOrder)
+
     def read_settings(self):
-        """
-        Read the setting when program launch to restore geometry and state
-        """
+        """ Read the setting when program launch to restore geometry and state """
+
         settings = QSettings("Samuel Drouin", "LabNote")
         self.restoreGeometry(settings.value("MainWindow/Geometry", QByteArray()))
 
@@ -84,15 +111,15 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         Write the program geometry and state to settings
         :param e: QCloseEvent
         """
+
         settings = QSettings("Samuel Drouin", "LabNote")
         settings.setValue("MainWindow/Geometry", self.saveGeometry())
 
         return super(MainWindow, self).closeEvent(e)
 
     def set_no_entry_widget(self):
-        """
-        Show a no entry selected label when no entry or notebook are open.
-        """
+        """ Show a no entry selected label when no entry or notebook are open. """
+
         # Setting up widget elements
         no_entry_pixmap = QPixmap(":/Icons/MainWindow/icons/main-window/no_entry_selected.png")
         lbl_no_entry_image = QLabel()
@@ -103,7 +130,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         lbl_no_entry = QLabel("No entry selected")
         lbl_no_entry.setAlignment(Qt.AlignCenter)
-        style.set_style_sheet(lbl_no_entry, ":/StyleSheet/style-sheet/main-window/no_entry_label.qss")
+        stylesheet.set_style_sheet(lbl_no_entry, ":/StyleSheet/style-sheet/main-window/no_entry_label.qss")
 
         # Setting up the layout
         self.no_entry_widget = QWidget()
@@ -115,47 +142,47 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.centralWidget().layout().addWidget(self.no_entry_widget, Qt.AlignHCenter, Qt.AlignCenter)
 
     def open_new_notebook_dialog(self):
-        """
-        Show a sheet dialog that create a new notebook.
-        """
+        """ Show a sheet dialog that create a new notebook. """
+
         self.new_notebook = NewNotebook()
         self.new_notebook.setWindowModality(Qt.WindowModal)
         self.new_notebook.setParent(self, Qt.Sheet)
         self.new_notebook.show()
-        self.new_notebook.accepted.connect(self.add_notebook)
+        self.new_notebook.accepted.connect(self.create_notebook)
 
-    def add_notebook(self):
-        """
-        Add a newly created notebook name to the notebook list.
-        """
-        notebook_name = self.new_notebook.notebook_name
-        self.lst_notebook.addItem(notebook_name)
-        self.lst_notebook.sortItems(Qt.AscendingOrder)
+    def create_notebook(self):
+        """ Add a newly created notebook name to the notebook list. """
+        nb_name = self.new_notebook.notebook_name
+        nb_uuid = uuid.uuid4()
+
+        database.create_notebook(nb_name, nb_uuid)
+        directory.create_nb_directory(nb_name, nb_uuid)
+
+        self.show_notebook_list()
 
         # Select the newly inserted item
-        items = self.lst_notebook.findItems(notebook_name, Qt.MatchExactly)
+        items = self.lst_notebook.findItems(nb_name, Qt.MatchExactly)
         self.lst_notebook.setCurrentItem(items[0])
 
     def notebook_changed(self, current, previous):
-        """
-        Handle notebook changes :
+        """ Handle notebook changes :
             - Change the experiment list
             - Allow new experiment creation
         """
+
         # Allow new experiment creation
         self.act_new.setEnabled(True)
         self.act_new_experiment.setEnabled(True)
 
     def new_experiment(self):
         """
-        New exp
-        :return:
+        Create a new experiment.
         """
-        #if self.centralWidget().layout().indexOf(self.no_entry_widget) != -1:
-        textbox_widget = textbox.Textbox()
-        #self.centralWidget().layout().removeWidget(self.no_entry_widget)
-        #self.no_entry_widget.deleteLater()
-        #self.no_entry_widget = None
+        if self.centralWidget().layout().indexOf(self.no_entry_widget) != -1:
+            textbox_widget = textbox.Textbox()
+            self.centralWidget().layout().removeWidget(self.no_entry_widget)
+            self.no_entry_widget.deleteLater()
+            self.no_entry_widget = None
 
-        self.centralWidget().layout().addWidget(textbox_widget)
-        self.centralWidget().layout().setStretch(2, 10)
+            self.centralWidget().layout().addWidget(textbox_widget)
+            self.centralWidget().layout().setStretch(2, 10)
