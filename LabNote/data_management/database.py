@@ -3,9 +3,12 @@ import sqlite3
 import os
 import logging
 
+# PyQt import
+from PyQt5.QtWidgets import QMessageBox
+
 # Project import
-from data_management import directory
-from common import logs
+from LabNote.data_management import directory
+from LabNote.common import logs
 
 MAIN_DATABASE_FILE_PATH = os.path.join(directory.DEFAULT_MAIN_DIRECTORY_PATH + "/labnote.db")
 PROTOCOL_DATABASE_FILE_PATH = os.path.join(directory.DEFAULT_MAIN_DIRECTORY_PATH + "/protocols.db")
@@ -116,47 +119,80 @@ INSERT_NOTEBOOK = """
 INSERT INTO notebook (name, uuid) VALUES ('{}', '{}')
 """
 
-print("database logging")
-logs.init_logging()
 
+def create_notebook(nb_name, nb_uuid, silent=False):
+    """ Create a new notebook
 
-def create_notebook(nb_name, nb_uuid):
-    """ Create a new notebook """
-    conn = sqlite3.connect(MAIN_DATABASE_FILE_PATH)
-    cursor = conn.cursor()
+    :param silent: Hide the messagebox if true
+    :type silent: bool
+    :returns: True if the notebook was created and false otherwise
+    """
 
+    conn = None
     query = INSERT_NOTEBOOK.format(nb_name, nb_uuid)
+
     try:
+        conn = sqlite3.connect(MAIN_DATABASE_FILE_PATH)
+        cursor = conn.cursor()
+
         cursor.execute(query)
         conn.commit()
     except sqlite3.Error as e:
+        # Log error
         logging.info("Creating a new notebook ({}) in the labnote.db".format(nb_name))
         logging.exception(str(e))
-        raise
+
+        # Warn the user
+        if not silent:
+            message = QMessageBox()
+            message.setWindowTitle("LabNote")
+            message.setText("Notebook cannot be created")
+            message.setInformativeText("An error occurred during the notebook creation in the database.")
+            message.setDetailedText(str(e))
+            message.setIcon(QMessageBox.Warning)
+            message.setStandardButtons(QMessageBox.Ok)
+            message.exec()
+
+        return False
     finally:
         if conn:
             conn.close()
 
+    return True
 
-def get_notebook_list():
+
+def get_notebook_list(silent=False):
     """Get a list of all existing notebooks
 
+    :param silent: Hide the messagebox if true
+    :type silent: bool
     :return: List of dictionary of name and id of the notebooks
     """
-    # Prepare the connection
-    conn = sqlite3.connect(MAIN_DATABASE_FILE_PATH)
-    cursor = conn.cursor()
 
     # Select notebook list from database
     buffer = None
+    conn = None
 
     try:
+        # Prepare the connection
+        conn = sqlite3.connect(MAIN_DATABASE_FILE_PATH)
+        cursor = conn.cursor()
+
         cursor.execute(SELECT_NOTEBOOK_NAME)
         buffer = cursor.fetchall()
-    except sqlite3.Error as e:
+    except sqlite3.Error as exception:
         logging.info("Getting name and id of all notebooks from labnote.db")
-        logging.exception(str(e))
-        raise
+        logging.exception(str(exception))
+
+        if not silent:
+            message = QMessageBox()
+            message.setWindowTitle("LabNote")
+            message.setText("Error getting the notebook list")
+            message.setInformativeText("An error occurred while getting the notebook list. ")
+            message.setDetailedText(str(exception))
+            message.setIcon(QMessageBox.Warning)
+            message.setStandardButtons(QMessageBox.Ok)
+            message.exec()
     finally:
         if conn:
             conn.close()
@@ -170,14 +206,21 @@ def get_notebook_list():
 
     return notebook_list
 
-def create_main_database():
-    """ Create the labnote database """
-    conn = sqlite3.connect(MAIN_DATABASE_FILE_PATH)
-    conn.isolation_level = None
 
-    cursor = conn.cursor()
+def create_main_database(silent=False):
+    """ Create the labnote database
+
+    :param silent: Hide the messagebox if true
+    :type silent: bool
+    """
+
+    conn = None
 
     try:
+        conn = sqlite3.connect(MAIN_DATABASE_FILE_PATH)
+        conn.isolation_level = None
+        cursor = conn.cursor()
+
         cursor.execute("BEGIN")
         cursor.execute(CREATE_NOTEBOOK_TABLE)
         cursor.execute(CREATE_EXPERIMENT_TABLE)
@@ -191,35 +234,70 @@ def create_main_database():
         cursor.execute(CREATE_EXPERIMENT_PROTOCOL_TABLE)
         cursor.execute(CREATE_EXPERIMENT_PROTOCOL_INDEX)
         cursor.execute("COMMIT")
-    except sqlite3.Error as e:
-        cursor.execute("ROLLBACK")
-        
-        logging.info("Creating the labnote.db file")
-        logging.exception(str(e))
+    except sqlite3.Error as exception:
+        # Warn the user
+        if not silent:
+            message = QMessageBox()
+            message.setWindowTitle("LabNote")
+            message.setText("Main database cannot be created")
+            message.setInformativeText("An error occurred during the creation of the main database. "
+                                   "The program will now close.")
+            message.setDetailedText(str(exception))
+            message.setIcon(QMessageBox.Critical)
+            message.setStandardButtons(QMessageBox.Ok)
+            message.exec()
+
+        # Try to cleanup the main directory
+        try:
+            directory.cleanup_main_directory()
+        except:
+            raise  # Raise any possible exception that can happen at this point
+
         raise
     finally:
         if conn:
             conn.close()
 
 
-def create_protocol_db():
-    """ Create the protocol database """
-    conn = sqlite3.connect(PROTOCOL_DATABASE_FILE_PATH)
-    conn.isolation_level = None
+def create_protocol_db(silent=False):
+    """ Create the protocole database
 
-    cursor = conn.cursor()
+    :param silent: Hide the messagebox if true
+    :type silent: bool
+    """
+
+    conn = None
 
     try:
+        conn = sqlite3.connect(PROTOCOL_DATABASE_FILE_PATH)
+        conn.isolation_level = None
+
+        cursor = conn.cursor()
+
         cursor.execute("BEGIN")
         cursor.execute(CREATE_PROTOCOL_DB_RESEACH_FIELD_TABLE)
         cursor.execute(CREATE_PROTOCOL_DB_PROTOCOL_TABLE)
         cursor.execute(CREATE_PROTOCOL_DB_UPDATE_DATE_TRIGGER)
         cursor.execute("COMMIT")
-    except sqlite3.Error as e:
-        cursor.execute("ROLLBACK")
+    except sqlite3.Error as exception:
+        # Warn the user
+        if not silent:
+            message = QMessageBox()
+            message.setWindowTitle("LabNote")
+            message.setText("Protocols database cannot be created")
+            message.setInformativeText("An error occurred during the creation of the protocols database. "
+                                   "The program will now close.")
+            message.setDetailedText(str(exception))
+            message.setIcon(QMessageBox.Critical)
+            message.setStandardButtons(QMessageBox.Ok)
+            message.exec()
 
-        logging.info("Creating the protocol.db file")
-        logging.exception(str(e))
+        # Try to cleanup the main directory
+        try:
+            directory.cleanup_main_directory()
+        except:
+            raise  # Raise any possible exception that can happen at this point
+
         raise
     finally:
         if conn:

@@ -109,7 +109,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def closeEvent(self, e):
         """
         Write the program geometry and state to settings
-        :param e: QCloseEvent
+        :param e: Close event
+        :type e: QCloseEvent
+        :returns: Event for the parent
         """
 
         settings = QSettings("Samuel Drouin", "LabNote")
@@ -155,14 +157,15 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         nb_name = self.new_notebook.notebook_name
         nb_uuid = uuid.uuid4()
 
-        database.create_notebook(nb_name, nb_uuid)
-        directory.create_nb_directory(nb_name, nb_uuid)
+        if directory.create_nb_directory(nb_name, nb_uuid):
+            if database.create_notebook(nb_name, nb_uuid):
+                self.show_notebook_list()
 
-        self.show_notebook_list()
-
-        # Select the newly inserted item
-        items = self.lst_notebook.findItems(nb_name, Qt.MatchExactly)
-        self.lst_notebook.setCurrentItem(items[0])
+                # Select the newly inserted item
+                items = self.lst_notebook.findItems(nb_name, Qt.MatchExactly)
+                self.lst_notebook.setCurrentItem(items[0])
+            else:
+                directory.delete_nb_directory(nb_name, nb_uuid)
 
     def notebook_changed(self, current, previous):
         """ Handle notebook changes :
