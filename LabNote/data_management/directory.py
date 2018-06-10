@@ -3,9 +3,6 @@ import os
 import logging
 import shutil
 
-# PyQt import
-from PyQt5.QtWidgets import QMessageBox
-
 # Project import
 from LabNote.common import logs
 

@@ -3,12 +3,8 @@ import sqlite3
 import os
 import logging
 
-# PyQt import
-from PyQt5.QtWidgets import QMessageBox
-
 # Project import
 from LabNote.data_management import directory
-from LabNote.common import logs
 
 MAIN_DATABASE_FILE_PATH = os.path.join(directory.DEFAULT_MAIN_DIRECTORY_PATH + "/labnote.db")
 PROTOCOL_DATABASE_FILE_PATH = os.path.join(directory.DEFAULT_MAIN_DIRECTORY_PATH + "/protocols.db")
