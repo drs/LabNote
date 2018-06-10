@@ -9,6 +9,12 @@ from LabNote.data_management import directory
 MAIN_DATABASE_FILE_PATH = os.path.join(directory.DEFAULT_MAIN_DIRECTORY_PATH + "/labnote.db")
 PROTOCOL_DATABASE_FILE_PATH = os.path.join(directory.DEFAULT_MAIN_DIRECTORY_PATH + "/protocols.db")
 
+MAIN_DATABASE_VERSION = 2
+PROTOCOL_DATABASE_VERSION = 1
+NOTEBOOK_DATABASE_VERSION = 1
+
+SET_MAIN_DB_USER_VERSION = "PRAGMA user_version = '{}'".format(MAIN_DATABASE_VERSION)
+
 CREATE_NOTEBOOK_TABLE = """
 CREATE TABLE notebook (
     notebook_id     INTEGER         PRIMARY KEY   AUTOINCREMENT,
@@ -107,6 +113,8 @@ CREATE TABLE research_field (
     name              VARCHAR (255)     NOT NULL        UNIQUE
 )"""
 
+SET_PROTOCOL_DB_USER_VERSION = "PRAGMA user_version = '{}'".format(PROTOCOL_DATABASE_VERSION)
+
 SELECT_NOTEBOOK_NAME = """
 SELECT notebook_id, name FROM notebook
 """
@@ -195,6 +203,7 @@ def create_main_database():
         cursor = conn.cursor()
 
         cursor.execute("BEGIN")
+        cursor.execute(SET_MAIN_DB_USER_VERSION)
         cursor.execute(CREATE_NOTEBOOK_TABLE)
         cursor.execute(CREATE_EXPERIMENT_TABLE)
         cursor.execute(CREATE_EXPERIMENT_INDEX)
@@ -232,6 +241,7 @@ def create_protocol_db():
         cursor = conn.cursor()
 
         cursor.execute("BEGIN")
+        cursor.execute(SET_PROTOCOL_DB_USER_VERSION)
         cursor.execute(CREATE_PROTOCOL_DB_RESEACH_FIELD_TABLE)
         cursor.execute(CREATE_PROTOCOL_DB_PROTOCOL_TABLE)
         cursor.execute(CREATE_PROTOCOL_DB_UPDATE_DATE_TRIGGER)
