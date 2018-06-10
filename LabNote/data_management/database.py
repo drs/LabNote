@@ -11,83 +11,83 @@ PROTOCOL_DATABASE_FILE_PATH = os.path.join(directory.DEFAULT_MAIN_DIRECTORY_PATH
 
 MAIN_DATABASE_VERSION = 2
 PROTOCOL_DATABASE_VERSION = 1
-NOTEBOOK_DATABASE_VERSION = 1
 
 SET_MAIN_DB_USER_VERSION = "PRAGMA user_version = '{}'".format(MAIN_DATABASE_VERSION)
 
 CREATE_NOTEBOOK_TABLE = """
 CREATE TABLE notebook (
-    notebook_id     INTEGER         PRIMARY KEY   AUTOINCREMENT,
+    nb_id           INTEGER         PRIMARY KEY   AUTOINCREMENT,
     name            VARCHAR (255)   NOT NULL      UNIQUE, 
     uuid            CHAR (36)       UNIQUE        NOT NULL
 )"""
 
 CREATE_EXPERIMENT_TABLE = """
 CREATE TABLE experiment (
-    experiment_id       INTEGER       PRIMARY KEY   AUTOINCREMENT,
-    experiment_name     VARCHAR (255) NOT NULL      UNIQUE,
-    experiment_uuid     CHAR (36)     NOT NULL      UNIQUE,
-    notebook_id         INTEGER       NOT NULL      REFERENCES notebook (notebook_id)
+    exp_id         INTEGER       PRIMARY KEY   AUTOINCREMENT,
+    name           VARCHAR (255) NOT NULL      UNIQUE,
+    objective      TEXT,
+    uuid           CHAR (36)     NOT NULL      UNIQUE,
+    nb_id           INTEGER       NOT NULL     REFERENCES notebook (nb_id)
 )"""
 
 CREATE_EXPERIMENT_INDEX = """
 CREATE UNIQUE INDEX experiment_uuid ON experiment (
-    experiment_uuid ASC
+    uuid ASC
 )"""
 
 CREATE_DATASET_TABLE = """
 CREATE TABLE dataset (
-    dataset_id      INTEGER     PRIMARY KEY   AUTOINCREMENT,
-    dataset_uuid    CHAR (36)   NOT NULL      UNIQUE,
-    name            VARCHAR (255) 
+    data_id      INTEGER     PRIMARY KEY   AUTOINCREMENT,
+    uuid         CHAR (36)   NOT NULL      UNIQUE,
+    name         VARCHAR (255) 
 )"""
 
 CREATE_DATASET_INDEX = """
 CREATE UNIQUE INDEX dataset_index ON dataset (
-    dataset_uuid
+    uuid
 )"""
 
 CREATE_PROTOCOL_TABLE = """
 CREATE TABLE protocol (
     protocol_id     INTEGER   PRIMARY KEY   AUTOINCREMENT,
-    protocol_uuid   CHAR (36) NOT NULL      UNIQUE,
+    uuid            CHAR (36) NOT NULL      UNIQUE,
     name            VARCHAR (255)
 )
 """
 
 CREATE_PROTOCOL_INDEX = """
 CREATE UNIQUE INDEX protocol_index ON protocol (
-    protocol_uuid
+    uuid
 )"""
 
 CREATE_EXPERIMENT_DATASET_TABLE = """
 CREATE TABLE experiment_dataset (
-    experiment_id INTEGER REFERENCES experiment (experiment_id)  NOT NULL,
-    dataset_id    INTEGER REFERENCES dataset (dataset_id)       NOT NULL
+    exp_id INTEGER REFERENCES experiment (exp_id)  NOT NULL,
+    data_id    INTEGER REFERENCES dataset (data_id)       NOT NULL
 )"""
 
 CREATE_EXPERIMENT_DATASET_INDEX = """
 CREATE UNIQUE INDEX experiment_dataset_index ON experiment_dataset (
-    experiment_id ASC,
-    dataset_id ASC
+    exp_id ASC,
+    data_id ASC
 )"""
 
 CREATE_EXPERIMENT_PROTOCOL_TABLE = """
 CREATE TABLE experiment_protocol (
-    experiment_id INTEGER REFERENCES experiment (experiment_id)     NOT NULL,
+    exp_id INTEGER REFERENCES experiment (exp_id)     NOT NULL,
     protocol_id   INTEGER REFERENCES protocol (protocol_id)         NOT NULL
 )"""
 
 CREATE_EXPERIMENT_PROTOCOL_INDEX = """
 CREATE UNIQUE INDEX experiment_protocol_index ON experiment_protocol (
-    experiment_id ASC,
+    exp_id ASC,
     protocol_id ASC
 )"""
 
 CREATE_PROTOCOL_DB_PROTOCOL_TABLE = """
 CREATE TABLE protocol (
     protocol_id       INTEGER       PRIMARY KEY AUTOINCREMENT,
-    protocol_uuid     CHAR (36)     NOT NULL
+    uuid              CHAR (36)     NOT NULL
                                     UNIQUE,
     name              VARCHAR (255) NOT NULL,
     research_field_id INTEGER       REFERENCES research_field (research_field_id),
@@ -97,6 +97,12 @@ CREATE TABLE protocol (
     date_created      DATETIME      DEFAULT (CURRENT_TIMESTAMP),
     date_updated      DATETIME
 )"""
+
+CREATE_PROTOCOL_DB_INDEX = """
+CREATE UNIQUE INDEX protocol_index ON protocol (
+    uuid
+)
+"""
 
 CREATE_PROTOCOL_DB_UPDATE_DATE_TRIGGER = """
 CREATE TRIGGER update_date
@@ -116,11 +122,20 @@ CREATE TABLE research_field (
 SET_PROTOCOL_DB_USER_VERSION = "PRAGMA user_version = '{}'".format(PROTOCOL_DATABASE_VERSION)
 
 SELECT_NOTEBOOK_NAME = """
-SELECT notebook_id, name FROM notebook
+SELECT uuid, name FROM notebook
 """
 
 INSERT_NOTEBOOK = """
 INSERT INTO notebook (name, uuid) VALUES ('{}', '{}')
+"""
+
+INSERT_EXPERIMENT = """
+INSERT INTO experiment (name, uuid, objective, nb_id) VALUES ('{}', '{}', '{}', 
+(SELECT nb_id FROM notebook WHERE notebook.uuid = '{}'))
+"""
+
+SELECT_NOTEBOOK_EXPERIMENT = """
+SELECT name, objective, uuid FROM experiment WHERE nb_id = (SELECT nb_id FROM notebook WHERE notebook.uuid = '{}')
 """
 
 
@@ -157,8 +172,6 @@ def create_notebook(nb_name, nb_uuid):
 def get_notebook_list():
     """Get a list of all existing notebooks
 
-    :param silent: Hide the messagebox if true
-    :type silent: bool
     :return: List of dictionary of name and id of the notebooks
     """
 
@@ -187,7 +200,7 @@ def get_notebook_list():
     notebook_list = []
 
     for notebook in buffer:
-        notebook_list.append({'id': notebook[0], 'name': notebook[1]})
+        notebook_list.append({'uuid': notebook[0], 'name': notebook[1]})
 
     return notebook_list
 
@@ -244,6 +257,7 @@ def create_protocol_db():
         cursor.execute(SET_PROTOCOL_DB_USER_VERSION)
         cursor.execute(CREATE_PROTOCOL_DB_RESEACH_FIELD_TABLE)
         cursor.execute(CREATE_PROTOCOL_DB_PROTOCOL_TABLE)
+        cursor.execute(CREATE_PROTOCOL_DB_INDEX)
         cursor.execute(CREATE_PROTOCOL_DB_UPDATE_DATE_TRIGGER)
         cursor.execute("COMMIT")
     except sqlite3.Error as exception:
@@ -257,3 +271,67 @@ def create_protocol_db():
     finally:
         if conn:
             conn.close()
+
+
+def create_experiment(exp_name, exp_uuid, exp_obj, nb_uuid):
+    """ Create a new experiment in the main database """
+
+    conn = None
+    query = INSERT_EXPERIMENT.format(exp_name, exp_uuid, exp_obj, nb_uuid)
+
+    try:
+        conn = sqlite3.connect(MAIN_DATABASE_FILE_PATH)
+        cursor = conn.cursor()
+
+        cursor.execute(query)
+        conn.commit()
+    except sqlite3.Error as exception:
+        # Log error
+        logging.info("An exception occured while adding the experiment ({}) in the labnote.db".format(exp_uuid))
+        logging.exception(str(exception))
+
+        return exception
+    finally:
+        if conn:
+            conn.close()
+
+
+def get_experiment_list_notebook(nb_uuid):
+    """ Get the experiment list for a specific notebook
+
+    :param nb_uuid: UUID of the notebook
+    :type nb_uuid: UUID
+    :return: List of dictionary of name, objective and id of the notebooks
+    """
+
+    # Select notebook list from database
+    buffer = None
+    conn = None
+
+    try:
+        # Prepare the connection
+        conn = sqlite3.connect(MAIN_DATABASE_FILE_PATH)
+        cursor = conn.cursor()
+
+        query = SELECT_NOTEBOOK_EXPERIMENT.format(nb_uuid)
+
+        cursor.execute(query)
+        buffer = cursor.fetchall()
+    except sqlite3.Error as exception:
+        logging.info("An exception occured while getting a list all experiment for notebook {} "
+                     "from labnote.db".format(nb_uuid))
+        logging.exception(str(exception))
+
+        return exception
+    finally:
+        if conn:
+            conn.close()
+
+    # Prepare the return format
+
+    experiement_list = []
+
+    for experiment in buffer:
+        experiement_list.append({'uuid': experiment[2], 'name': experiment[0], 'objective': experiment[1]})
+
+    return experiement_list
