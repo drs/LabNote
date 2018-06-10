@@ -1,11 +1,15 @@
+# Python import
+import math
+
+# Python import
 from PyQt5.QtWidgets import QWidget, QMenu, QAction, QTextEdit
 from PyQt5.QtGui import QTextCharFormat, QFont, QTextDocument, QPixmap, QPainter, QIcon, QPainterPath, QPen, QColor, \
-    QTextListFormat, QBrush
+    QTextListFormat, QBrush, QFontMetrics
 from PyQt5.QtCore import Qt, QRectF
 
-from ui.ui_textbox import Ui_TextBox
-from common import stylesheet, color
-from resources import resources
+from LabNote.ui.ui_textbox import Ui_TextBox
+from LabNote.common import stylesheet, color
+from LabNote.resources import resources
 
 
 class TextEdit(QTextEdit):
@@ -28,7 +32,26 @@ class Textbox(QWidget, Ui_TextBox):
 
         # Insert textedit in layout
         self.textedit = TextEdit()
-        self.frame.layout().addWidget(self.textedit)
+        self.frame.layout().addWidget(self.textedit, 20)
+
+        # Insert title text edit
+        self.title_text_edit = TextEdit()
+        font = QFont()
+        font.setBold(True)
+        font.setPointSize(16)
+        self.title_text_edit.setFont(font)
+        self.title_text_edit.setPlaceholderText("Untitled experiment")
+        self.title_text_edit.setMinimumHeight(26)
+        self.title_text_edit.setMaximumHeight(64)
+        self.frame.layout().insertWidget(1, self.title_text_edit, 1)
+
+        # Insert aims text edit
+        self.objectives_text_edit = TextEdit()
+        self.objectives_text_edit.setStyleSheet("QTextEdit { border-bottom: 0.5px solid rgb(212, 212, 212)}")
+        self.objectives_text_edit.setPlaceholderText("Objectives of the experiment")
+        self.objectives_text_edit.setMinimumHeight(42)
+        self.objectives_text_edit.setMaximumHeight(74)
+        self.frame.layout().insertWidget(2, self.objectives_text_edit, 2)
 
         # Set button groups
         self.btn_bold.setProperty("Menu", False)
@@ -219,6 +242,38 @@ class Textbox(QWidget, Ui_TextBox):
         self.highlight_menu.triggered.connect(self.format_highlight)
         self.style_menu.triggered.connect(self.format_style)
         self.textedit.cursorPositionChanged.connect(self.update_button)
+        self.title_text_edit.textChanged.connect(self.title_text_resize)
+        self.objectives_text_edit.textChanged.connect(self.objectives_text_resize)
+
+    def resizeEvent(self, event):
+        """ Updated the textbox size when the window is resized """
+        self.objectives_text_resize()
+        self.title_text_resize()
+
+        return super(Textbox, self).resizeEvent(event)
+
+    def objectives_text_resize(self):
+        """ Set the objectives textbox size when the text is edited """
+        font_metric = QFontMetrics(self.objectives_text_edit.font())
+        text_size = font_metric.size(0, self.objectives_text_edit.toPlainText())
+
+        factor = math.ceil(text_size.width() / self.objectives_text_edit.width())
+
+        height = text_size.height() * factor + 10
+
+        if height <= 74:
+            self.objectives_text_edit.setMinimumHeight(height)
+
+    def title_text_resize(self):
+        """ Set the title textbox size when it's text is edited """
+        font_metric = QFontMetrics(self.title_text_edit.font())
+        text_size = font_metric.size(0, self.title_text_edit.toPlainText())
+
+        factor = math.ceil(text_size.width() / self.title_text_edit.width())
+
+        height = text_size.height() * factor + 6
+        if height <= 64:
+            self.title_text_edit.setMinimumHeight(height)
 
     def change_list_button_icon(self, action):
         """Change the list button icon to the selected list format

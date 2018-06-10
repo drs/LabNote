@@ -132,7 +132,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
             sys.exit("Unexpected error during protocol database creation")
 
-
     def show_notebook_list(self):
         """ Show the existing notebooks in the notebook list """
 
