@@ -27,10 +27,10 @@ class TestMainDirectoryCreation(unittest.TestCase):
         self.assertTrue(os.path.isdir(directory.DEFAULT_MAIN_DIRECTORY_PATH))
 
     def test_main_directory_creation_error(self):
-        with self.assertRaises(OSError):
-            with unittest.mock.patch('os.mkdir') as mock_mkdir:
-                mock_mkdir.side_effect = OSError
-                directory.create_default_main_directory(silent=SILENT_TESTING)
+        with unittest.mock.patch('os.mkdir') as mock_mkdir:
+            mock_mkdir.side_effect = OSError
+            ret = directory.create_default_main_directory()
+            self.assertIsInstance(ret, OSError)
 
 
 class TestSubdirectoryCreation(unittest.TestCase):
@@ -53,12 +53,20 @@ class TestSubdirectoryCreation(unittest.TestCase):
         directory.create_nb_directory(nb_name, nb_uuid)
         self.assertTrue(os.path.isdir(os.path.join(directory.NOTEBOOK_DIRECTORY_PATH + "/{}".format(nb_uuid))))
 
-    def test_notebook_directory_creation_oserror(self):
+    def test_notebook_directory_creation_raise_oserror(self):
         with unittest.mock.patch('os.mkdir') as mock_mkdir:
             mock_mkdir.side_effect = OSError
             nb_name = 'Notebook'
             nb_uuid = uuid.uuid4()
-            self.assertFalse(directory.create_nb_directory(nb_name, nb_uuid, silent=SILENT_TESTING))
+            self.assertIsInstance(directory.create_nb_directory(nb_name, nb_uuid), OSError)
+
+    def test_notebook_directory_creation_oserror_no_notebook(self):
+        with unittest.mock.patch('os.mkdir') as mock_mkdir:
+            mock_mkdir.side_effect = OSError
+            nb_name = 'Notebook'
+            nb_uuid = uuid.uuid4()
+            directory.create_nb_directory(nb_name, nb_uuid)
+            self.assertFalse(os.path.isdir(os.path.join(directory.NOTEBOOK_DIRECTORY_PATH + "/" + str(nb_uuid))))
 
 
 class TestDirectoryDeletion(unittest.TestCase):
@@ -83,7 +91,7 @@ class TestDirectoryDeletion(unittest.TestCase):
             mock_rmtree.side_effect = OSError
             nb_name = self.nb_name
             nb_uuid = self.nb_uuid
-            self.assertFalse(directory.delete_nb_directory(nb_name, nb_uuid, silent=SILENT_TESTING))
+            self.assertIsInstance(directory.delete_nb_directory(nb_name, nb_uuid), OSError)
 
 
 if __name__ == '__main__':

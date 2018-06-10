@@ -23,11 +23,10 @@ def cleanup_main_directory():
     shutil.rmtree(DEFAULT_MAIN_DIRECTORY_PATH, ignore_errors=True)
 
 
-def create_default_main_directory(silent=False):
+def create_default_main_directory():
     """ Create the main directory at it's default location
 
-    :param silent: Hide the messagebox if true
-    :type silent: bool
+    :returns: An exception if an exception occured
     """
 
     # Create the defaults directories
@@ -38,90 +37,52 @@ def create_default_main_directory(silent=False):
     except OSError as exception:
         # Warn the user about the error
         # This is a fatal error as the program cannot continue without a basic file structure
-        if not silent:
-            message = QMessageBox()
-            message.setWindowTitle("LabNote")
-            message.setText("File structure cannot be created")
-            message.setInformativeText("The file structure required to save the user information cannot be created."
-                                   "The program will now close. Please delete any LabNote directory in Documents as"
-                                   "it might interfere with a new program installation.")
-            message.setDetailedText(str(exception))
-            message.setIcon(QMessageBox.Critical)
-            message.setStandardButtons(QMessageBox.Ok)
-            message.exec()
 
         # Try to cleanup the main directory
         try:
             cleanup_main_directory()
         except:
-            raise # Raise any possible exception that can happen at this point
+            pass  # No need to raise any exception as an error message is already shown to the user
 
-        raise
+        return exception
 
 
-def create_nb_directory(nb_name, nb_uuid, silent=False):
+def create_nb_directory(nb_name, nb_uuid):
     """ Create a directory for a new notebook
 
     :param nb_name: Notebook name
     :type nb_name: str
     :param nb_uuid: Notebook uuid
     :type nb_uuid: UUID
-    :param silent: If true the messagebox are not shown
-    :type silent: bool
-    :returns: True if the directory is created and false otherwise
+    :returns: An exception if an exception occured
     """
     notebook_path = os.path.join(NOTEBOOK_DIRECTORY_PATH + "/{}".format(nb_uuid))
 
     try:
         os.mkdir(notebook_path)
-    except OSError as e:
+    except OSError as exception:
         #  Log the exception
         logging.info("Creating a directory for a notebook ({})".format(nb_name))
-        logging.exception(str(e))
+        logging.exception(str(exception))
 
-        if not silent:
-            message = QMessageBox()
-            message.setWindowTitle("LabNote")
-            message.setText("Notebook cannot be created")
-            message.setInformativeText("An error occurred during the notebook directory creation.")
-            message.setDetailedText(str(e))
-            message.setIcon(QMessageBox.Warning)
-            message.setStandardButtons(QMessageBox.Ok)
-            message.exec()
-
-        return False
-    return True
+        return exception
 
 
-def delete_nb_directory(nb_name, nb_uuid, silent=False):
+def delete_nb_directory(nb_name, nb_uuid):
     """ Delete a notebook directory
 
     :param nb_name: Notebook name
     :type nb_name: str
     :param nb_uuid: Notebook uuid
     :type nb_uuid: UUID
-    :param silent: Hide the messagebox if true
-    :type silent: bool
-    :returns: True if the directory is created and false otherwise
+    :returns: An exception if an exception occured
     """
     notebook_path = os.path.join(NOTEBOOK_DIRECTORY_PATH + "/{}".format(nb_uuid))
 
     try:
         shutil.rmtree(notebook_path, ignore_errors=True)
-    except OSError as e:
+    except OSError as exception:
         logging.info("Deleting a directory for a notebook ({})".format(nb_name))
-        logging.exception(str(e))
+        logging.exception(str(exception))
 
-        if not silent:
-            message = QMessageBox()
-            message.setWindowTitle("LabNote")
-            message.setText("Notebook cannot be deleted")
-            message.setInformativeText("An error occurred during the notebook directory deletion. The notebook with UUID {}"
-                                   " should be deleted manually.".format(nb_uuid))
-            message.setDetailedText(str(e))
-            message.setIcon(QMessageBox.Warning)
-            message.setStandardButtons(QMessageBox.Ok)
-            message.exec()
-
-        return False
-    return True
+        return exception

@@ -4,19 +4,21 @@ This module contain the classes responsible for launching and managing the LabNo
 
 # Python import
 import uuid
+import sys
+import sqlite3
 
 # PyQt import
-from PyQt5.QtWidgets import QMainWindow, QWidget, QLabel, QVBoxLayout, QListWidgetItem
+from PyQt5.QtWidgets import QMainWindow, QWidget, QLabel, QVBoxLayout, QListWidgetItem, QMessageBox
 from PyQt5.QtGui import QPixmap, QIcon
 from PyQt5.QtCore import Qt, QSettings, QByteArray
 
 # Project import
-from ui.ui_mainwindow import Ui_MainWindow
-from common import stylesheet
-from data_management import integrity, database, directory
-from interface import textbox
-from interface.new_notebook import NewNotebook
-from resources import resources
+from LabNote.ui.ui_mainwindow import Ui_MainWindow
+from LabNote.common import stylesheet
+from LabNote.data_management import integrity, database, directory
+from LabNote.interface import textbox
+from LabNote.interface.new_notebook import NewNotebook
+from LabNote.resources import resources
 
 
 class MainWindow(QMainWindow, Ui_MainWindow):
@@ -71,7 +73,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.read_settings()
 
         # Check files integrity
-        integrity.check_folder_integrity()
+        self.check_files_integrity()
 
         # Get existing notebook list
         self.show_notebook_list()
@@ -82,6 +84,55 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.act_new.triggered.connect(self.new_experiment)
         self.act_new_experiment.triggered.connect(self.new_experiment)
 
+    @staticmethod
+    def check_files_integrity():
+        """ Check the program files integrity """
+        exception = integrity.check_folder_integrity()
+
+        # Main directory creation exception
+        if exception[0] == integrity.MAIN_DIRECTORY_CREATION_EXCEPTION:
+            message = QMessageBox()
+            message.setWindowTitle("LabNote")
+            message.setText("Unexpected error during file structure creation")
+            message.setInformativeText("An unexpected error hapenned during the creation of the file structure "
+                                       "required to save the user information. "
+                                       "The program will now close. Please delete any LabNote directory in Documents "
+                                       "as it might interfere with a new program installation. "
+                                       "The program will now close.")
+            message.setDetailedText(str(exception[1]))
+            message.setIcon(QMessageBox.Critical)
+            message.setStandardButtons(QMessageBox.Ok)
+            message.exec()
+
+            sys.exit("Unexpected error during main directory creation")
+
+        # Main database creation exception
+        elif exception[0] == integrity.MAIN_DATABASE_CREATION_EXCEPTION:
+            message = QMessageBox()
+            message.setWindowTitle("LabNote")
+            message.setText("Unexpected error during main database creation")
+            message.setInformativeText("An unexpected error occurred during the creation of the main database. "
+                                       "The program will now close.")
+            message.setDetailedText(str(exception[1]))
+            message.setIcon(QMessageBox.Critical)
+            message.setStandardButtons(QMessageBox.Ok)
+            message.exec()
+
+            sys.exit("Unexpected error during main database creation")
+        elif exception[0] == integrity.PROTOCOLS_DATABASE_CREATION_EXCEPTION:
+            message = QMessageBox()
+            message.setWindowTitle("LabNote")
+            message.setText("Unexpected error during protocol database creation")
+            message.setInformativeText("An unexpected error occurred during the creation of the protocols database. "
+                                       "The program will now close.")
+            message.setDetailedText(str(exception[1]))
+            message.setIcon(QMessageBox.Critical)
+            message.setStandardButtons(QMessageBox.Ok)
+            message.exec()
+
+            sys.exit("Unexpected error during protocol database creation")
+
+
     def show_notebook_list(self):
         """ Show the existing notebooks in the notebook list """
 
@@ -91,14 +142,24 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # Get the notebook list from the database
         notebook_list = database.get_notebook_list()
 
-        # Add items to the list
-        for notebook in notebook_list:
-            item = QListWidgetItem(notebook['name'])
-            item.setData(Qt.UserRole, notebook['id'])
-            self.lst_notebook.addItem(item)
+        if not isinstance(notebook_list, sqlite3.Error):
+            # Add items to the list
+            for notebook in notebook_list:
+                item = QListWidgetItem(notebook['name'])
+                item.setData(Qt.UserRole, notebook['id'])
+                self.lst_notebook.addItem(item)
 
-        # Order the list
-        self.lst_notebook.sortItems(Qt.AscendingOrder)
+            # Order the list
+            self.lst_notebook.sortItems(Qt.AscendingOrder)
+        else:
+            message = QMessageBox()
+            message.setWindowTitle("LabNote")
+            message.setText("Error getting the notebook list")
+            message.setInformativeText("An error occurred while getting the notebook list. ")
+            message.setDetailedText(str(notebook_list))
+            message.setIcon(QMessageBox.Warning)
+            message.setStandardButtons(QMessageBox.Ok)
+            message.exec()
 
     def read_settings(self):
         """ Read the setting when program launch to restore geometry and state """
@@ -157,15 +218,61 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         nb_name = self.new_notebook.notebook_name
         nb_uuid = uuid.uuid4()
 
-        if directory.create_nb_directory(nb_name, nb_uuid):
-            if database.create_notebook(nb_name, nb_uuid):
+        # Create a directory for the new notebook
+        create_nb_directory_exception = directory.create_nb_directory(nb_name, nb_uuid)
+
+        if not create_nb_directory_exception:
+            # Add the new notebook to the database
+            create_notebook_exception = database.create_notebook(nb_name, nb_uuid)
+
+            if not create_notebook_exception:
+                # Add the notebook to the notebook list
                 self.show_notebook_list()
 
                 # Select the newly inserted item
                 items = self.lst_notebook.findItems(nb_name, Qt.MatchExactly)
                 self.lst_notebook.setCurrentItem(items[0])
+            # Handle exception thrown during the notebook is added to the database
             else:
-                directory.delete_nb_directory(nb_name, nb_uuid)
+                # Delete the newly created notebook directory
+                delete_nb_directory_exception = directory.delete_nb_directory(nb_name, nb_uuid)
+
+                # Show a messagebox that an error happened while the notebook was added to the database
+                # and during the notebook directory deletion
+                if delete_nb_directory_exception:
+                    message = QMessageBox()
+                    message.setWindowTitle("LabNote")
+                    message.setText("Notebook cannot be created")
+                    message.setInformativeText(
+                        "An error occurred during the notebook directory creation in the database and the associated"
+                        "files could not be deleted. The notebook with UUID {} should be deleted "
+                        "manually.".format(nb_uuid))
+                    message.setDetailedText("Database exception : \n" + str(create_notebook_exception) + "\n" +
+                                            "Directory deletion : \n" + str(delete_nb_directory_exception))
+                    message.setIcon(QMessageBox.Warning)
+                    message.setStandardButtons(QMessageBox.Ok)
+                    message.exec()
+                # Show a messagebox that an error happened while the notebook was added to the database
+                else:
+                    # Show a messagebox
+                    message = QMessageBox()
+                    message.setWindowTitle("LabNote")
+                    message.setText("Notebook cannot be created")
+                    message.setInformativeText("An error occurred during the notebook creation in the database.")
+                    message.setDetailedText(str(create_notebook_exception))
+                    message.setIcon(QMessageBox.Warning)
+                    message.setStandardButtons(QMessageBox.Ok)
+                    message.exec()
+        # Show a messagebox if an error happen during the notebook directory creation
+        else:
+            message = QMessageBox()
+            message.setWindowTitle("LabNote")
+            message.setText("Notebook cannot be created")
+            message.setInformativeText("An error occurred during the notebook directory creation.")
+            message.setDetailedText(str(create_nb_directory_exception))
+            message.setIcon(QMessageBox.Warning)
+            message.setStandardButtons(QMessageBox.Ok)
+            message.exec()
 
     def notebook_changed(self, current, previous):
         """ Handle notebook changes :

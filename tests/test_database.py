@@ -4,7 +4,8 @@ import os
 import sqlite3
 import shutil
 import unittest.mock
-import errno
+import sys
+import argparse
 
 from PyQt5.QtWidgets import QApplication
 
@@ -22,44 +23,37 @@ class TestDatabaseCreation(unittest.TestCase):
         directory.create_default_main_directory()
 
     def tearDown(self):
-        shutil.rmtree(directory.DEFAULT_MAIN_DIRECTORY_PATH, ignore_errors=True)
+        directory.cleanup_main_directory()
 
     def test_main_database_creation(self):
         database.create_main_database()
         self.assertTrue(os.path.isfile(database.MAIN_DATABASE_FILE_PATH))
 
     def test_main_database_creation_sqlite_error(self):
-        with self.assertRaises(sqlite3.Error):
-            with unittest.mock.patch("sqlite3.connect") as mock_sqlite3_conn:
-                mock_sqlite3_conn.side_effect = sqlite3.Error
-                database.create_main_database(silent=SILENT_TESTING)
+        with unittest.mock.patch("sqlite3.connect") as mock_sqlite3_conn:
+            mock_sqlite3_conn.side_effect = sqlite3.Error
+            self.assertIsInstance(database.create_main_database(), sqlite3.Error)
 
     def test_main_database_creation_cleanup(self):
         with unittest.mock.patch("sqlite3.connect") as mock_sqlite3_conn:
             mock_sqlite3_conn.side_effect = sqlite3.Error
-            try:
-                database.create_main_database(silent=SILENT_TESTING)
-            except sqlite3.Error:
-                self.assertFalse(os.path.isdir(directory.DEFAULT_MAIN_DIRECTORY_PATH))
+            database.create_main_database()
+            self.assertFalse(os.path.isdir(directory.DEFAULT_MAIN_DIRECTORY_PATH))
 
     def test_protocols_database_creation(self):
         database.create_protocol_db()
         self.assertTrue(os.path.isfile(database.PROTOCOL_DATABASE_FILE_PATH))
 
     def test_protocols_database_creation_error(self):
-        with self.assertRaises(sqlite3.Error):
-            with unittest.mock.patch("sqlite3.connect") as mock_sqlite3_conn:
-                mock_sqlite3_conn.side_effect = sqlite3.Error
-                database.create_protocol_db(silent=SILENT_TESTING)
+        with unittest.mock.patch("sqlite3.connect") as mock_sqlite3_conn:
+            mock_sqlite3_conn.side_effect = sqlite3.Error
+            self.assertIsInstance(database.create_protocol_db(), sqlite3.Error)
 
     def test_protocols_database_creation_cleanup(self):
         with unittest.mock.patch("sqlite3.connect") as mock_sqlite3_conn:
             mock_sqlite3_conn.side_effect = sqlite3.Error
-            try:
-                database.create_protocol_db(silent=SILENT_TESTING)
-            except sqlite3.Error:
-                self.assertFalse(os.path.isdir(directory.DEFAULT_MAIN_DIRECTORY_PATH))
-
+            database.create_protocol_db()
+            self.assertFalse(os.path.isdir(directory.DEFAULT_MAIN_DIRECTORY_PATH))
 
 
 if __name__ == '__main__':
