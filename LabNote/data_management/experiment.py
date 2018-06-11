@@ -8,20 +8,21 @@ import logging
 from LabNote.data_management import directory
 
 
-def create_empty_experiment(exp_uuid, nb_uuid):
+def create_experiment(exp_uuid, nb_uuid, data):
     """ Create an empty notebook
 
     :param exp_uuid: Experiment uuid
     :type exp_uuid: UUID
     :param nb_uuid: Notebook uuid
     :type nb_uuid: UUID
+    :param data: Notebook data
+    :type data: bytearray
     """
     notebook_path = os.path.join(directory.NOTEBOOK_DIRECTORY_PATH + "/{}".format(nb_uuid))
     experiment_path = os.path.join(notebook_path + "/{}".format(exp_uuid))
     experiment_file_path = os.path.join(experiment_path + "/{}".format(exp_uuid))
 
     experiment_file = None
-    data = bytearray()
 
     try:
         experiment_file = open(experiment_file_path, "wb")

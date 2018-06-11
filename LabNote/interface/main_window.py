@@ -295,3 +295,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
             self.centralWidget().layout().addWidget(textbox_widget)
             self.centralWidget().layout().setStretch(2, 10)
+
+        # Create a new experiment file
+        title = "Untitled experiment".encode()
+        data = bytearray(title)

@@ -10,16 +10,12 @@ from PyQt5.QtWidgets import QApplication
 
 # Project import
 from LabNote.data_management import directory
-from LabNote.common import logs
 
 app = QApplication([])
 
-SILENT_TESTING = True
-
 
 class TestMainDirectoryCreation(unittest.TestCase):
-    @classmethod
-    def tearDownClass(cls):
+    def tearDown(self):
         shutil.rmtree(directory.DEFAULT_MAIN_DIRECTORY_PATH, ignore_errors=True)
 
     def test_main_directory_creation(self):
@@ -42,9 +38,6 @@ class TestSubdirectoryCreation(unittest.TestCase):
 
     def test_main_notebook_directory_creation(self):
         self.assertTrue(os.path.isdir(directory.NOTEBOOK_DIRECTORY_PATH))
-
-    def test_logs_directory_creation(self):
-        self.assertTrue(os.path.isdir(logs.LOG_DIRECTORY_PATH))
 
     def test_notebook_directory_creation(self):
         # Create a directory

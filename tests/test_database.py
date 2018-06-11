@@ -22,6 +22,7 @@ class TestDatabaseCreation(unittest.TestCase):
 
     def test_main_database_creation(self):
         database.create_main_database()
+        print(database.MAIN_DATABASE_FILE_PATH)
         self.assertTrue(os.path.isfile(database.MAIN_DATABASE_FILE_PATH))
 
     def test_main_database_creation_sqlite_error(self):
