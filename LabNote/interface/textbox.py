@@ -34,6 +34,9 @@ class Textbox(QWidget, Ui_TextBox):
         self.textedit = TextEdit()
         self.frame.layout().addWidget(self.textedit, 20)
 
+        print(self.textedit.toHtml())
+        print(self.textedit.toHtml().encode())
+
         # Insert title text edit
         self.title_text_edit = TextEdit()
         font = QFont()

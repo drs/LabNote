@@ -14,7 +14,7 @@ from PyQt5.QtCore import Qt, QSettings, QByteArray
 
 # Project import
 from LabNote.ui.ui_mainwindow import Ui_MainWindow
-from LabNote.common import stylesheet
+from LabNote.common import stylesheet, sqlite_error
 from LabNote.data_management import integrity, database, directory
 from LabNote.interface import textbox
 from LabNote.interface.new_notebook import NewNotebook
@@ -94,7 +94,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             message = QMessageBox()
             message.setWindowTitle("LabNote")
             message.setText("Unexpected error during file structure creation")
-            message.setInformativeText("An unexpected error hapenned during the creation of the file structure "
+            message.setInformativeText("An unexpected error occured during the creation of the file structure "
                                        "required to save the user information. "
                                        "The program will now close. Please delete any LabNote directory in Documents "
                                        "as it might interfere with a new program installation. "
@@ -119,6 +119,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             message.exec()
 
             sys.exit("Unexpected error during main database creation")
+
         elif exception[0] == integrity.PROTOCOLS_DATABASE_CREATION_EXCEPTION:
             message = QMessageBox()
             message.setWindowTitle("LabNote")
@@ -145,7 +146,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             # Add items to the list
             for notebook in notebook_list:
                 item = QListWidgetItem(notebook['name'])
-                item.setData(Qt.UserRole, notebook['id'])
+                item.setData(Qt.UserRole, notebook['uuid'])
                 self.lst_notebook.addItem(item)
 
             # Order the list
@@ -218,7 +219,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         nb_uuid = uuid.uuid4()
 
         # Create a directory for the new notebook
-        create_nb_directory_exception = directory.create_nb_directory(nb_name, nb_uuid)
+        create_nb_directory_exception = directory.create_nb_directory(nb_uuid)
 
         if not create_nb_directory_exception:
             # Add the new notebook to the database
@@ -234,14 +235,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             # Handle exception thrown during the notebook is added to the database
             else:
                 # Delete the newly created notebook directory
-                delete_nb_directory_exception = directory.delete_nb_directory(nb_name, nb_uuid)
+                delete_nb_directory_exception = directory.delete_nb_directory(nb_uuid)
 
                 # Show a messagebox that an error happened while the notebook was added to the database
                 # and during the notebook directory deletion
                 if delete_nb_directory_exception:
                     message = QMessageBox()
                     message.setWindowTitle("LabNote")
-                    message.setText("Notebook cannot be created")
+                    message.setText("Cannot create notebook")
                     message.setInformativeText(
                         "An error occurred during the notebook directory creation in the database and the associated"
                         "files could not be deleted. The notebook with UUID {} should be deleted "
@@ -253,20 +254,34 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                     message.exec()
                 # Show a messagebox that an error happened while the notebook was added to the database
                 else:
+                    error_code = sqlite_error.sqlite_err_handler(str(create_notebook_exception))
+
                     # Show a messagebox
-                    message = QMessageBox()
-                    message.setWindowTitle("LabNote")
-                    message.setText("Notebook cannot be created")
-                    message.setInformativeText("An error occurred during the notebook creation in the database.")
-                    message.setDetailedText(str(create_notebook_exception))
-                    message.setIcon(QMessageBox.Warning)
-                    message.setStandardButtons(QMessageBox.Ok)
-                    message.exec()
+                    # Show a unique contraint error
+                    if error_code == sqlite_error.UNIQUE_CODE:
+                        message = QMessageBox()
+                        message.setWindowTitle("LabNote")
+                        message.setText("Cannot create notebook")
+                        message.setInformativeText("Another notebook with the same name already exist in the database. "
+                                                   "Please choose another name.")
+                        message.setIcon(QMessageBox.Warning)
+                        message.setStandardButtons(QMessageBox.Ok)
+                        message.exec()
+                    else:
+                        # Show the generic messagebox for unhandled errors
+                        message = QMessageBox()
+                        message.setWindowTitle("LabNote")
+                        message.setText("Cannot create notebook")
+                        message.setInformativeText("An error occurred during the notebook creation in the database.")
+                        message.setDetailedText(str(create_notebook_exception))
+                        message.setIcon(QMessageBox.Warning)
+                        message.setStandardButtons(QMessageBox.Ok)
+                        message.exec()
         # Show a messagebox if an error happen during the notebook directory creation
         else:
             message = QMessageBox()
             message.setWindowTitle("LabNote")
-            message.setText("Notebook cannot be created")
+            message.setText("Cannot create notebook")
             message.setInformativeText("An error occurred during the notebook directory creation.")
             message.setDetailedText(str(create_nb_directory_exception))
             message.setIcon(QMessageBox.Warning)

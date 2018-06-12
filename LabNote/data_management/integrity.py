@@ -6,7 +6,6 @@ from PyQt5.QtWidgets import QMessageBox
 
 # Project import
 from LabNote.data_management import database, directory
-from LabNote.common import logs
 
 NO_EXCEPTION = -1
 MAIN_DIRECTORY_CREATION_EXCEPTION = 0
@@ -33,8 +32,6 @@ def check_folder_integrity():
         if create_default_main_directory_exception:
             return [MAIN_DIRECTORY_CREATION_EXCEPTION, create_default_main_directory_exception]
         else:
-            logs.init_logging()  # Start logging when the main directory is created
-
             # Create the general database
             create_main_database_exception = database.create_main_database()
             if create_main_database_exception:
@@ -45,5 +42,4 @@ def check_folder_integrity():
                     return [PROTOCOLS_DATABASE_CREATION_EXCEPTION, create_protocol_db_exception]
             return [NO_EXCEPTION, "No exception"]
     else:
-        logs.init_logging()  # Start logging
         return [NO_EXCEPTION, "No exception"]

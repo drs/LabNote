@@ -1,7 +1,6 @@
 # Python import
 import sqlite3
 import os
-import logging
 
 # Project import
 from LabNote.data_management import directory
@@ -159,10 +158,6 @@ def create_notebook(nb_name, nb_uuid):
         cursor.execute(query)
         conn.commit()
     except sqlite3.Error as exception:
-        # Log error
-        logging.info("Creating a new notebook ({}) in the labnote.db".format(nb_name))
-        logging.exception(str(exception))
-
         return exception
     finally:
         if conn:
@@ -187,9 +182,6 @@ def get_notebook_list():
         cursor.execute(SELECT_NOTEBOOK_NAME)
         buffer = cursor.fetchall()
     except sqlite3.Error as exception:
-        logging.info("Getting name and id of all notebooks from labnote.db")
-        logging.exception(str(exception))
-
         return exception
     finally:
         if conn:
@@ -286,10 +278,6 @@ def create_experiment(exp_name, exp_uuid, exp_obj, nb_uuid):
         cursor.execute(query)
         conn.commit()
     except sqlite3.Error as exception:
-        # Log error
-        logging.info("An exception occured while adding the experiment ({}) in the labnote.db".format(exp_uuid))
-        logging.exception(str(exception))
-
         return exception
     finally:
         if conn:
@@ -318,10 +306,6 @@ def get_experiment_list_notebook(nb_uuid):
         cursor.execute(query)
         buffer = cursor.fetchall()
     except sqlite3.Error as exception:
-        logging.info("An exception occured while getting a list all experiment for notebook {} "
-                     "from labnote.db".format(nb_uuid))
-        logging.exception(str(exception))
-
         return exception
     finally:
         if conn:
