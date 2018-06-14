@@ -8,14 +8,15 @@ import sys
 import sqlite3
 
 # PyQt import
-from PyQt5.QtWidgets import QMainWindow, QWidget, QLabel, QVBoxLayout, QListWidgetItem, QMessageBox
+from PyQt5.QtWidgets import QMainWindow, QWidget, QLabel, QVBoxLayout, QListWidgetItem, QMessageBox, QLabel, \
+    QHBoxLayout, QListWidgetItem, QPushButton, QHBoxLayout
 from PyQt5.QtGui import QPixmap, QIcon
 from PyQt5.QtCore import Qt, QSettings, QByteArray
 
 # Project import
 from LabNote.ui.ui_mainwindow import Ui_MainWindow
-from LabNote.common import stylesheet, sqlite_error
-from LabNote.data_management import integrity, database, directory
+from LabNote.common import stylesheet, sqlite_error, list_widget
+from LabNote.data_management import integrity, database, directory, experiment
 from LabNote.interface import textbox
 from LabNote.interface.new_notebook import NewNotebook
 from LabNote.resources import resources
@@ -75,7 +76,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # Check files integrity
         self.check_files_integrity()
 
-        # Get existing notebook list
+        # Show existing notebook list
         self.show_notebook_list()
 
         # Slots connection
@@ -151,6 +152,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
             # Order the list
             self.lst_notebook.sortItems(Qt.AscendingOrder)
+            self.lst_notebook.setCurrentRow(0)
+            self.act_new.setEnabled(True)
+            self.act_new_experiment.setEnabled(True)
+            self.show_experiment_list()
         else:
             message = QMessageBox()
             message.setWindowTitle("LabNote")
@@ -295,22 +300,44 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         """
 
         # Allow new experiment creation
-        self.act_new.setEnabled(True)
-        self.act_new_experiment.setEnabled(True)
+        #self.act_new.setEnabled(True)
+        #self.act_new_experiment.setEnabled(True)
 
     def new_experiment(self):
-        """
-        Create a new experiment.
-        """
+        """ Create a new experiment """
         if self.centralWidget().layout().indexOf(self.no_entry_widget) != -1:
-            textbox_widget = textbox.Textbox()
+            self.textbox_widget = textbox.Textbox()
             self.centralWidget().layout().removeWidget(self.no_entry_widget)
             self.no_entry_widget.deleteLater()
             self.no_entry_widget = None
 
-            self.centralWidget().layout().addWidget(textbox_widget)
+            self.centralWidget().layout().addWidget(self.textbox_widget)
             self.centralWidget().layout().setStretch(2, 10)
 
-        # Create a new experiment file
-        title = "Untitled experiment".encode()
-        data = bytearray(title)
+        # Create a UUID for the experiment
+        exp_uuid = uuid.uuid4()
+
+        # Create the experiment
+        experiment.create_experiment(exp_uuid,
+                                     self.lst_notebook.currentItem().data(Qt.UserRole),
+                                     self.textbox_widget.textedit.toHtml(),
+                                     self.textbox_widget.title_text_edit.toPlainText() or "Untitled experiment",
+                                     self.textbox_widget.objectives_text_edit.toPlainText())
+
+    def show_experiment_list(self):
+        """ Show the list of experiment for the open notebook """
+
+        # Get experiment list
+        lst = database.get_experiment_list_notebook(self.lst_notebook.currentItem().data(Qt.UserRole))
+        for item in lst:
+            # Create experiment widget
+            list_widget_item = QListWidgetItem()
+
+            widget = list_widget.ListWidget()
+            widget.set_title(item['name'])
+
+            # Add widget to list
+            list_widget_item.setSizeHint(widget.sizeHint())
+            self.lst_entry.addItem(list_widget_item)
+            self.lst_entry.setItemWidget(list_widget_item, widget)
+

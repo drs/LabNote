@@ -41,8 +41,20 @@ QListView::item {
 }
 
 QListView::item:selected {
-    background-color: rgb(196, 196, 196);
+    background-color: rgb(232, 232, 232);
     color: black;
+}
+
+QListView#lst_entry::item:selected {
+    background-color: rgb(239, 239, 239);
+}
+
+QListView::item:focus {
+    background-color: rgb(196, 196, 196);
+}
+
+QListView#lst_entry::item:focus {
+    background-color: rgb(196, 196, 196);
 }
 
 QFrame#frame {
@@ -51,4 +63,17 @@ QFrame#frame {
     border-bottom: none;
     border-right: 0.5px solid rgb(212, 212, 212);
     background-color: rgb(246, 246, 246);
+}
+
+QFrame#entry_frame {
+    border: none;
+    background-color: white;
+}
+
+QListWidget#lst_entry::item {
+    border-bottom: 0.5px solid rgb(212, 212, 212);
+}
+
+QListView#lst_entry::item:selected {
+    border-radius: 2px;
 }
