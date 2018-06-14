@@ -8,8 +8,8 @@ import sys
 import sqlite3
 
 # PyQt import
-from PyQt5.QtWidgets import QMainWindow, QWidget, QLabel, QVBoxLayout, QListWidgetItem, QMessageBox, QLabel, \
-    QHBoxLayout, QListWidgetItem, QPushButton, QHBoxLayout
+from PyQt5.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QMessageBox, QLabel, QListWidgetItem, QLineEdit, QAction, \
+    QSizePolicy, QMenu
 from PyQt5.QtGui import QPixmap, QIcon
 from PyQt5.QtCore import Qt, QSettings, QByteArray
 
@@ -50,12 +50,35 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         # Set toolbar separator
         empty_widget_1 = QWidget()
-        empty_widget_1.setMinimumWidth(190)
+        empty_widget_1.setFixedWidth(190)
         self.experiment_toolbar.insertWidget(self.act_new, empty_widget_1)
 
         empty_widget_2 = QWidget()
-        empty_widget_2.setMinimumWidth(90)
+        empty_widget_2.setFixedWidth(90)
         self.data_toolbar.insertWidget(self.act_protocols, empty_widget_2)
+
+        empty_widget_3 = QWidget()
+        empty_widget_3.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.search_toolbar.addWidget(empty_widget_3)
+
+        # Set search widget in toolbar
+        search_icon = QIcon(":/Icons/MainWindow/icons/main-window/search.png")
+
+        self.txt_search = QLineEdit()
+        self.txt_search.setPlaceholderText("Search")
+        self.txt_search.addAction(search_icon, QLineEdit.LeadingPosition)
+        self.txt_search.setFixedWidth(300)
+        self.search_toolbar.addWidget(self.txt_search)
+
+        empty_widget_4 = QWidget()
+        empty_widget_4.setFixedWidth(10)
+        self.search_toolbar.addWidget(empty_widget_4)
+
+        # Set notebook settings button menu
+        self.notebook_setting_menu = QMenu(self)
+        self.act_delete_notebook = QAction("Delete notebook", self)
+        self.notebook_setting_menu.addAction(self.act_delete_notebook)
+        self.btn_settings.setMenu(self.notebook_setting_menu)
 
         # Disable the notebook and experiment related actions from toolbar
         self.act_new.setEnabled(False)
@@ -66,6 +89,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # Remove focus rectangle
         self.lst_notebook.setAttribute(Qt.WA_MacShowFocusRect, 0)
         self.lst_entry.setAttribute(Qt.WA_MacShowFocusRect, 0)
+        self.txt_search.setAttribute(Qt.WA_MacShowFocusRect, 0)
 
         # Set no entry widget as default widget
         self.set_no_entry_widget()
@@ -326,6 +350,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def show_experiment_list(self):
         """ Show the list of experiment for the open notebook """
+        # Clear the existing list
+        self.lst_entry.clear()
 
         # Get experiment list
         lst = database.get_experiment_list_notebook(self.lst_notebook.currentItem().data(Qt.UserRole))

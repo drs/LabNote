@@ -18,10 +18,39 @@ QPushButton#btn_add_notebook {
     max-height: 25px;
 }
 
+QPushButton#btn_add_notebook {
+    color: rgb(129, 129, 129)
+}
+
 QPushButton#btn_add_notebook:pressed {
     /* Border and background color */
     background-color: none;
     border: none;
+    color: rgb(72, 72, 72);
+}
+
+QPushButton#btn_settings {
+    border-image: url(:/Icons/MainWindow/icons/main-window/settings.png);
+    max-width: 24px;
+    min-width: 24px;
+    max-height: 16px;
+    min-height: 16px;
+}
+
+QPushButton#btn_settings:pressed {
+    border-image: url(:/Icons/MainWindow/icons/main-window/settings_pressed.png);
+}
+
+
+QPushButton#btn_settings:pressed {
+    /* Border and background color */
+    background-color: none;
+    border: none;
+}
+
+QPushButton::menu-indicator {
+    height: 0px;
+	width: 0px;
 }
 
 QLabel#lbl_notebook {
@@ -76,4 +105,10 @@ QListWidget#lst_entry::item {
 
 QListView#lst_entry::item:selected {
     border-radius: 2px;
+}
+
+QLineEdit {
+    border-radius: 2px;
+    border: none;
+    height: 22px;
 }

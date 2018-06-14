@@ -7,6 +7,9 @@
         <file>icons/main-window/protocols.png</file>
         <file>icons/main-window/share.png</file>
         <file>icons/main-window/new-experiment.png</file>
+        <file>icons/main-window/search.png</file>
+        <file>icons/main-window/settings.png</file>
+        <file>icons/main-window/settings_pressed.png</file>
     </qresource>
     <qresource prefix="/StyleSheet">
         <file>style-sheet/main_window.qss</file>
