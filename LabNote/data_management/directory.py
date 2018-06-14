@@ -83,6 +83,6 @@ def create_exp_directory(exp_uuid, nb_uuid):
 
     try:
         os.mkdir(experiment_path)
-        os.mkdir(os.path.join(experiment_path + "/resources"))
+        os.mkdir(os.path.join(experiment_path + "/data"))
     except OSError as exception:
         return exception

@@ -34,9 +34,6 @@ class Textbox(QWidget, Ui_TextBox):
         self.textedit = TextEdit()
         self.frame.layout().addWidget(self.textedit, 20)
 
-        print(self.textedit.toHtml())
-        print(self.textedit.toHtml().encode())
-
         # Insert title text edit
         self.title_text_edit = TextEdit()
         font = QFont()
@@ -752,3 +749,6 @@ class Textbox(QWidget, Ui_TextBox):
             self.btn_list.setChecked(True)
         else:
             self.btn_list.setChecked(False)
+
+    def save(self):
+        """ Save the textbox content to the files or the database """

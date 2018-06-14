@@ -4,7 +4,30 @@
 import os
 
 # Project import
-from LabNote.data_management import directory
+from LabNote.data_management import directory, database
+
+
+def create_experiment(exp_uuid, nb_uuid, body, name, objective):
+    """ Create a new experiment
+
+    This function is responsible of adding the experiment to the database and to create all the required
+    directories
+
+    :param exp_uuid: Experiment uuid
+    :type exp_uuid: UUID
+    :param nb_uuid: Notebook uuid
+    :type nb_uuid: UUID
+    :param body: Experiment body HTML
+    :type body: str
+    :param name: Experiment name
+    :type name: str
+    :param objective: Experiment objective
+    :type objective: str
+    """
+
+    directory.create_exp_directory(exp_uuid, nb_uuid)
+    database.create_experiment(name, exp_uuid, objective, nb_uuid)
+    write_experiment(exp_uuid, nb_uuid, encode_experiment(body))
 
 
 def encode_experiment(html):
@@ -17,7 +40,7 @@ def encode_experiment(html):
     return html.encode()
 
 
-def create_experiment(exp_uuid, nb_uuid, data):
+def write_experiment(exp_uuid, nb_uuid, data):
     """ Create a notebook with data
 
     :param exp_uuid: Experiment uuid
@@ -25,7 +48,7 @@ def create_experiment(exp_uuid, nb_uuid, data):
     :param nb_uuid: Notebook uuid
     :type nb_uuid: UUID
     :param data: Notebook data
-    :type data: bytearray
+    :type data: bytes
     """
     notebook_path = os.path.join(directory.NOTEBOOK_DIRECTORY_PATH + "/{}".format(nb_uuid))
     experiment_path = os.path.join(notebook_path + "/{}".format(exp_uuid))
@@ -48,16 +71,17 @@ def create_experiment(exp_uuid, nb_uuid, data):
 def read_experiment(exp_uuid, nb_uuid):
     """
 
-    :param exp_uuid:
-    :param nb_uuid:
-    :return:
+    :param exp_uuid: Experiment uuid
+    :type exp_uuid: UUID
+    :param nb_uuid: Notebook uuid
+    :type nb_uuid: UUID
+    :return: HTML string (or exception)
     """
     notebook_path = os.path.join(directory.NOTEBOOK_DIRECTORY_PATH + "/{}".format(nb_uuid))
     experiment_path = os.path.join(notebook_path + "/{}".format(exp_uuid))
     experiment_file_path = os.path.join(experiment_path + "/{}".format(exp_uuid))
 
     experiment_file = None
-    html = None
 
     try:
         experiment_file = open(experiment_file_path, "rb")

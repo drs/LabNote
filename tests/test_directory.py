@@ -72,7 +72,7 @@ class TestSubdirectoryCreation(unittest.TestCase):
         exp_uuid = uuid.uuid4()
         directory.create_exp_directory(exp_uuid, nb_uuid)
         self.assertTrue(os.path.isdir(os.path.join(directory.NOTEBOOK_DIRECTORY_PATH +
-                                                   "/{}".format(nb_uuid) + "/{}".format(exp_uuid) + "/resources")))
+                                                   "/{}".format(nb_uuid) + "/{}".format(exp_uuid) + "/data")))
 
     def test_experiment_directory_creation_error(self):
         nb_uuid = uuid.uuid4()
