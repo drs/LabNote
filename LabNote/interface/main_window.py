@@ -110,7 +110,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         # Slots connection
         self.btn_add_notebook.clicked.connect(self.open_new_notebook_dialog)
-        self.lst_notebook.currentItemChanged.connect(self.notebook_changed)
+        self.lst_notebook.itemSelectionChanged.connect(self.notebook_changed)
         self.act_new.triggered.connect(self.new_experiment)
         self.act_new_experiment.triggered.connect(self.new_experiment)
 
@@ -439,15 +439,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 message.setStandardButtons(QMessageBox.Ok)
                 message.exec()
 
-    def notebook_changed(self, current, previous):
-        """ Handle notebook changes :
-            - Change the experiment list
-            - Allow new experiment creation
-        """
-
-        # Allow new experiment creation
-        #self.act_new.setEnabled(True)
-        #self.act_new_experiment.setEnabled(True)
+    def notebook_changed(self):
+        """ Update the experiment list when the notebook change """
+        self.show_experiment_list()
 
     def new_experiment(self):
         """ Create a new experiment """
@@ -475,6 +469,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         """ Show the list of experiment for the open notebook. """
         # Clear the existing list
         self.lst_entry.clear()
+
+        print(self.lst_notebook.currentItem())
 
         # Get experiment list
         lst = database.get_experiment_list_notebook(self.lst_notebook.currentItem().data(Qt.UserRole))
