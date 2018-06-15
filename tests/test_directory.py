@@ -83,6 +83,7 @@ class TestSubdirectoryCreation(unittest.TestCase):
             exp_uuid = uuid.uuid4()
             self.assertIsInstance(directory.create_exp_directory(exp_uuid, nb_uuid), OSError)
 
+
 class TestDirectoryDeletion(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
