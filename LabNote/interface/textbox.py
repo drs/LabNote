@@ -41,7 +41,7 @@ class Textbox(QWidget, Ui_TextBox):
         font.setPointSize(16)
         self.title_text_edit.setFont(font)
         self.title_text_edit.setPlaceholderText("Untitled experiment")
-        self.title_text_edit.setMinimumHeight(26)
+        self.title_text_edit.setMinimumHeight(28)
         self.title_text_edit.setMaximumHeight(64)
         self.frame.layout().insertWidget(1, self.title_text_edit, 1)
 
@@ -227,6 +227,10 @@ class Textbox(QWidget, Ui_TextBox):
         self.change_text_color_button_icon(self.act_black_text)
         self.change_list_button_icon(self.act_no_list)
 
+        # Set title and objective text size
+        self.title_text_resize()
+        self.objectives_text_resize()
+
         # Slots connection
         self.btn_bold.clicked.connect(self.format_bold)
         self.btn_italic.clicked.connect(self.format_italic)
@@ -261,8 +265,8 @@ class Textbox(QWidget, Ui_TextBox):
 
         height = text_size.height() * factor + 10
 
-        if height <= 74:
-            self.objectives_text_edit.setMinimumHeight(height)
+        if height >= 42 and height <= 74:
+            self.objectives_text_edit.setFixedHeight(height)
 
     def title_text_resize(self):
         """ Set the title textbox size when it's text is edited """
@@ -271,9 +275,9 @@ class Textbox(QWidget, Ui_TextBox):
 
         factor = math.ceil(text_size.width() / self.title_text_edit.width())
 
-        height = text_size.height() * factor + 6
-        if height <= 64:
-            self.title_text_edit.setMinimumHeight(height)
+        height = text_size.height() * factor + 8
+        if height >= 28 and height <= 64:
+            self.title_text_edit.setFixedHeight(height)
 
     def change_list_button_icon(self, action):
         """Change the list button icon to the selected list format
@@ -749,6 +753,3 @@ class Textbox(QWidget, Ui_TextBox):
             self.btn_list.setChecked(True)
         else:
             self.btn_list.setChecked(False)
-
-    def save(self):
-        """ Save the textbox content to the files or the database """

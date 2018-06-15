@@ -470,8 +470,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # Clear the existing list
         self.lst_entry.clear()
 
-        print(self.lst_notebook.currentItem())
-
         # Get experiment list
         lst = database.get_experiment_list_notebook(self.lst_notebook.currentItem().data(Qt.UserRole))
 
