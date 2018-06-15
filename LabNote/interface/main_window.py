@@ -10,7 +10,7 @@ import sqlite3
 # PyQt import
 from PyQt5.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QMessageBox, QLabel, QListWidgetItem, QLineEdit, QAction, \
     QSizePolicy, QMenu
-from PyQt5.QtGui import QPixmap, QIcon
+from PyQt5.QtGui import QPixmap, QIcon, QFont
 from PyQt5.QtCore import Qt, QSettings, QByteArray
 
 # Project import
@@ -76,8 +76,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         # Set notebook settings button menu
         self.notebook_setting_menu = QMenu(self)
+        self.notebook_setting_menu.setFont(QFont(self.font().family(), 13, QFont.Normal))
         self.act_delete_notebook = QAction("Delete notebook", self)
+        self.act_delete_notebook.triggered.connect(self.delete_notebook)
         self.notebook_setting_menu.addAction(self.act_delete_notebook)
+        self.act_rename_notebook = QAction("Rename notebook", self)
+        self.act_rename_notebook.triggered.connect(self.start_rename_notebook)
+        self.notebook_setting_menu.addAction(self.act_rename_notebook)
         self.btn_settings.setMenu(self.notebook_setting_menu)
 
         # Disable the notebook and experiment related actions from toolbar
@@ -158,8 +163,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
             sys.exit("Unexpected error during protocol database creation")
 
-    def show_notebook_list(self):
-        """ Show the existing notebooks in the notebook list """
+    def show_notebook_list(self, selected = None):
+        """ Show the existing notebooks in the notebook list
+
+        If the parameter selected is passed, this function can restore the last selected item.
+
+        :param selected: Text of the last selected item
+        :type selected: str
+        """
 
         # Clear the existing list
         self.lst_notebook.clear()
@@ -168,18 +179,29 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         notebook_list = database.get_notebook_list()
 
         if not isinstance(notebook_list, sqlite3.Error):
-            # Add items to the list
-            for notebook in notebook_list:
-                item = QListWidgetItem(notebook['name'])
-                item.setData(Qt.UserRole, notebook['uuid'])
-                self.lst_notebook.addItem(item)
+            if len(notebook_list):
+                # Add items to the list
+                for notebook in notebook_list:
+                    item = QListWidgetItem(notebook['name'])
+                    item.setData(Qt.UserRole, notebook['uuid'])
+                    self.lst_notebook.addItem(item)
 
-            # Order the list
-            self.lst_notebook.sortItems(Qt.AscendingOrder)
-            self.lst_notebook.setCurrentRow(0)
-            self.act_new.setEnabled(True)
-            self.act_new_experiment.setEnabled(True)
-            self.show_experiment_list()
+                # Order the list
+                self.lst_notebook.sortItems(Qt.AscendingOrder)
+                self.lst_notebook.setCurrentRow(0)
+                self.act_new.setEnabled(True)
+                self.act_new_experiment.setEnabled(True)
+
+                self.show_experiment_list()
+
+                # Sort item in ascending order
+                self.lst_notebook.sortItems(Qt.AscendingOrder)
+
+                # Select the last selected element
+                if selected:
+                    item = self.lst_notebook.findItems(selected, Qt.MatchExactly)
+                    self.lst_notebook.setCurrentItem(item[0])
+
         else:
             message = QMessageBox()
             message.setWindowTitle("LabNote")
@@ -235,7 +257,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def open_new_notebook_dialog(self):
         """ Show a sheet dialog that create a new notebook. """
-
         self.new_notebook = NewNotebook()
         self.new_notebook.setWindowModality(Qt.WindowModal)
         self.new_notebook.setParent(self, Qt.Sheet)
@@ -244,7 +265,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def create_notebook(self):
         """ Add a newly created notebook name to the notebook list. """
+        # Ask for the notebook name
         nb_name = self.new_notebook.notebook_name
+
+        # Create UUID
         nb_uuid = uuid.uuid4()
 
         # Create a directory for the new notebook
@@ -317,6 +341,104 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             message.setStandardButtons(QMessageBox.Ok)
             message.exec()
 
+    def start_rename_notebook(self):
+        """ Make a notebook item editable to allow renaming """
+        current_row = self.lst_notebook.currentRow()
+        # If an item is selected make it editable
+        if current_row != -1:
+            # Make the item editable
+            item = self.lst_notebook.item(current_row)
+            item.setFlags(item.flags() | Qt.ItemIsEditable)
+
+            index = self.lst_notebook.model().index(current_row, 0)
+            self.lst_notebook.edit(index)
+
+            self.call_finish_rename_notebook = lambda: self.finish_rename_notebook(current_row)
+
+            # When the editing is finished call the function that rename the item in the database
+            self.lst_notebook.itemDelegate().closeEditor.connect(self.call_finish_rename_notebook)
+
+    def finish_rename_notebook(self, current_row):
+        """ Change the notebook name in the database after editing is finished
+
+        :param current_row: Row of the item being edited
+        :type current_row: int
+        """
+        # Get the item at the row
+        item = self.lst_notebook.item(current_row)
+
+        # Set the item not editable
+        item.setFlags(item.flags() ^ Qt.ItemIsEditable)
+
+        # Update notebook name in the database
+        exception = database.update_notebook_name(item.text(), item.data(Qt.UserRole))
+
+        if exception:
+            message = QMessageBox()
+            message.setWindowTitle("LabNote")
+            message.setText("Cannot rename notebook")
+            message.setInformativeText(
+                "An error occurred while renaming the notebook {} in the database.".format(item.text()))
+            message.setDetailedText(str(exception))
+            message.setIcon(QMessageBox.Warning)
+            message.setStandardButtons(QMessageBox.Ok)
+            message.exec()
+
+        # Show the notebook list with the updated name
+        self.show_notebook_list(selected=item.text())
+
+        # Disconnect the slot
+        # This is necessary to allow renaming of other notebook later on
+        self.lst_notebook.itemDelegate().closeEditor.disconnect(self.call_finish_rename_notebook)
+
+    def delete_notebook(self):
+        """ Delete a notebook """
+        # Get the notebook informations
+        current_row = self.lst_notebook.currentRow()
+        item = self.lst_notebook.item(current_row)
+        nb_uuid = item.data(Qt.UserRole)
+        nb_name = item.text()
+
+        # Confirm if the user really want to delete the notebook
+        confirmation_messagebox = QMessageBox()
+        confirmation_messagebox.setWindowTitle("LabNote")
+        confirmation_messagebox.setText("Delete notebook")
+        confirmation_messagebox.setInformativeText("Do you want to delete the notebook '{}'".format(nb_name))
+        confirmation_messagebox.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+        confirmation_messagebox.setDefaultButton(QMessageBox.Cancel)
+        confirmation_messagebox.setIcon(QMessageBox.Question)
+        confirmation_message = confirmation_messagebox.exec()
+
+        if confirmation_message == QMessageBox.Ok:
+            # Delete the notebook from the database
+            delete_notebook_database_exception = database.delete_notebook(nb_uuid)
+
+            if not delete_notebook_database_exception:
+                # Delete the notebook files
+                delete_notebook_exception = directory.delete_nb_directory(nb_uuid)
+
+                if not delete_notebook_exception:
+                    # Add the notebook to the notebook list
+                    self.show_notebook_list()
+                else:
+                    message = QMessageBox()
+                    message.setWindowTitle("LabNote")
+                    message.setText("Cannot delete notebook")
+                    message.setInformativeText("An error occurred while deleting the notebook directory.")
+                    message.setDetailedText(str(delete_notebook_exception))
+                    message.setIcon(QMessageBox.Warning)
+                    message.setStandardButtons(QMessageBox.Ok)
+                    message.exec()
+            else:
+                message = QMessageBox()
+                message.setWindowTitle("LabNote")
+                message.setText("Cannot delete notebook")
+                message.setInformativeText("An error occurred while deleting the notebook in the database.")
+                message.setDetailedText(str(delete_notebook_database_exception))
+                message.setIcon(QMessageBox.Warning)
+                message.setStandardButtons(QMessageBox.Ok)
+                message.exec()
+
     def notebook_changed(self, current, previous):
         """ Handle notebook changes :
             - Change the experiment list
@@ -347,14 +469,17 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                                      self.textbox_widget.textedit.toHtml(),
                                      self.textbox_widget.title_text_edit.toPlainText() or "Untitled experiment",
                                      self.textbox_widget.objectives_text_edit.toPlainText())
+        self.show_experiment_list()
 
     def show_experiment_list(self):
-        """ Show the list of experiment for the open notebook """
+        """ Show the list of experiment for the open notebook. """
         # Clear the existing list
         self.lst_entry.clear()
 
         # Get experiment list
         lst = database.get_experiment_list_notebook(self.lst_notebook.currentItem().data(Qt.UserRole))
+
+        # Add all experiments to the list widget
         for item in lst:
             # Create experiment widget
             list_widget_item = QListWidgetItem()
@@ -366,4 +491,3 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             list_widget_item.setSizeHint(widget.sizeHint())
             self.lst_entry.addItem(list_widget_item)
             self.lst_entry.setItemWidget(list_widget_item, widget)
-

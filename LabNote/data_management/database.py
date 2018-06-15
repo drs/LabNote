@@ -23,10 +23,10 @@ CREATE TABLE notebook (
 CREATE_EXPERIMENT_TABLE = """
 CREATE TABLE experiment (
     exp_id         INTEGER       PRIMARY KEY   AUTOINCREMENT,
-    name           VARCHAR (255) NOT NULL      UNIQUE,
+    name           VARCHAR (255) NOT NULL,
     objective      TEXT,
     uuid           CHAR (36)     NOT NULL      UNIQUE,
-    nb_id           INTEGER       NOT NULL     REFERENCES notebook (nb_id)
+    nb_id          INTEGER       NOT NULL      REFERENCES notebook (nb_id)    ON DELETE CASCADE
 )"""
 
 CREATE_EXPERIMENT_INDEX = """
@@ -61,8 +61,8 @@ CREATE UNIQUE INDEX protocol_index ON protocol (
 
 CREATE_EXPERIMENT_DATASET_TABLE = """
 CREATE TABLE experiment_dataset (
-    exp_id INTEGER REFERENCES experiment (exp_id)  NOT NULL,
-    data_id    INTEGER REFERENCES dataset (data_id)       NOT NULL
+    exp_id     INTEGER    REFERENCES experiment (exp_id)     ON DELETE CASCADE             NOT NULL,
+    data_id    INTEGER    REFERENCES dataset (data_id)       NOT NULL
 )"""
 
 CREATE_EXPERIMENT_DATASET_INDEX = """
@@ -73,8 +73,8 @@ CREATE UNIQUE INDEX experiment_dataset_index ON experiment_dataset (
 
 CREATE_EXPERIMENT_PROTOCOL_TABLE = """
 CREATE TABLE experiment_protocol (
-    exp_id INTEGER REFERENCES experiment (exp_id)     NOT NULL,
-    protocol_id   INTEGER REFERENCES protocol (protocol_id)         NOT NULL
+    exp_id        INTEGER       REFERENCES experiment (exp_id)        ON DELETE CASCADE     NOT NULL,
+    protocol_id   INTEGER       REFERENCES protocol (protocol_id)     NOT NULL
 )"""
 
 CREATE_EXPERIMENT_PROTOCOL_INDEX = """
@@ -137,19 +137,24 @@ SELECT_NOTEBOOK_EXPERIMENT = """
 SELECT name, objective, uuid FROM experiment WHERE nb_id = (SELECT nb_id FROM notebook WHERE notebook.uuid = '{}')
 """
 
+UPDATE_NOTEBOOK_NAME = """
+UPDATE notebook SET name = '{}' WHERE uuid = '{}'
+"""
 
-def create_notebook(nb_name, nb_uuid):
-    """ Create a new notebook
+DELETE_NOTEBOOK = """
+DELETE FROM notebook WHERE uuid = '{}'
+"""
 
-    :param nb_name: Name of the notebook to create
-    :type nb_name: str
-    :param nb_uuid: UUID of the notebook to create
-    :type nb_uuid: UUID
-    :returns: True if the notebook was created and false otherwise
+
+def execute_query(query):
+    """ Execute the query
+
+    :param query: Query to execute
+    :type query: str
+    :returns: An sqlite3.Error is an exception occured
     """
 
     conn = None
-    query = INSERT_NOTEBOOK.format(nb_name, nb_uuid)
 
     try:
         conn = sqlite3.connect(MAIN_DATABASE_FILE_PATH)
@@ -162,6 +167,43 @@ def create_notebook(nb_name, nb_uuid):
     finally:
         if conn:
             conn.close()
+
+
+def create_notebook(nb_name, nb_uuid):
+    """ Create a new notebook
+
+    :param nb_name: Name of the notebook to create
+    :type nb_name: str
+    :param nb_uuid: UUID of the notebook to create
+    :type nb_uuid: UUID
+    :returns: An sqlite3.Error is an exception occured
+    """
+    query = INSERT_NOTEBOOK.format(nb_name, nb_uuid)
+    return execute_query(query)
+
+
+def update_notebook_name(new_name, nb_uuid):
+    """ Update the name of a notebook
+
+    :param new_name: New name for the notebook
+    :type new_name: str
+    :param nb_uuid: UUID of the notebook to rename
+    :type nb_uuid: UUID
+    :returns: An sqlite3.Error is an exception occured
+    """
+    query = UPDATE_NOTEBOOK_NAME.format(new_name, nb_uuid)
+    return execute_query(query)
+
+
+def delete_notebook(nb_uuid):
+    """ Delete a notebook from the database
+
+    :param nb_uuid: UUID of the notebook to delete
+    :type nb_uuid: UUID
+    :returns: An sqlite3.Error is an exception occured
+    """
+    query = DELETE_NOTEBOOK.format(nb_uuid)
+    return execute_query(query)
 
 
 def get_notebook_list():
@@ -267,21 +309,8 @@ def create_protocol_db():
 
 def create_experiment(exp_name, exp_uuid, exp_obj, nb_uuid):
     """ Create a new experiment in the main database """
-
-    conn = None
     query = INSERT_EXPERIMENT.format(exp_name, exp_uuid, exp_obj, nb_uuid)
-
-    try:
-        conn = sqlite3.connect(MAIN_DATABASE_FILE_PATH)
-        cursor = conn.cursor()
-
-        cursor.execute(query)
-        conn.commit()
-    except sqlite3.Error as exception:
-        return exception
-    finally:
-        if conn:
-            conn.close()
+    return execute_query(query)
 
 
 def get_experiment_list_notebook(nb_uuid):

@@ -23,11 +23,21 @@ def create_experiment(exp_uuid, nb_uuid, body, name, objective):
     :type name: str
     :param objective: Experiment objective
     :type objective: str
+    :returns: Exception if an exception occurs
     """
-
-    directory.create_exp_directory(exp_uuid, nb_uuid)
-    database.create_experiment(name, exp_uuid, objective, nb_uuid)
-    write_experiment(exp_uuid, nb_uuid, encode_experiment(body))
+    create_experiment_exception = directory.create_exp_directory(exp_uuid, nb_uuid)
+    if not create_experiment_exception:
+        create_experiment_database_exception = database.create_experiment(name, exp_uuid, objective, nb_uuid)
+        if not create_experiment_database_exception:
+            write_experiment_exception = write_experiment(exp_uuid, nb_uuid, encode_experiment(body))
+            if not write_experiment_exception:
+                return None
+            else:
+                return write_experiment_exception
+        else:
+            return create_experiment_database_exception
+    else:
+        return create_experiment_exception
 
 
 def encode_experiment(html):
