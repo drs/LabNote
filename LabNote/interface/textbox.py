@@ -4,8 +4,8 @@ import math
 # Python import
 from PyQt5.QtWidgets import QWidget, QMenu, QAction, QTextEdit
 from PyQt5.QtGui import QTextCharFormat, QFont, QTextDocument, QPixmap, QPainter, QIcon, QPainterPath, QPen, QColor, \
-    QTextListFormat, QBrush, QFontMetrics
-from PyQt5.QtCore import Qt, QRectF
+    QTextListFormat, QBrush, QFontMetrics, QImageReader, QImage
+from PyQt5.QtCore import Qt, QRectF, QUrl, QFile, QIODevice, QFileInfo
 
 from LabNote.ui.ui_textbox import Ui_TextBox
 from LabNote.common import stylesheet, color
@@ -15,9 +15,36 @@ from LabNote.resources import resources
 class TextEdit(QTextEdit):
     """ This class is a reimplanted QTextEdit used in the Textbox """
 
+    def canInsertFromMimeData(self, source):
+        if source.hasImage():
+            return source.hasImage()
+        elif source.hasUrls():
+            return source.hasUrls()
+        else:
+            return QTextEdit().canInsertFromMimeData(source)
+
     def insertFromMimeData(self, source):
-        """ Insert text from clipboard as plain text """
-        self.insertPlainText(source.text())
+        if source.hasImage():
+            self.drop_image(QUrl(), source.imageData())
+        elif source.hasUrls():
+            for url in source.urls():
+                info = QFileInfo(url.toLocalFile())
+                if info.suffix().lower().encode('latin-1') in QImageReader.supportedImageFormats():
+                    self.drop_image(url, QImage(info.filePath()))
+                else:
+                    self.dropTextFile(url)
+        else:
+            self.insertPlainText(source.text())
+
+    def drop_image(self, url, image):
+        if image:
+            self.document().addResource(QTextDocument.ImageResource, url, image)
+            self.textCursor().insertImage(str(url.toLocalFile()))
+
+    def drop_text_file(self, url):
+        file = QFile(url.toLocalFile())
+        if file.open(QIODevice.ReadOnly | QIODevice.Text):
+            self.textCursor().insertText(file.readAll())
 
 
 class Textbox(QWidget, Ui_TextBox):
@@ -248,6 +275,7 @@ class Textbox(QWidget, Ui_TextBox):
         self.textedit.cursorPositionChanged.connect(self.update_button)
         self.title_text_edit.textChanged.connect(self.title_text_resize)
         self.objectives_text_edit.textChanged.connect(self.objectives_text_resize)
+        self.textedit.textChanged.connect(lambda: print(self.textedit.toHtml()))
 
     def resizeEvent(self, event):
         """ Updated the textbox size when the window is resized """
