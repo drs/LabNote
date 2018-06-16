@@ -79,13 +79,13 @@ def write_experiment(exp_uuid, nb_uuid, data):
 
 
 def read_experiment(exp_uuid, nb_uuid):
-    """
+    """ Read an experiment file
 
     :param exp_uuid: Experiment uuid
     :type exp_uuid: UUID
     :param nb_uuid: Notebook uuid
     :type nb_uuid: UUID
-    :return: HTML string (or exception)
+    :returns: HTML string (or exception)
     """
     notebook_path = os.path.join(directory.NOTEBOOK_DIRECTORY_PATH + "/{}".format(nb_uuid))
     experiment_path = os.path.join(notebook_path + "/{}".format(exp_uuid))
@@ -105,3 +105,18 @@ def read_experiment(exp_uuid, nb_uuid):
     finally:
         if experiment_file:
             experiment_file.close()
+
+
+def open_experiment(exp_uuid, nb_uuid):
+    """ Get all the informations about an experiment from the files and the database
+
+    :param exp_uuid: Experiment uuid
+    :type exp_uuid: UUID
+    :param nb_uuid: Notebook uuid
+    :type nb_uuid: UUID
+    :returns: HTML string (or exception)
+    """
+    informations = database.get_experiment_informations(exp_uuid)
+
+    if informations.lst:
+        return read_experiment(exp_uuid, nb_uuid)

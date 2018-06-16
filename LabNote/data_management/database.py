@@ -117,6 +117,10 @@ DELETE_NOTEBOOK = """
 DELETE FROM notebook WHERE nb_uuid = '{}'
 """
 
+SELECT_EXPERIMENT = """
+SELECT exp_name, exp_objective FROM experiment WHERE exp_uuid = '{}'
+"""
+
 # Named tuples Returns
 # Should be used when a function can return either an error or a list
 Returns = collections.namedtuple('Returns', ['lst', 'error'])
@@ -290,7 +294,7 @@ def get_experiment_list_notebook(nb_uuid):
 
     :param nb_uuid: UUID of the notebook
     :type nb_uuid: UUID
-    :return: List of dictionary of name, objective and id of the notebooks
+    :returns: List of dictionary of name, objective and id of the notebooks
     """
 
     # Select notebook list from database
@@ -319,3 +323,31 @@ def get_experiment_list_notebook(nb_uuid):
         experiement_list.append({'uuid': experiment[0], 'name': experiment[1], 'objective': experiment[2]})
 
     return Returns(lst=experiement_list)
+
+
+def get_experiment_informations(exp_uuid):
+    """ Get informations for an experiment
+
+    :param exp_uuid: Experiment UUID
+    :type exp_uuid: UUID
+    :returns: Dictionary with the name, objective of the notebook
+    """
+    conn = None
+
+    try:
+        # Select the experiment from the database
+        conn = sqlite3.connect(MAIN_DATABASE_FILE_PATH)
+        cursor = conn.cursor()
+
+        query = SELECT_EXPERIMENT.format(exp_uuid)
+
+        cursor.execute(query)
+        buffer = cursor.fetchall()
+    except sqlite3.Error as exception:
+        return Returns(error=exception)
+    finally:
+        if conn:
+            conn.close()
+
+    # Return experiment informations
+    return Returns(lst=[{'name': buffer[0], 'objective': buffer[1]}])

@@ -1,3 +1,5 @@
+""" This module contains miscellaneous identifier used throughout LabNote """
+
 from collections import namedtuple
 
 from PyQt5.QtGui import QColor
