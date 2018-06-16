@@ -5,6 +5,7 @@ import os
 
 # Project import
 from LabNote.data_management import directory, database
+from LabNote.common import common
 
 
 def create_experiment(exp_uuid, nb_uuid, body, name, objective):
@@ -45,9 +46,19 @@ def encode_experiment(html):
 
     :param html: HTLM string to encode to binary
     :type html: str
-    :return: Encoded HTML string
+    :returns: Encoded HTML string
     """
     return html.encode()
+
+
+def decode_experiment(html):
+    """ Decole experiment data to string
+
+    :param html: HTLM binary to decode
+    :type html: bytes
+    :returns: HTML string
+    """
+    return html.decode()
 
 
 def write_experiment(exp_uuid, nb_uuid, data):
@@ -97,11 +108,11 @@ def read_experiment(exp_uuid, nb_uuid):
         experiment_file = open(experiment_file_path, "rb")
         data = experiment_file.read()
         html = data.decode()
-        return html
+        return common.ReturnSgl(sgl=html)
     except OSError as exception:
-        return exception
+        return common.ReturnSgl(error=exception)
     except IOError as exception:
-        return exception
+        return common.ReturnSgl(error=exception)
     finally:
         if experiment_file:
             experiment_file.close()
@@ -116,7 +127,23 @@ def open_experiment(exp_uuid, nb_uuid):
     :type nb_uuid: UUID
     :returns: HTML string (or exception)
     """
+    # Get experiment informations fromt the database
     informations = database.get_experiment_informations(exp_uuid)
 
-    if informations.lst:
-        return read_experiment(exp_uuid, nb_uuid)
+    # informations contains a dictionary with the experiment informations
+    if informations.dct:
+        # Read the experiment body from the experiment file
+        body = read_experiment(exp_uuid, nb_uuid)
+
+        # body contains data
+        if body.sgl:
+            body_string = body.sgl.decode()
+            return common.ReturnDict(dct={'name': informations.dct['name'],
+                                          'objective': informations.dct['objective'],
+                                          'body': body_string})
+        # body contains an error
+        elif body.error:
+            return common.ReturnDict(error=body.error)
+    # informations contains an error
+    elif informations.error:
+        return common.ReturnDict(error=informations.error)

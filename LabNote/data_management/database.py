@@ -99,51 +99,28 @@ SELECT nb_uuid, nb_name FROM notebook
 """
 
 INSERT_NOTEBOOK = """
-INSERT INTO notebook (nb_uuid, nb_name) VALUES ('{}', '{}')
+INSERT INTO notebook (nb_uuid, nb_name) VALUES (?, ?)
 """
 
 INSERT_EXPERIMENT = """
-INSERT INTO experiment (exp_uuid, nb_uuid, exp_name, exp_objective) VALUES ('{}', '{}', '{}', '{}')
+INSERT INTO experiment (exp_uuid, nb_uuid, exp_name, exp_objective) VALUES (?, ?, ?, ?)
 """
 
 SELECT_NOTEBOOK_EXPERIMENT = """
-SELECT exp_uuid, exp_name, exp_objective FROM experiment WHERE nb_uuid =  '{}'
+SELECT exp_uuid, exp_name, exp_objective FROM experiment WHERE nb_uuid =  ?
 """
 
 UPDATE_NOTEBOOK_NAME = """
-UPDATE notebook SET nb_name = '{}' WHERE nb_uuid = '{}'
+UPDATE notebook SET nb_name = ? WHERE nb_uuid = ?
 """
 
 DELETE_NOTEBOOK = """
-DELETE FROM notebook WHERE nb_uuid = '{}'
+DELETE FROM notebook WHERE nb_uuid = ?
 """
 
 SELECT_EXPERIMENT = """
-SELECT exp_name, exp_objective FROM experiment WHERE exp_uuid = '{}'
+SELECT exp_name, exp_objective FROM experiment WHERE exp_uuid = ?
 """
-
-
-def execute_query(query):
-    """ Execute the query
-
-    :param query: Query to execute
-    :type query: str
-    :returns: An sqlite3.Error is an exception occured
-    """
-
-    conn = None
-
-    try:
-        conn = sqlite3.connect(MAIN_DATABASE_FILE_PATH)
-        cursor = conn.cursor()
-
-        cursor.execute(query)
-        conn.commit()
-    except sqlite3.Error as exception:
-        return exception
-    finally:
-        if conn:
-            conn.close()
 
 
 def create_notebook(nb_name, nb_uuid):
@@ -155,8 +132,18 @@ def create_notebook(nb_name, nb_uuid):
     :type nb_uuid: UUID
     :returns: An sqlite3.Error is an exception occured
     """
-    query = INSERT_NOTEBOOK.format(nb_uuid.bytes, nb_name)
-    return execute_query(query)
+    conn = None
+
+    try:
+        conn = sqlite3.connect(MAIN_DATABASE_FILE_PATH)
+        cursor = conn.cursor()
+        cursor.execute(INSERT_NOTEBOOK, (nb_uuid.bytes, nb_name))
+        conn.commit()
+    except sqlite3.Error as exception:
+        return exception
+    finally:
+        if conn:
+            conn.close()
 
 
 def update_notebook_name(new_name, nb_uuid):
@@ -165,22 +152,42 @@ def update_notebook_name(new_name, nb_uuid):
     :param new_name: New name for the notebook
     :type new_name: str
     :param nb_uuid: UUID of the notebook to rename
-    :type nb_uuid: UUID
+    :type nb_uuid: str
     :returns: An sqlite3.Error is an exception occured
     """
-    query = UPDATE_NOTEBOOK_NAME.format(new_name, nb_uuid.bytes)
-    return execute_query(query)
+    conn = None
+
+    try:
+        conn = sqlite3.connect(MAIN_DATABASE_FILE_PATH)
+        cursor = conn.cursor()
+        cursor.execute(UPDATE_NOTEBOOK_NAME, (new_name, uuid.UUID(nb_uuid).bytes))
+        conn.commit()
+    except sqlite3.Error as exception:
+        return exception
+    finally:
+        if conn:
+            conn.close()
 
 
 def delete_notebook(nb_uuid):
     """ Delete a notebook from the database
 
     :param nb_uuid: UUID of the notebook to delete
-    :type nb_uuid: UUID
+    :type nb_uuid: str
     :returns: An sqlite3.Error is an exception occured
     """
-    query = DELETE_NOTEBOOK.format(nb_uuid.bytes)
-    return execute_query(query)
+    conn = None
+
+    try:
+        conn = sqlite3.connect(MAIN_DATABASE_FILE_PATH)
+        cursor = conn.cursor()
+        cursor.execute(DELETE_NOTEBOOK, (uuid.UUID(nb_uuid).bytes))
+        conn.commit()
+    except sqlite3.Error as exception:
+        return exception
+    finally:
+        if conn:
+            conn.close()
 
 
 def get_notebook_list():
@@ -188,7 +195,6 @@ def get_notebook_list():
 
     :return: List of dictionary of name and id of the notebooks
     """
-
     # Select notebook list from database
     conn = None
 
@@ -210,7 +216,7 @@ def get_notebook_list():
     notebook_list = []
 
     for notebook in buffer:
-        notebook_list.append({'uuid': uuid.UUID(bytes=notebook[0].bytes), 'name': notebook[1]})
+        notebook_list.append({'uuid': str(uuid.UUID(bytes=notebook[0])), 'name': notebook[1]})
 
     return common.ReturnList(lst=notebook_list)
 
@@ -280,16 +286,38 @@ def create_protocol_db():
 
 
 def create_experiment(exp_name, exp_uuid, exp_obj, nb_uuid):
-    """ Create a new experiment in the main database """
-    query = INSERT_EXPERIMENT.format(exp_uuid.bytes, nb_uuid.bytes, exp_name, exp_obj)
-    return execute_query(query)
+    """ Create a new experiment in the main database
+
+    :param exp_name: Experiment name
+    :type exp_name: str
+    :param exp_uuid: Experiment UUID
+    :type exp_uuid: UUID
+    :param exp_obj: Experiment objective
+    :type exp_obj: str
+    :param nb_uuid: UUID of the notebook that contains the experiment
+    :type nb_uuid: str
+    :returns: An sqlite3.Error is an exception occured
+    """
+    conn = None
+
+    try:
+        conn = sqlite3.connect(MAIN_DATABASE_FILE_PATH)
+        cursor = conn.cursor()
+        cursor.execute(INSERT_EXPERIMENT, (exp_uuid.bytes, uuid.UUID(nb_uuid).bytes,
+                                         exp_name, exp_obj))
+        conn.commit()
+    except sqlite3.Error as exception:
+        return exception
+    finally:
+        if conn:
+            conn.close()
 
 
 def get_experiment_list_notebook(nb_uuid):
     """ Get the experiment list for a specific notebook
 
     :param nb_uuid: UUID of the notebook
-    :type nb_uuid: UUID
+    :type nb_uuid: str
     :returns: List of dictionary of name, objective and id of the notebooks
     """
 
@@ -301,9 +329,7 @@ def get_experiment_list_notebook(nb_uuid):
         conn = sqlite3.connect(MAIN_DATABASE_FILE_PATH)
         cursor = conn.cursor()
 
-        query = SELECT_NOTEBOOK_EXPERIMENT.format(nb_uuid.bytes)
-
-        cursor.execute(query)
+        cursor.execute(SELECT_NOTEBOOK_EXPERIMENT, (uuid.UUID(nb_uuid).bytes,))
         buffer = cursor.fetchall()
     except sqlite3.Error as exception:
         return common.ReturnList(error=exception)
@@ -316,7 +342,7 @@ def get_experiment_list_notebook(nb_uuid):
     experiement_list = []
 
     for experiment in buffer:
-        experiement_list.append({'uuid': uuid.UUID(bytes=experiment[0].bytes), 'name': experiment[1],
+        experiement_list.append({'uuid': str(uuid.UUID(bytes=experiment[0])), 'name': experiment[1],
                                  'objective': experiment[2]})
 
     return common.ReturnList(lst=experiement_list)
@@ -336,9 +362,7 @@ def get_experiment_informations(exp_uuid):
         conn = sqlite3.connect(MAIN_DATABASE_FILE_PATH)
         cursor = conn.cursor()
 
-        query = SELECT_EXPERIMENT.format(exp_uuid.bytes)
-
-        cursor.execute(query)
+        cursor.execute(SELECT_EXPERIMENT, (uuid.UUID(exp_uuid).bytes, ))
         buffer = cursor.fetchall()
     except sqlite3.Error as exception:
         return common.ReturnDict(error=exception)

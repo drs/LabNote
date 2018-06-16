@@ -459,6 +459,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
                 widget = list_widget.ListWidget()
                 widget.set_title(item['name'])
+                widget.set_subtitle(item['objective'])
+
+                list_widget_item.setData(Qt.UserRole, item['uuid'])
 
                 # Add widget to list
                 list_widget_item.setSizeHint(widget.sizeHint())
@@ -467,8 +470,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         elif ret.error:
             message = QMessageBox()
             message.setWindowTitle("LabNote")
-            message.setText("Error getting the notebook list")
-            message.setInformativeText("An error occurred while getting the notebook list. ")
+            message.setText("Error getting the experiment list")
+            message.setInformativeText("An error occurred while getting the experiment list. ")
             message.setDetailedText(str(ret.error))
             message.setIcon(QMessageBox.Warning)
             message.setStandardButtons(QMessageBox.Ok)
@@ -476,7 +479,21 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def experiment_changed(self):
         """ Load the experiment informations when an experiment is selected from the list """
-
+        ret = experiment.open_experiment(self.lst_notebook.currentItem().data(Qt.UserRole),
+                                            self.lst_entry.currentItem().data(Qt.UserRole))
+        if ret.dct:
+            self.textbox_widget.title_text_edit.setPlainText(ret.dct['name'])
+            self.textbox_widget.objectives_text_edit.setPlainText(ret.dct['objective'])
+            self.textbox_widget.textedit.setHtml(ret.dct['body'])
+        elif ret.error:
+            message = QMessageBox()
+            message.setWindowTitle("LabNote")
+            message.setText("Error getting the experiment informations")
+            message.setInformativeText("An error occurred while getting the experiment informations.")
+            message.setDetailedText(str(ret.error))
+            message.setIcon(QMessageBox.Warning)
+            message.setStandardButtons(QMessageBox.Ok)
+            message.exec()
 
     def new_experiment(self):
         """ Create a new experiment """

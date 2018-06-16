@@ -24,4 +24,4 @@ class ListWidget(QWidget):
         self.lbl_title.setText(title)
 
     def set_subtitle(self, subtitle):
-        self.subtitle.setText(subtitle)
+        self.lbl_subtitle.setText(subtitle)

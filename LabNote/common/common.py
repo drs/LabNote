@@ -1,11 +1,13 @@
 """ This module contains miscellaneous identifier used throughout LabNote """
 
-from collections import namedtuple
+import collections
 
 from PyQt5.QtGui import QColor
 from PyQt5.QtCore import Qt
 
-Color = namedtuple('Color', ['color', 'dark_shade'])
+# Color named tuple
+
+Color = collections.namedtuple('Color', ['color', 'dark_shade'])
 
 WHITE = Color(Qt.white, Qt.lightGray)
 BLACK = Color(Qt.black, Qt.black)
@@ -44,3 +46,18 @@ HIGHLIGHT_COLOR = {
     'purple': PURPLE,
     'gray': GRAY
 }
+
+# Return Named tuples
+# Should be used when a function can return either an error or a list
+
+# Return a single element and an error
+ReturnSgl = collections.namedtuple('Returns', ['sgl', 'error'])
+ReturnSgl.__new__.__defaults__ = (None, None)
+
+# Return a list of element and an error
+ReturnList = collections.namedtuple('Returns', ['lst', 'error'])
+ReturnList.__new__.__defaults__ = ([], None)
+
+# Return a dictionary and an error
+ReturnDict = collections.namedtuple('Returns', ['dct', 'error'])
+ReturnDict.__new__.__defaults__ = ({}, None)
