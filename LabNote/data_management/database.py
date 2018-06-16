@@ -1,6 +1,7 @@
 # Python import
 import sqlite3
 import os
+import collections
 
 # Project import
 from LabNote.data_management import directory
@@ -145,6 +146,11 @@ DELETE_NOTEBOOK = """
 DELETE FROM notebook WHERE uuid = '{}'
 """
 
+# Named tuples Returns
+# Should be used when a function can return either an error or a list
+Returns = collections.namedtuple('Returns', ['lst', 'error'])
+Returns.__new__.__defaults__ = ([], None)
+
 
 def execute_query(query):
     """ Execute the query
@@ -213,7 +219,6 @@ def get_notebook_list():
     """
 
     # Select notebook list from database
-    buffer = None
     conn = None
 
     try:
@@ -224,7 +229,7 @@ def get_notebook_list():
         cursor.execute(SELECT_NOTEBOOK_NAME)
         buffer = cursor.fetchall()
     except sqlite3.Error as exception:
-        return exception
+        return Returns(error=exception)
     finally:
         if conn:
             conn.close()
@@ -236,7 +241,7 @@ def get_notebook_list():
     for notebook in buffer:
         notebook_list.append({'uuid': notebook[0], 'name': notebook[1]})
 
-    return notebook_list
+    return Returns(lst=notebook_list)
 
 
 def create_main_database():
@@ -322,7 +327,6 @@ def get_experiment_list_notebook(nb_uuid):
     """
 
     # Select notebook list from database
-    buffer = None
     conn = None
 
     try:
@@ -335,7 +339,7 @@ def get_experiment_list_notebook(nb_uuid):
         cursor.execute(query)
         buffer = cursor.fetchall()
     except sqlite3.Error as exception:
-        return exception
+        return Returns(error=exception)
     finally:
         if conn:
             conn.close()
@@ -347,4 +351,4 @@ def get_experiment_list_notebook(nb_uuid):
     for experiment in buffer:
         experiement_list.append({'uuid': experiment[2], 'name': experiment[0], 'objective': experiment[1]})
 
-    return experiement_list
+    return Returns(lst=experiement_list)

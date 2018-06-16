@@ -163,7 +163,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
             sys.exit("Unexpected error during protocol database creation")
 
-    def show_notebook_list(self, selected = None):
+    def show_notebook_list(self, selected=None):
         """ Show the existing notebooks in the notebook list
 
         If the parameter selected is passed, this function can restore the last selected item.
@@ -176,12 +176,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.lst_notebook.clear()
 
         # Get the notebook list from the database
-        notebook_list = database.get_notebook_list()
+        ret = database.get_notebook_list()
 
-        if not isinstance(notebook_list, sqlite3.Error):
-            if len(notebook_list):
+        if ret.lst:
+            if len(ret.lst):
                 # Add items to the list
-                for notebook in notebook_list:
+                for notebook in ret.lst:
                     item = QListWidgetItem(notebook['name'])
                     item.setData(Qt.UserRole, notebook['uuid'])
                     self.lst_notebook.addItem(item)
@@ -201,13 +201,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 if selected:
                     item = self.lst_notebook.findItems(selected, Qt.MatchExactly)
                     self.lst_notebook.setCurrentItem(item[0])
-
-        else:
+        elif ret.error:
             message = QMessageBox()
             message.setWindowTitle("LabNote")
             message.setText("Error getting the notebook list")
             message.setInformativeText("An error occurred while getting the notebook list. ")
-            message.setDetailedText(str(notebook_list))
+            message.setDetailedText(str(ret.error))
             message.setIcon(QMessageBox.Warning)
             message.setStandardButtons(QMessageBox.Ok)
             message.exec()
@@ -378,7 +377,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             message.setWindowTitle("LabNote")
             message.setText("Cannot rename notebook")
             message.setInformativeText(
-                "An error occurred while renaming the notebook {} in the database.".format(item.text()))
+                "An error occurred while renaming the notebook {}.".format(item.text()))
             message.setDetailedText(str(exception))
             message.setIcon(QMessageBox.Warning)
             message.setStandardButtons(QMessageBox.Ok)
@@ -433,7 +432,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 message = QMessageBox()
                 message.setWindowTitle("LabNote")
                 message.setText("Cannot delete notebook")
-                message.setInformativeText("An error occurred while deleting the notebook in the database.")
+                message.setInformativeText("An error occurred while deleting the notebook in the database. The notebook"
+                                           "was not deleted.")
                 message.setDetailedText(str(delete_notebook_database_exception))
                 message.setIcon(QMessageBox.Warning)
                 message.setStandardButtons(QMessageBox.Ok)
@@ -442,6 +442,41 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def notebook_changed(self):
         """ Update the experiment list when the notebook change """
         self.show_experiment_list()
+
+    def show_experiment_list(self):
+        """ Show the list of experiment for the open notebook. """
+        # Clear the existing list
+        self.lst_entry.clear()
+
+        # Get experiment list
+        ret = database.get_experiment_list_notebook(self.lst_notebook.currentItem().data(Qt.UserRole))
+
+        if ret.lst:
+            # Add all experiments to the list widget
+            for item in ret.lst:
+                # Create experiment widget
+                list_widget_item = QListWidgetItem()
+
+                widget = list_widget.ListWidget()
+                widget.set_title(item['name'])
+
+                # Add widget to list
+                list_widget_item.setSizeHint(widget.sizeHint())
+                self.lst_entry.addItem(list_widget_item)
+                self.lst_entry.setItemWidget(list_widget_item, widget)
+        elif ret.error:
+            message = QMessageBox()
+            message.setWindowTitle("LabNote")
+            message.setText("Error getting the notebook list")
+            message.setInformativeText("An error occurred while getting the notebook list. ")
+            message.setDetailedText(str(ret.error))
+            message.setIcon(QMessageBox.Warning)
+            message.setStandardButtons(QMessageBox.Ok)
+            message.exec()
+
+    def experiment_changed(self):
+        """ Load the experiment informations when an experiment is selected from the list """
+
 
     def new_experiment(self):
         """ Create a new experiment """
@@ -464,24 +499,3 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                                      self.textbox_widget.title_text_edit.toPlainText() or "Untitled experiment",
                                      self.textbox_widget.objectives_text_edit.toPlainText())
         self.show_experiment_list()
-
-    def show_experiment_list(self):
-        """ Show the list of experiment for the open notebook. """
-        # Clear the existing list
-        self.lst_entry.clear()
-
-        # Get experiment list
-        lst = database.get_experiment_list_notebook(self.lst_notebook.currentItem().data(Qt.UserRole))
-
-        # Add all experiments to the list widget
-        for item in lst:
-            # Create experiment widget
-            list_widget_item = QListWidgetItem()
-
-            widget = list_widget.ListWidget()
-            widget.set_title(item['name'])
-
-            # Add widget to list
-            list_widget_item.setSizeHint(widget.sizeHint())
-            self.lst_entry.addItem(list_widget_item)
-            self.lst_entry.setItemWidget(list_widget_item, widget)
