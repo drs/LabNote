@@ -113,6 +113,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.lst_notebook.itemSelectionChanged.connect(self.notebook_changed)
         self.act_new.triggered.connect(self.new_experiment)
         self.act_new_experiment.triggered.connect(self.new_experiment)
+        self.lst_entry.itemSelectionChanged.connect(self.experiment_changed)
 
     @staticmethod
     def check_files_integrity():
@@ -479,8 +480,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def experiment_changed(self):
         """ Load the experiment informations when an experiment is selected from the list """
+        self.create_textbox_widget()
+
         ret = experiment.open_experiment(self.lst_notebook.currentItem().data(Qt.UserRole),
-                                            self.lst_entry.currentItem().data(Qt.UserRole))
+                                         self.lst_entry.currentItem().data(Qt.UserRole))
         if ret.dct:
             self.textbox_widget.title_text_edit.setPlainText(ret.dct['name'])
             self.textbox_widget.objectives_text_edit.setPlainText(ret.dct['objective'])
@@ -497,14 +500,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def new_experiment(self):
         """ Create a new experiment """
-        if self.centralWidget().layout().indexOf(self.no_entry_widget) != -1:
-            self.textbox_widget = textbox.Textbox()
-            self.centralWidget().layout().removeWidget(self.no_entry_widget)
-            self.no_entry_widget.deleteLater()
-            self.no_entry_widget = None
-
-            self.centralWidget().layout().addWidget(self.textbox_widget)
-            self.centralWidget().layout().setStretch(2, 10)
+        self.create_textbox_widget()
 
         # Create a UUID for the experiment
         exp_uuid = uuid.uuid4()
@@ -516,3 +512,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                                      self.textbox_widget.title_text_edit.toPlainText() or "Untitled experiment",
                                      self.textbox_widget.objectives_text_edit.toPlainText())
         self.show_experiment_list()
+
+    def create_textbox_widget(self):
+        """ Create the textbox widget when an experiment is selected for the first time """
+        if self.centralWidget().layout().indexOf(self.no_entry_widget) != -1:
+            self.textbox_widget = textbox.Textbox()
+            self.centralWidget().layout().removeWidget(self.no_entry_widget)
+            self.no_entry_widget.deleteLater()
+            self.no_entry_widget = None
+
+            self.centralWidget().layout().addWidget(self.textbox_widget)
+            self.centralWidget().layout().setStretch(2, 10)
