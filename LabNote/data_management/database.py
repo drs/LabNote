@@ -16,79 +16,57 @@ SET_MAIN_DB_USER_VERSION = "PRAGMA user_version = '{}'".format(MAIN_DATABASE_VER
 
 CREATE_NOTEBOOK_TABLE = """
 CREATE TABLE notebook (
-    nb_id           INTEGER         PRIMARY KEY   AUTOINCREMENT,
-    name            VARCHAR (255)   NOT NULL      UNIQUE, 
-    uuid            CHAR (36)       UNIQUE        NOT NULL
+    nb_uuid     BLOB (16)         PRIMARY KEY,
+    nb_name     VARCHAR (255)     NOT NULL          UNIQUE
 )"""
 
 CREATE_EXPERIMENT_TABLE = """
 CREATE TABLE experiment (
-    exp_id         INTEGER       PRIMARY KEY   AUTOINCREMENT,
-    name           VARCHAR (255) NOT NULL,
-    objective      TEXT,
-    uuid           CHAR (36)     NOT NULL      UNIQUE,
-    nb_id          INTEGER       NOT NULL      REFERENCES notebook (nb_id)    ON DELETE CASCADE
-)"""
-
-CREATE_EXPERIMENT_INDEX = """
-CREATE UNIQUE INDEX experiment_uuid ON experiment (
-    uuid ASC
+    exp_uuid      BLOB (16)     PRIMARY KEY,
+    exp_name      VARCHAR (255) NOT NULL,
+    nb_uuid       BLOB          REFERENCES notebook (nb_uuid)     ON DELETE CASCADE     NOT NULL,
+    exp_objective TEXT
 )"""
 
 CREATE_DATASET_TABLE = """
 CREATE TABLE dataset (
-    data_id      INTEGER     PRIMARY KEY   AUTOINCREMENT,
-    uuid         CHAR (36)   NOT NULL      UNIQUE,
-    name         VARCHAR (255) 
-)"""
-
-CREATE_DATASET_INDEX = """
-CREATE UNIQUE INDEX dataset_index ON dataset (
-    uuid
+    dataset_uuid    BLOB (16)         PRIMARY KEY,
+    dataset_name    VARCHAR (255) 
 )"""
 
 CREATE_PROTOCOL_TABLE = """
 CREATE TABLE protocol (
-    protocol_id     INTEGER   PRIMARY KEY   AUTOINCREMENT,
-    uuid            CHAR (36) NOT NULL      UNIQUE,
-    name            VARCHAR (255)
-)
-"""
-
-CREATE_PROTOCOL_INDEX = """
-CREATE UNIQUE INDEX protocol_index ON protocol (
-    uuid
+    protocol_uuid     BLOB (16)         PRIMARY KEY,
+    protocol_name     VARCHAR (255) 
 )"""
 
 CREATE_EXPERIMENT_DATASET_TABLE = """
 CREATE TABLE experiment_dataset (
-    exp_id     INTEGER    REFERENCES experiment (exp_id)     ON DELETE CASCADE             NOT NULL,
-    data_id    INTEGER    REFERENCES dataset (data_id)       NOT NULL
+    exp_uuid      BLOB (16)    REFERENCES experiment (exp_uuid)       ON DELETE CASCADE     NOT NULL,
+    dataset_uuid  BLOB (16)    REFERENCES dataset (dataset_uuid)      ON DELETE RESTRICT    NOT NULL
 )"""
 
 CREATE_EXPERIMENT_DATASET_INDEX = """
 CREATE UNIQUE INDEX experiment_dataset_index ON experiment_dataset (
-    exp_id ASC,
-    data_id ASC
+    exp_uuid        ASC,
+    dataset_uuid    ASC
 )"""
 
 CREATE_EXPERIMENT_PROTOCOL_TABLE = """
 CREATE TABLE experiment_protocol (
-    exp_id        INTEGER       REFERENCES experiment (exp_id)        ON DELETE CASCADE     NOT NULL,
-    protocol_id   INTEGER       REFERENCES protocol (protocol_id)     NOT NULL
+    exp_uuid        BLOB (16)     REFERENCES experiment (exp_uuid)      ON DELETE CASCADE       NOT NULL,
+    protocol_uuid   BLOB (16)     REFERENCES protocol (protocol_uuid)   ON DELETE RESTRICT      NOT NULL
 )"""
 
 CREATE_EXPERIMENT_PROTOCOL_INDEX = """
 CREATE UNIQUE INDEX experiment_protocol_index ON experiment_protocol (
-    exp_id ASC,
-    protocol_id ASC
+    exp_uuid ASC,
+    protocol_uuid ASC
 )"""
 
 CREATE_PROTOCOL_DB_PROTOCOL_TABLE = """
 CREATE TABLE protocol (
-    protocol_id       INTEGER       PRIMARY KEY AUTOINCREMENT,
-    uuid              CHAR (36)     NOT NULL
-                                    UNIQUE,
+    protocol_uuid     BLOB (16)     PRIMARY KEY,
     name              VARCHAR (255) NOT NULL,
     research_field_id INTEGER       REFERENCES research_field (research_field_id),
     version           VARCHAR (16),
@@ -97,12 +75,6 @@ CREATE TABLE protocol (
     date_created      DATETIME      DEFAULT (CURRENT_TIMESTAMP),
     date_updated      DATETIME
 )"""
-
-CREATE_PROTOCOL_DB_INDEX = """
-CREATE UNIQUE INDEX protocol_index ON protocol (
-    uuid
-)
-"""
 
 CREATE_PROTOCOL_DB_UPDATE_DATE_TRIGGER = """
 CREATE TRIGGER update_date
@@ -115,35 +87,34 @@ END"""
 
 CREATE_PROTOCOL_DB_RESEACH_FIELD_TABLE = """
 CREATE TABLE research_field (
-    research_field_id INTEGER           PRIMARY KEY     AUTOINCREMENT,
-    name              VARCHAR (255)     NOT NULL        UNIQUE
+    research_field_id INTEGER       PRIMARY KEY AUTOINCREMENT,
+    name              VARCHAR (255) NOT NULL      UNIQUE
 )"""
 
 SET_PROTOCOL_DB_USER_VERSION = "PRAGMA user_version = '{}'".format(PROTOCOL_DATABASE_VERSION)
 
 SELECT_NOTEBOOK_NAME = """
-SELECT uuid, name FROM notebook
+SELECT nb_uuid, nb_name FROM notebook
 """
 
 INSERT_NOTEBOOK = """
-INSERT INTO notebook (name, uuid) VALUES ('{}', '{}')
+INSERT INTO notebook (nb_uuid, nb_name) VALUES ('{}', '{}')
 """
 
 INSERT_EXPERIMENT = """
-INSERT INTO experiment (name, uuid, objective, nb_id) VALUES ('{}', '{}', '{}', 
-(SELECT nb_id FROM notebook WHERE notebook.uuid = '{}'))
+INSERT INTO experiment (exp_uuid, nb_uuid, exp_name, exp_objective) VALUES ('{}', '{}', '{}', '{}')
 """
 
 SELECT_NOTEBOOK_EXPERIMENT = """
-SELECT name, objective, uuid FROM experiment WHERE nb_id = (SELECT nb_id FROM notebook WHERE notebook.uuid = '{}')
+SELECT exp_uuid, exp_name, exp_objective FROM experiment WHERE nb_uuid =  '{}'
 """
 
 UPDATE_NOTEBOOK_NAME = """
-UPDATE notebook SET name = '{}' WHERE uuid = '{}'
+UPDATE notebook SET nb_name = '{}' WHERE nb_uuid = '{}'
 """
 
 DELETE_NOTEBOOK = """
-DELETE FROM notebook WHERE uuid = '{}'
+DELETE FROM notebook WHERE nb_uuid = '{}'
 """
 
 # Named tuples Returns
@@ -184,7 +155,7 @@ def create_notebook(nb_name, nb_uuid):
     :type nb_uuid: UUID
     :returns: An sqlite3.Error is an exception occured
     """
-    query = INSERT_NOTEBOOK.format(nb_name, nb_uuid)
+    query = INSERT_NOTEBOOK.format(nb_uuid, nb_name)
     return execute_query(query)
 
 
@@ -258,11 +229,8 @@ def create_main_database():
         cursor.execute(SET_MAIN_DB_USER_VERSION)
         cursor.execute(CREATE_NOTEBOOK_TABLE)
         cursor.execute(CREATE_EXPERIMENT_TABLE)
-        cursor.execute(CREATE_EXPERIMENT_INDEX)
         cursor.execute(CREATE_DATASET_TABLE)
-        cursor.execute(CREATE_DATASET_INDEX)
         cursor.execute(CREATE_PROTOCOL_TABLE)
-        cursor.execute(CREATE_PROTOCOL_INDEX)
         cursor.execute(CREATE_EXPERIMENT_DATASET_TABLE)
         cursor.execute(CREATE_EXPERIMENT_DATASET_INDEX)
         cursor.execute(CREATE_EXPERIMENT_PROTOCOL_TABLE)
@@ -296,7 +264,6 @@ def create_protocol_db():
         cursor.execute(SET_PROTOCOL_DB_USER_VERSION)
         cursor.execute(CREATE_PROTOCOL_DB_RESEACH_FIELD_TABLE)
         cursor.execute(CREATE_PROTOCOL_DB_PROTOCOL_TABLE)
-        cursor.execute(CREATE_PROTOCOL_DB_INDEX)
         cursor.execute(CREATE_PROTOCOL_DB_UPDATE_DATE_TRIGGER)
         cursor.execute("COMMIT")
     except sqlite3.Error as exception:
@@ -314,7 +281,7 @@ def create_protocol_db():
 
 def create_experiment(exp_name, exp_uuid, exp_obj, nb_uuid):
     """ Create a new experiment in the main database """
-    query = INSERT_EXPERIMENT.format(exp_name, exp_uuid, exp_obj, nb_uuid)
+    query = INSERT_EXPERIMENT.format(exp_uuid, nb_uuid, exp_name, exp_obj)
     return execute_query(query)
 
 
@@ -349,6 +316,6 @@ def get_experiment_list_notebook(nb_uuid):
     experiement_list = []
 
     for experiment in buffer:
-        experiement_list.append({'uuid': experiment[2], 'name': experiment[0], 'objective': experiment[1]})
+        experiement_list.append({'uuid': experiment[0], 'name': experiment[1], 'objective': experiment[2]})
 
     return Returns(lst=experiement_list)

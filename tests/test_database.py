@@ -72,7 +72,7 @@ class TestDatabaseInsert(unittest.TestCase):
         with unittest.mock.patch("LabNote.data_management.database.sqlite3") as mock_sqlite3:
             database.create_notebook(self.nb_name, self.nb_uuid)
             mock_sqlite3.connect().cursor().execute.assert_called_with(
-                "\nINSERT INTO notebook (name, uuid) VALUES ('{}', '{}')\n".format(self.nb_name, self.nb_uuid))
+                "\nINSERT INTO notebook (nb_uuid, nb_name) VALUES ('{}', '{}')\n".format(self.nb_uuid, self.nb_name))
 
     def test_notebook_creation_data(self):
         database.create_notebook(self.nb_name, self.nb_uuid)
@@ -81,7 +81,7 @@ class TestDatabaseInsert(unittest.TestCase):
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM notebook")
 
-        self.assertEqual(cursor.fetchall(), [(1, '{}'.format(self.nb_name), '{}'.format(self.nb_uuid))])
+        self.assertEqual(cursor.fetchall(), [('{}'.format(self.nb_uuid), '{}'.format(self.nb_name))])
 
     def test_notebook_creation_error(self):
         with unittest.mock.patch("LabNote.data_management.database.sqlite3.connect",
@@ -94,10 +94,9 @@ class TestDatabaseInsert(unittest.TestCase):
 
             database.create_experiment(self.exp_name, self.exp_uuid, self.exp_obj, self.nb_uuid)
             mock_sqlite3.connect().cursor().execute.assert_called_with(
-                "\nINSERT INTO experiment (name, uuid, objective, nb_id) "
-                "VALUES ('{}', '{}', '{}', "
-                "\n(SELECT nb_id FROM notebook WHERE notebook.uuid = '{}'))\n".format(self.exp_name, self.exp_uuid,
-                                                                                      self.exp_obj, self.nb_uuid))
+                "\nINSERT INTO experiment (exp_uuid, nb_uuid, exp_name, exp_objective) "
+                "VALUES ('{}', '{}', '{}', '{}')\n".format(self.exp_uuid, self.nb_uuid,
+                                                 self.exp_name, self.exp_obj))
 
     def test_experiment_creation_data(self):
         database.create_notebook(self.nb_name, self.nb_uuid)
@@ -107,9 +106,8 @@ class TestDatabaseInsert(unittest.TestCase):
         conn = sqlite3.connect(database.MAIN_DATABASE_FILE_PATH)
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM experiment")
-
-        self.assertEqual(cursor.fetchall(), [(1, '{}'.format(self.exp_name), '{}'.format(self.exp_obj),
-                                              '{}'.format(self.exp_uuid), 1)])
+        self.assertEqual(cursor.fetchall(), [('{}'.format(self.exp_uuid), '{}'.format(self.exp_name),
+                                              '{}'.format(self.nb_uuid), '{}'.format(self.exp_obj))])
 
     def test_experiment_creation_error(self):
         with unittest.mock.patch("LabNote.data_management.database.sqlite3.connect",
@@ -140,48 +138,48 @@ class TestDatabaseModification(unittest.TestCase):
 
     def test_notebook_select(self):
         result = database.get_notebook_list()
-        self.assertEqual(result, [{'uuid': '{}'.format(self.nb_uuid), 'name': '{}'.format(self.nb_name)}])
+        self.assertEqual(result.lst, [{'uuid': '{}'.format(self.nb_uuid), 'name': '{}'.format(self.nb_name)}])
 
     def test_notebook_select_error(self):
         with unittest.mock.patch("LabNote.data_management.database.sqlite3.connect",
                                  unittest.mock.MagicMock(side_effect=sqlite3.Error)):
             database.get_notebook_list()
-            self.assertIsInstance(database.get_notebook_list(), sqlite3.Error)
+            self.assertIsInstance(database.get_notebook_list().error, sqlite3.Error)
 
     def test_notebook_update(self):
         new_name = "Notebook 1"
         database.update_notebook_name(new_name, self.nb_uuid)
         result = database.get_notebook_list()
-        self.assertEqual(result, [{'uuid': '{}'.format(self.nb_uuid), 'name': '{}'.format(new_name)}])
+        self.assertEqual(result.lst, [{'uuid': '{}'.format(self.nb_uuid), 'name': '{}'.format(new_name)}])
 
     def test_notebook_update_error(self):
         new_name = "Notebook 1"
         with unittest.mock.patch("LabNote.data_management.database.sqlite3.connect",
                                  unittest.mock.MagicMock(side_effect=sqlite3.Error)):
             database.update_notebook_name(new_name, self.nb_uuid)
-            self.assertIsInstance(database.get_experiment_list_notebook(self.nb_uuid), sqlite3.Error)
+            self.assertIsInstance(database.get_experiment_list_notebook(self.nb_uuid).error, sqlite3.Error)
 
     def test_notebook_delete(self):
         database.delete_notebook(self.nb_uuid)
         result = database.get_notebook_list()
-        self.assertFalse(result)
+        self.assertFalse(result.error)
 
     def test_notebook_delete_error(self):
         with unittest.mock.patch("LabNote.data_management.database.sqlite3.connect",
                                  unittest.mock.MagicMock(side_effect=sqlite3.Error)):
             database.delete_notebook(self.nb_uuid)
-            self.assertIsInstance(database.get_experiment_list_notebook(self.nb_uuid), sqlite3.Error)
+            self.assertIsInstance(database.get_experiment_list_notebook(self.nb_uuid).error, sqlite3.Error)
 
     def test_experiment_select(self):
         result = database.get_experiment_list_notebook(self.nb_uuid)
-        self.assertEqual(result, [{'uuid': '{}'.format(self.exp_uuid), 'name': '{}'.format(self.exp_name),
+        self.assertEqual(result.lst, [{'uuid': '{}'.format(self.exp_uuid), 'name': '{}'.format(self.exp_name),
                                    'objective': '{}'.format(self.exp_obj)}])
 
     def test_experiment_select_error(self):
         with unittest.mock.patch("LabNote.data_management.database.sqlite3.connect",
                                  unittest.mock.MagicMock(side_effect=sqlite3.Error)):
             database.get_experiment_list_notebook(self.nb_uuid)
-            self.assertIsInstance(database.get_experiment_list_notebook(self.nb_uuid), sqlite3.Error)
+            self.assertIsInstance(database.get_experiment_list_notebook(self.nb_uuid).error, sqlite3.Error)
 
 
 if __name__ == '__main__':
