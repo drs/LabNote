@@ -4,8 +4,8 @@
 import os
 
 # Project import
-from LabNote.data_management import directory, database
-from LabNote.common import common
+from labnote.utils import directory, database
+from labnote.core import common
 
 
 def create_experiment(exp_uuid, nb_uuid, body, name, objective):
@@ -118,13 +118,13 @@ def read_experiment(exp_uuid, nb_uuid):
             experiment_file.close()
 
 
-def open_experiment(exp_uuid, nb_uuid):
+def open_experiment(nb_uuid, exp_uuid):
     """ Get all the informations about an experiment from the files and the database
 
     :param exp_uuid: Experiment uuid
-    :type exp_uuid: UUID
+    :type exp_uuid: str
     :param nb_uuid: Notebook uuid
-    :type nb_uuid: UUID
+    :type nb_uuid: str
     :returns: HTML string (or exception)
     """
     # Get experiment informations fromt the database
@@ -137,7 +137,7 @@ def open_experiment(exp_uuid, nb_uuid):
 
         # body contains data
         if body.sgl:
-            body_string = body.sgl.decode()
+            body_string = body.sgl
             return common.ReturnDict(dct={'name': informations.dct['name'],
                                           'objective': informations.dct['objective'],
                                           'body': body_string})
@@ -147,3 +147,33 @@ def open_experiment(exp_uuid, nb_uuid):
     # informations contains an error
     elif informations.error:
         return common.ReturnDict(error=informations.error)
+
+
+def save_experiment(nb_uuid, exp_uuid, name, objective, body):
+    """ Save an experiment
+
+    :param nb_uuid: uuid of the notebook that contains the experiment
+    :type nb_uuid: str
+    :param exp_uuid: Experiment uuid
+    :type exp_uuid: str
+    :param name: Experiment name
+    :type name: str
+    :param objective: Experiment objective
+    :type objective: str
+    :param body: Experiment body HTML
+    :type body: str
+    :return: An exception if an exception occurs
+    """
+
+    # Encode experiment body
+    encoded_body = encode_experiment(body)
+
+    # Update experiment in database
+    update_database_exception = database.update_experiment(exp_uuid, name, objective)
+
+    if not update_database_exception:
+        write_experiment_exception = write_experiment(exp_uuid, nb_uuid, encoded_body)
+        if write_experiment_exception:
+            return write_experiment_exception
+    else:
+        return update_database_exception

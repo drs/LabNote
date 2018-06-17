@@ -9,8 +9,8 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon
 
 # Project import
-from interface.main_window import MainWindow
-from common import stylesheet
+from labnote.interface.main_window import MainWindow
+from labnote.core import stylesheet
 
 # Permettre les écrans High DPI avec PyQt5
 QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)

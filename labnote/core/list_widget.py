@@ -2,8 +2,8 @@
 from PyQt5.QtWidgets import QWidget, QLabel, QVBoxLayout, QLayout
 
 # Project import
-from LabNote.resources import resources
-from LabNote.common import stylesheet
+from labnote.resources import resources
+from labnote.core import stylesheet
 
 
 class ListWidget(QWidget):

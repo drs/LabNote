@@ -4,8 +4,8 @@ import os
 import uuid
 
 # Project import
-from LabNote.data_management import directory
-from LabNote.common import common
+from labnote.utils import directory
+from labnote.core import common
 
 MAIN_DATABASE_FILE_PATH = os.path.join(directory.DEFAULT_MAIN_DIRECTORY_PATH + "/labnote.db")
 PROTOCOL_DATABASE_FILE_PATH = os.path.join(directory.DEFAULT_MAIN_DIRECTORY_PATH + "/protocols.db")
@@ -120,6 +120,10 @@ DELETE FROM notebook WHERE nb_uuid = ?
 
 SELECT_EXPERIMENT = """
 SELECT exp_name, exp_objective FROM experiment WHERE exp_uuid = ?
+"""
+
+UPDATE_EXPERIMENT = """
+UPDATE experiment SET exp_name = ?, exp_objective = ? WHERE  exp_uuid = ?
 """
 
 
@@ -395,3 +399,28 @@ def get_experiment_informations(exp_uuid):
 
     # Return experiment informations
     return common.ReturnDict(dct={'name': buffer[0][0], 'objective': buffer[0][1]})
+
+
+def update_experiment(exp_uuid, name, objective):
+    """ Update the name of a notebook
+
+    :param exp_uuid: Experiment uuid
+    :type exp_uuid: str
+    :param name: Experiment name
+    :type name: str
+    :param objective: Experiment objective
+    :type objective: str
+    :returns: An sqlite3.Error is an exception occured
+    """
+    conn = None
+
+    try:
+        conn = sqlite3.connect(MAIN_DATABASE_FILE_PATH)
+        cursor = conn.cursor()
+        cursor.execute(UPDATE_EXPERIMENT, (name, objective, uuid_bytes(exp_uuid)))
+        conn.commit()
+    except sqlite3.Error as exception:
+        return exception
+    finally:
+        if conn:
+            conn.close()

@@ -6,7 +6,7 @@ from PyQt5.QtWidgets import QDialog
 from PyQt5.QtGui import QPixmap, QRegExpValidator
 from PyQt5.QtCore import QRegExp
 
-from LabNote.ui.ui_new_notebook import Ui_NewNotebook
+from labnote.ui.ui_new_notebook import Ui_NewNotebook
 
 
 class NewNotebook(QDialog, Ui_NewNotebook):

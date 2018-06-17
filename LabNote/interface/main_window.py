@@ -5,7 +5,8 @@ This module contain the classes responsible for launching and managing the LabNo
 # Python import
 import uuid
 import sys
-import sqlite3
+import threading
+from threading import Thread
 
 # PyQt import
 from PyQt5.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QMessageBox, QLabel, QListWidgetItem, QLineEdit, QAction, \
@@ -14,12 +15,12 @@ from PyQt5.QtGui import QPixmap, QIcon, QFont
 from PyQt5.QtCore import Qt, QSettings, QByteArray
 
 # Project import
-from LabNote.ui.ui_mainwindow import Ui_MainWindow
-from LabNote.common import stylesheet, sqlite_error, list_widget
-from LabNote.data_management import integrity, database, directory, experiment
-from LabNote.interface import textbox
-from LabNote.interface.new_notebook import NewNotebook
-from LabNote.resources import resources
+from labnote.ui.ui_mainwindow import Ui_MainWindow
+from labnote.core import stylesheet, sqlite_error, list_widget
+from labnote.utils import integrity, database, directory, experiment
+from labnote.interface import textbox
+from labnote.interface.new_notebook import NewNotebook
+from labnote.resources import resources
 
 
 class MainWindow(QMainWindow, Ui_MainWindow):
@@ -29,8 +30,22 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def __init__(self):
         super(MainWindow, self).__init__()
-        self.setupUi(self)
+        # Class variable definition
+        self.current_nb_uuid = None
+        self.current_exp_uuid = None
+        self.current_exp_name = None
+        self.name_updated = False
+        self.current_exp_objective = None
+        self.objective_updated = False
+        self.current_exp_body = None
+        self.body_updated = False
 
+        # Initialize the GUI
+        self.setupUi(self)
+        self.init_ui()
+
+    def init_ui(self):
+        """ Initialize all the GUI elements """
         # Set style sheet
         stylesheet.set_style_sheet(self, ":/StyleSheet/style-sheet/main_window.qss")
 
@@ -193,6 +208,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 self.act_new.setEnabled(True)
                 self.act_new_experiment.setEnabled(True)
 
+                # Update the current selected notebook uuid
+                self.current_nb_uuid = self.lst_notebook.currentItem().data(Qt.UserRole)
+
                 self.show_experiment_list()
 
                 # Sort item in ascending order
@@ -225,7 +243,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         :type e: QCloseEvent
         :returns: Event for the parent
         """
-
+        # Write the settings
         settings = QSettings("Samuel Drouin", "LabNote")
         settings.setValue("MainWindow/Geometry", self.saveGeometry())
 
@@ -442,6 +460,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def notebook_changed(self):
         """ Update the experiment list when the notebook change """
+        self.current_nb_uuid = self.lst_notebook.currentItem().data(Qt.UserRole)
+
         self.show_experiment_list()
 
     def show_experiment_list(self):
@@ -450,14 +470,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.lst_entry.clear()
 
         # Get experiment list
-        ret = database.get_experiment_list_notebook(self.lst_notebook.currentItem().data(Qt.UserRole))
+        ret = database.get_experiment_list_notebook(self.current_nb_uuid)
 
         if ret.lst:
             # Add all experiments to the list widget
             for item in ret.lst:
                 # Create experiment widget
                 list_widget_item = QListWidgetItem()
-
                 widget = list_widget.ListWidget()
                 widget.set_title(item['name'])
                 widget.set_subtitle(item['objective'])
@@ -468,6 +487,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 list_widget_item.setSizeHint(widget.sizeHint())
                 self.lst_entry.addItem(list_widget_item)
                 self.lst_entry.setItemWidget(list_widget_item, widget)
+
+                self.lst_entry.setCurrentRow(0)
+
+                # Update the current selected notebook uuid
+                self.current_exp_uuid = self.lst_entry.currentItem().data(Qt.UserRole)
         elif ret.error:
             message = QMessageBox()
             message.setWindowTitle("LabNote")
@@ -480,10 +504,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def experiment_changed(self):
         """ Load the experiment informations when an experiment is selected from the list """
-        self.create_textbox_widget()
 
-        ret = experiment.open_experiment(self.lst_notebook.currentItem().data(Qt.UserRole),
-                                         self.lst_entry.currentItem().data(Qt.UserRole))
+        # Update the current selected notebook uuid
+        self.current_exp_uuid = self.lst_entry.currentItem().data(Qt.UserRole)
+
+        self.create_textbox_widget()
+        ret = experiment.open_experiment(self.current_nb_uuid, self.current_exp_uuid)
+
         if ret.dct:
             self.textbox_widget.title_text_edit.setPlainText(ret.dct['name'])
             self.textbox_widget.objectives_text_edit.setPlainText(ret.dct['objective'])
@@ -507,7 +534,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         # Create the experiment
         experiment.create_experiment(exp_uuid,
-                                     self.lst_notebook.currentItem().data(Qt.UserRole),
+                                     self.current_nb_uuid,
                                      self.textbox_widget.textedit.toHtml(),
                                      self.textbox_widget.title_text_edit.toPlainText() or "Untitled experiment",
                                      self.textbox_widget.objectives_text_edit.toPlainText())
@@ -523,3 +550,42 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
             self.centralWidget().layout().addWidget(self.textbox_widget)
             self.centralWidget().layout().setStretch(2, 10)
+
+            # Connect slots
+            self.textbox_widget.title_text_edit.textChanged.connect(self.title_changed)
+            self.textbox_widget.objectives_text_edit.textChanged.connect(self.objective_changed)
+            self.textbox_widget.textedit.textChanged.connect(self.body_changed)
+
+    def save_experiment(self):
+        """ Save the current experiment """
+        update_exception = experiment.save_experiment(self.current_nb_uuid, self.current_exp_uuid, self.current_exp_name,
+                                                      self.current_exp_objective, self.current_exp_body)
+
+        self.name_updated = False
+        self.objective_updated = False
+        self.body_updated = False
+
+        if update_exception:
+            message = QMessageBox()
+            message.setWindowTitle("LabNote")
+            message.setText("Error saving the experiment")
+            message.setInformativeText("An error occurred while saving the experiment to the database.")
+            message.setDetailedText(str(update_exception))
+            message.setIcon(QMessageBox.Warning)
+            message.setStandardButtons(QMessageBox.Ok)
+            message.exec()
+
+    def title_changed(self):
+        """ Update the current title """
+        self.current_exp_name = self.textbox_widget.title_text_edit.toPlainText()
+        self.name_updated = True
+
+    def objective_changed(self):
+        """ Update the current objective """
+        self.current_exp_objective = self.textbox_widget.objectives_text_edit.toPlainText()
+        self.objective_updated = True
+
+    def body_changed(self):
+        """ Update the current body """
+        self.current_exp_body = self.textbox_widget.textedit.toHtml()
+        self.body_updated = True

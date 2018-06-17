@@ -5,7 +5,7 @@ import os
 from PyQt5.QtWidgets import QMessageBox
 
 # Project import
-from LabNote.data_management import database, directory
+from labnote.utils import database, directory
 
 NO_EXCEPTION = -1
 MAIN_DIRECTORY_CREATION_EXCEPTION = 0

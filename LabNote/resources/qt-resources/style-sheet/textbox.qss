@@ -139,6 +139,10 @@ QTextEdit {
     border: none;
 }
 
+QPlainTextEdit {
+    border: none;
+}
+
 /* Frame properties */
 
 QFrame#frame {
