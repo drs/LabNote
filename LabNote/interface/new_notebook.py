@@ -16,8 +16,11 @@ class NewNotebook(QDialog, Ui_NewNotebook):
 
     def __init__(self):
         super(NewNotebook, self).__init__()
+        # Initialize the GUI
         self.setupUi(self)
+        self.init_gui()
 
+    def init_gui(self):
         # Set picture
         notebook_image = QPixmap(":/Icons/NewNotebook/icons/new-notebook/1xnotebook.png")
         if self.devicePixelRatio() == 2:

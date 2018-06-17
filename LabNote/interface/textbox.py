@@ -2,20 +2,29 @@
 import math
 
 # Python import
-from PyQt5.QtWidgets import QWidget, QMenu, QAction, QTextEdit
+from PyQt5.QtWidgets import QWidget, QMenu, QAction, QTextEdit, QPlainTextEdit
 from PyQt5.QtGui import QTextCharFormat, QFont, QTextDocument, QPixmap, QPainter, QIcon, QPainterPath, QPen, QColor, \
     QTextListFormat, QBrush, QFontMetrics, QImageReader, QImage
-from PyQt5.QtCore import Qt, QRectF, QUrl, QFile, QIODevice, QFileInfo
+from PyQt5.QtCore import Qt, QRectF, QUrl, QFileInfo
 
-from LabNote.ui.ui_textbox import Ui_TextBox
-from LabNote.common import stylesheet, common
-from LabNote.resources import resources
+# Project import
+from labnote.ui.ui_textbox import Ui_TextBox
+from labnote.core import stylesheet, common
+from labnote.utils import files
+from labnote.resources import resources
 
 
 class TextEdit(QTextEdit):
     """ This class is a reimplanted QTextEdit used in the Textbox """
-
     def canInsertFromMimeData(self, source):
+        """ Reimplanted QTextBrowser function
+
+        This function check if the source has image or urls
+
+        :param source: Source data
+        :type source: QMimeData
+        :returns: If source has image, url or can be inserted from mime data
+        """
         if source.hasImage():
             return source.hasImage()
         elif source.hasUrls():
@@ -24,27 +33,34 @@ class TextEdit(QTextEdit):
             return QTextEdit().canInsertFromMimeData(source)
 
     def insertFromMimeData(self, source):
+        """ Insert source from mime data in the text browser
+
+        :param source: Source data
+        :type source: QMimeData
+        """
         if source.hasImage():
-            self.drop_image(QUrl(), source.imageData())
+            self.insert_image(QUrl(), source.imageData())
         elif source.hasUrls():
             for url in source.urls():
                 info = QFileInfo(url.toLocalFile())
                 if info.suffix().lower().encode('latin-1') in QImageReader.supportedImageFormats():
-                    self.drop_image(url, QImage(info.filePath()))
-                else:
-                    self.dropTextFile(url)
+                    self.insert_image(url, QImage(info.filePath()))
         else:
             self.insertPlainText(source.text())
 
-    def drop_image(self, url, image):
+    def insert_image(self, url, image):
+        """ Insert image in the document
+
+        :param url: File url
+        :type url: QUrl
+        :param image: Image
+        :type image: QImage
+        """
+        if url:
+            files.copy_file_to_data()
         if image:
             self.document().addResource(QTextDocument.ImageResource, url, image)
             self.textCursor().insertImage(str(url.toLocalFile()))
-
-    def drop_text_file(self, url):
-        file = QFile(url.toLocalFile())
-        if file.open(QIODevice.ReadOnly | QIODevice.Text):
-            self.textCursor().insertText(file.readAll())
 
 
 class Textbox(QWidget, Ui_TextBox):
@@ -62,7 +78,7 @@ class Textbox(QWidget, Ui_TextBox):
         self.frame.layout().addWidget(self.textedit, 20)
 
         # Insert title text edit
-        self.title_text_edit = TextEdit()
+        self.title_text_edit = QPlainTextEdit()
         font = QFont()
         font.setBold(True)
         font.setPointSize(16)
@@ -73,7 +89,7 @@ class Textbox(QWidget, Ui_TextBox):
         self.frame.layout().insertWidget(1, self.title_text_edit, 1)
 
         # Insert aims text edit
-        self.objectives_text_edit = TextEdit()
+        self.objectives_text_edit = QPlainTextEdit()
         self.objectives_text_edit.setStyleSheet("QTextEdit { border-bottom: 0.5px solid rgb(212, 212, 212)}")
         self.objectives_text_edit.setPlaceholderText("Objectives of the experiment")
         self.objectives_text_edit.setMinimumHeight(42)
