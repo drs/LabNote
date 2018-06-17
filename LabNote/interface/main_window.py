@@ -12,7 +12,7 @@ from threading import Thread
 from PyQt5.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QMessageBox, QLabel, QListWidgetItem, QLineEdit, QAction, \
     QSizePolicy, QMenu
 from PyQt5.QtGui import QPixmap, QIcon, QFont
-from PyQt5.QtCore import Qt, QSettings, QByteArray
+from PyQt5.QtCore import Qt, QSettings, QByteArray, QTimer
 
 # Project import
 from labnote.ui.ui_mainwindow import Ui_MainWindow
@@ -123,12 +123,62 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # Show existing notebook list
         self.show_notebook_list()
 
+        # Create the autosave timer
+        self.autosave_timer = QTimer()
+
         # Slots connection
         self.btn_add_notebook.clicked.connect(self.open_new_notebook_dialog)
         self.lst_notebook.itemSelectionChanged.connect(self.notebook_changed)
-        self.act_new.triggered.connect(self.new_experiment)
-        self.act_new_experiment.triggered.connect(self.new_experiment)
+        self.act_new.triggered.connect(self.create_experiment)
+        self.act_new_experiment.triggered.connect(self.create_experiment)
         self.lst_entry.itemSelectionChanged.connect(self.experiment_changed)
+
+    """
+    General functions
+    """
+
+    def closeEvent(self, e):
+        """
+        Write the program geometry and state to settings
+        :param e: Close event
+        :type e: QCloseEvent
+        :returns: Event for the parent
+        """
+        # Write the settings
+        settings = QSettings("Samuel Drouin", "LabNote")
+        settings.setValue("MainWindow/Geometry", self.saveGeometry())
+
+        return super(MainWindow, self).closeEvent(e)
+
+    def read_settings(self):
+        """ Read the setting when program launch to restore geometry and state """
+
+        settings = QSettings("Samuel Drouin", "LabNote")
+        self.restoreGeometry(settings.value("MainWindow/Geometry", QByteArray()))
+
+    def set_no_entry_widget(self):
+        """ Show a no entry selected label when no entry or notebook are open. """
+
+        # Setting up widget elements
+        no_entry_pixmap = QPixmap(":/Icons/MainWindow/icons/main-window/no_entry_selected.png")
+        lbl_no_entry_image = QLabel()
+        lbl_no_entry_image.setAlignment(Qt.AlignCenter)
+
+        lbl_no_entry_image.setPixmap(no_entry_pixmap.scaled(16, 16, Qt.KeepAspectRatio))
+        lbl_no_entry_image.show()
+
+        lbl_no_entry = QLabel("No entry selected")
+        lbl_no_entry.setAlignment(Qt.AlignCenter)
+        stylesheet.set_style_sheet(lbl_no_entry, ":/StyleSheet/style-sheet/main-window/no_entry_label.qss")
+
+        # Setting up the layout
+        self.no_entry_widget = QWidget()
+        main_layout = QVBoxLayout(self.no_entry_widget)
+        main_layout.addWidget(lbl_no_entry_image)
+        main_layout.addWidget(lbl_no_entry)
+
+        # Add widget to mainwindow
+        self.centralWidget().layout().addWidget(self.no_entry_widget, Qt.AlignHCenter, Qt.AlignCenter)
 
     @staticmethod
     def check_files_integrity():
@@ -179,100 +229,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
             sys.exit("Unexpected error during protocol database creation")
 
-    def show_notebook_list(self, selected=None):
-        """ Show the existing notebooks in the notebook list
-
-        If the parameter selected is passed, this function can restore the last selected item.
-
-        :param selected: Text of the last selected item
-        :type selected: str
-        """
-
-        # Clear the existing list
-        self.lst_notebook.clear()
-
-        # Get the notebook list from the database
-        ret = database.get_notebook_list()
-
-        if ret.lst:
-            if len(ret.lst):
-                # Add items to the list
-                for notebook in ret.lst:
-                    item = QListWidgetItem(notebook['name'])
-                    item.setData(Qt.UserRole, notebook['uuid'])
-                    self.lst_notebook.addItem(item)
-
-                # Order the list
-                self.lst_notebook.sortItems(Qt.AscendingOrder)
-                self.lst_notebook.setCurrentRow(0)
-                self.act_new.setEnabled(True)
-                self.act_new_experiment.setEnabled(True)
-
-                # Update the current selected notebook uuid
-                self.current_nb_uuid = self.lst_notebook.currentItem().data(Qt.UserRole)
-
-                self.show_experiment_list()
-
-                # Sort item in ascending order
-                self.lst_notebook.sortItems(Qt.AscendingOrder)
-
-                # Select the last selected element
-                if selected:
-                    item = self.lst_notebook.findItems(selected, Qt.MatchExactly)
-                    self.lst_notebook.setCurrentItem(item[0])
-        elif ret.error:
-            message = QMessageBox()
-            message.setWindowTitle("LabNote")
-            message.setText("Error getting the notebook list")
-            message.setInformativeText("An error occurred while getting the notebook list. ")
-            message.setDetailedText(str(ret.error))
-            message.setIcon(QMessageBox.Warning)
-            message.setStandardButtons(QMessageBox.Ok)
-            message.exec()
-
-    def read_settings(self):
-        """ Read the setting when program launch to restore geometry and state """
-
-        settings = QSettings("Samuel Drouin", "LabNote")
-        self.restoreGeometry(settings.value("MainWindow/Geometry", QByteArray()))
-
-    def closeEvent(self, e):
-        """
-        Write the program geometry and state to settings
-        :param e: Close event
-        :type e: QCloseEvent
-        :returns: Event for the parent
-        """
-        # Write the settings
-        settings = QSettings("Samuel Drouin", "LabNote")
-        settings.setValue("MainWindow/Geometry", self.saveGeometry())
-
-        return super(MainWindow, self).closeEvent(e)
-
-    def set_no_entry_widget(self):
-        """ Show a no entry selected label when no entry or notebook are open. """
-
-        # Setting up widget elements
-        no_entry_pixmap = QPixmap(":/Icons/MainWindow/icons/main-window/no_entry_selected.png")
-        lbl_no_entry_image = QLabel()
-        lbl_no_entry_image.setAlignment(Qt.AlignCenter)
-
-        lbl_no_entry_image.setPixmap(no_entry_pixmap.scaled(16, 16, Qt.KeepAspectRatio))
-        lbl_no_entry_image.show()
-
-        lbl_no_entry = QLabel("No entry selected")
-        lbl_no_entry.setAlignment(Qt.AlignCenter)
-        stylesheet.set_style_sheet(lbl_no_entry, ":/StyleSheet/style-sheet/main-window/no_entry_label.qss")
-
-        # Setting up the layout
-        self.no_entry_widget = QWidget()
-        main_layout = QVBoxLayout(self.no_entry_widget)
-        main_layout.addWidget(lbl_no_entry_image)
-        main_layout.addWidget(lbl_no_entry)
-
-        # Add widget to mainwindow
-        self.centralWidget().layout().addWidget(self.no_entry_widget, Qt.AlignHCenter, Qt.AlignCenter)
-
+    """
+    Notebook list functions
+    """
     def open_new_notebook_dialog(self):
         """ Show a sheet dialog that create a new notebook. """
         self.new_notebook = NewNotebook()
@@ -355,6 +314,63 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             message.setText("Cannot create notebook")
             message.setInformativeText("An error occurred during the notebook directory creation.")
             message.setDetailedText(str(create_nb_directory_exception))
+            message.setIcon(QMessageBox.Warning)
+            message.setStandardButtons(QMessageBox.Ok)
+            message.exec()
+
+    def notebook_changed(self):
+        """ Update the experiment list when the notebook change """
+        self.current_nb_uuid = self.lst_notebook.currentItem().data(Qt.UserRole)
+
+        self.show_experiment_list()
+
+    def show_notebook_list(self, selected=None):
+        """ Show the existing notebooks in the notebook list
+
+        If the parameter selected is passed, this function can restore the last selected item.
+
+        :param selected: Text of the last selected item
+        :type selected: str
+        """
+
+        # Clear the existing list
+        self.lst_notebook.clear()
+
+        # Get the notebook list from the database
+        ret = database.get_notebook_list()
+
+        if ret.lst:
+            if len(ret.lst):
+                # Add items to the list
+                for notebook in ret.lst:
+                    item = QListWidgetItem(notebook['name'])
+                    item.setData(Qt.UserRole, notebook['uuid'])
+                    self.lst_notebook.addItem(item)
+
+                # Order the list
+                self.lst_notebook.sortItems(Qt.AscendingOrder)
+                self.lst_notebook.setCurrentRow(0)
+                self.act_new.setEnabled(True)
+                self.act_new_experiment.setEnabled(True)
+
+                # Update the current selected notebook uuid
+                self.current_nb_uuid = self.lst_notebook.currentItem().data(Qt.UserRole)
+
+                self.show_experiment_list()
+
+                # Sort item in ascending order
+                self.lst_notebook.sortItems(Qt.AscendingOrder)
+
+                # Select the last selected element
+                if selected:
+                    item = self.lst_notebook.findItems(selected, Qt.MatchExactly)
+                    self.lst_notebook.setCurrentItem(item[0])
+        elif ret.error:
+            message = QMessageBox()
+            message.setWindowTitle("LabNote")
+            message.setText("Error getting the notebook list")
+            message.setInformativeText("An error occurred while getting the notebook list. ")
+            message.setDetailedText(str(ret.error))
             message.setIcon(QMessageBox.Warning)
             message.setStandardButtons(QMessageBox.Ok)
             message.exec()
@@ -458,11 +474,46 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 message.setStandardButtons(QMessageBox.Ok)
                 message.exec()
 
-    def notebook_changed(self):
-        """ Update the experiment list when the notebook change """
-        self.current_nb_uuid = self.lst_notebook.currentItem().data(Qt.UserRole)
+    """
+    Experiment list functions
+    """
+    def create_experiment(self):
+        """ Create a new experiment """
+        self.create_textbox_widget()
 
+        # Create a UUID for the experiment
+        exp_uuid = uuid.uuid4()
+
+        # Create the experiment
+        experiment.create_experiment(exp_uuid,
+                                     self.current_nb_uuid,
+                                     self.textbox_widget.textedit.toHtml(),
+                                     self.textbox_widget.title_text_edit.toPlainText() or "Untitled experiment",
+                                     self.textbox_widget.objectives_text_edit.toPlainText())
         self.show_experiment_list()
+
+    def experiment_changed(self):
+        """ Load the experiment informations when an experiment is selected from the list """
+
+        # Update the current selected notebook uuid
+        self.current_exp_uuid = self.lst_entry.currentItem().data(Qt.UserRole)
+
+        self.create_textbox_widget()
+        ret = experiment.open_experiment(self.current_nb_uuid, self.current_exp_uuid)
+
+        if ret.dct:
+            self.textbox_widget.title_text_edit.setPlainText(ret.dct['name'])
+            self.textbox_widget.objectives_text_edit.setPlainText(ret.dct['objective'])
+            self.textbox_widget.textedit.setHtml(ret.dct['body'])
+        elif ret.error:
+            message = QMessageBox()
+            message.setWindowTitle("LabNote")
+            message.setText("Error getting the experiment informations")
+            message.setInformativeText("An error occurred while getting the experiment informations.")
+            message.setDetailedText(str(ret.error))
+            message.setIcon(QMessageBox.Warning)
+            message.setStandardButtons(QMessageBox.Ok)
+            message.exec()
 
     def show_experiment_list(self):
         """ Show the list of experiment for the open notebook. """
@@ -501,44 +552,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             message.setIcon(QMessageBox.Warning)
             message.setStandardButtons(QMessageBox.Ok)
             message.exec()
-
-    def experiment_changed(self):
-        """ Load the experiment informations when an experiment is selected from the list """
-
-        # Update the current selected notebook uuid
-        self.current_exp_uuid = self.lst_entry.currentItem().data(Qt.UserRole)
-
-        self.create_textbox_widget()
-        ret = experiment.open_experiment(self.current_nb_uuid, self.current_exp_uuid)
-
-        if ret.dct:
-            self.textbox_widget.title_text_edit.setPlainText(ret.dct['name'])
-            self.textbox_widget.objectives_text_edit.setPlainText(ret.dct['objective'])
-            self.textbox_widget.textedit.setHtml(ret.dct['body'])
-        elif ret.error:
-            message = QMessageBox()
-            message.setWindowTitle("LabNote")
-            message.setText("Error getting the experiment informations")
-            message.setInformativeText("An error occurred while getting the experiment informations.")
-            message.setDetailedText(str(ret.error))
-            message.setIcon(QMessageBox.Warning)
-            message.setStandardButtons(QMessageBox.Ok)
-            message.exec()
-
-    def new_experiment(self):
-        """ Create a new experiment """
-        self.create_textbox_widget()
-
-        # Create a UUID for the experiment
-        exp_uuid = uuid.uuid4()
-
-        # Create the experiment
-        experiment.create_experiment(exp_uuid,
-                                     self.current_nb_uuid,
-                                     self.textbox_widget.textedit.toHtml(),
-                                     self.textbox_widget.title_text_edit.toPlainText() or "Untitled experiment",
-                                     self.textbox_widget.objectives_text_edit.toPlainText())
-        self.show_experiment_list()
 
     def create_textbox_widget(self):
         """ Create the textbox widget when an experiment is selected for the first time """
