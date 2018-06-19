@@ -7,11 +7,23 @@ import uuid
 from labnote.utils import directory
 from labnote.core import common
 
+"""
+Database path
+"""
+
 MAIN_DATABASE_FILE_PATH = os.path.join(directory.DEFAULT_MAIN_DIRECTORY_PATH + "/labnote.db")
 PROTOCOL_DATABASE_FILE_PATH = os.path.join(directory.DEFAULT_MAIN_DIRECTORY_PATH + "/protocols.db")
 
+"""
+Database version
+"""
+
 MAIN_DATABASE_VERSION = 3
 PROTOCOL_DATABASE_VERSION = 2
+
+"""
+Database query
+"""
 
 SET_MAIN_DB_USER_VERSION = "PRAGMA user_version = '{}'".format(MAIN_DATABASE_VERSION)
 
@@ -94,158 +106,46 @@ CREATE TABLE research_field (
 
 SET_PROTOCOL_DB_USER_VERSION = "PRAGMA user_version = '{}'".format(PROTOCOL_DATABASE_VERSION)
 
-SELECT_NOTEBOOK_NAME = """
-SELECT nb_uuid, nb_name FROM notebook
+SELECT_NOTEBOOK = """
+SELECT nb_uuid, nb_name FROM notebook ORDER BY nb_name ASC
 """
 
 INSERT_NOTEBOOK = """
-INSERT INTO notebook (nb_uuid, nb_name) VALUES (?, ?)
+INSERT INTO notebook (nb_uuid, nb_name) VALUES (:nb_uuid, :nb_name)
 """
 
 INSERT_EXPERIMENT = """
-INSERT INTO experiment (exp_uuid, nb_uuid, exp_name, exp_objective) VALUES (?, ?, ?, ?)
+INSERT INTO experiment (exp_uuid, nb_uuid, exp_name, exp_objective) 
+VALUES (:exp_uuid, :nb_uuid, :exp_name, :exp_objective)
 """
 
 SELECT_NOTEBOOK_EXPERIMENT = """
-SELECT exp_uuid, exp_name, exp_objective FROM experiment WHERE nb_uuid = ?
+SELECT exp_uuid, exp_name, exp_objective FROM experiment WHERE nb_uuid = :nb_uuid
 """
 
 UPDATE_NOTEBOOK_NAME = """
-UPDATE notebook SET nb_name = ? WHERE nb_uuid = ?
+UPDATE notebook SET nb_name = :nb_name WHERE nb_uuid = :nb_uuid
 """
 
 DELETE_NOTEBOOK = """
-DELETE FROM notebook WHERE nb_uuid = ?
+DELETE FROM notebook WHERE nb_uuid = :nb_uuid
 """
 
 SELECT_EXPERIMENT = """
-SELECT exp_name, exp_objective FROM experiment WHERE exp_uuid = ?
+SELECT exp_name, exp_objective FROM experiment WHERE exp_uuid = :exp_uuid
 """
 
 UPDATE_EXPERIMENT = """
-UPDATE experiment SET exp_name = ?, exp_objective = ? WHERE  exp_uuid = ?
+UPDATE experiment SET exp_name = :exp_name, exp_objective = :exp_objective WHERE  exp_uuid = :exp_uuid
 """
 
+DELETE_EXPERIMENT = """
+DELETE FROM experiment WHERE exp_uuid = :exp_uuid
+"""
 
-def uuid_bytes(value):
-    """ Convert an UUID string to bytes
-
-    :param value: UUID string to convert to bytes
-    :type value: str or UUID
-    :return: bytes
-    """
-    if type(value) == str:
-        return uuid.UUID(value).bytes
-    else:
-        return value.bytes
-
-
-def uuid_string(value):
-    """ Convert an UUID bytes to string
-
-    :param value: UUID bytes to convert to string
-    :type value: bytes
-    :return: UUID string
-    """
-    return str(uuid.UUID(bytes=value))
-
-
-def create_notebook(nb_name, nb_uuid):
-    """ Create a new notebook
-
-    :param nb_name: Name of the notebook to create
-    :type nb_name: str
-    :param nb_uuid: UUID of the notebook to create
-    :type nb_uuid: UUID
-    :returns: An sqlite3.Error is an exception occured
-    """
-    conn = None
-
-    try:
-        conn = sqlite3.connect(MAIN_DATABASE_FILE_PATH)
-        cursor = conn.cursor()
-        cursor.execute(INSERT_NOTEBOOK, (uuid_bytes(nb_uuid), nb_name))
-        conn.commit()
-    except sqlite3.Error as exception:
-        return exception
-    finally:
-        if conn:
-            conn.close()
-
-
-def update_notebook_name(new_name, nb_uuid):
-    """ Update the name of a notebook
-
-    :param new_name: New name for the notebook
-    :type new_name: str
-    :param nb_uuid: UUID of the notebook to rename
-    :type nb_uuid: str
-    :returns: An sqlite3.Error is an exception occured
-    """
-    conn = None
-
-    try:
-        conn = sqlite3.connect(MAIN_DATABASE_FILE_PATH)
-        cursor = conn.cursor()
-        cursor.execute(UPDATE_NOTEBOOK_NAME, (new_name, uuid_bytes(nb_uuid)))
-        conn.commit()
-    except sqlite3.Error as exception:
-        return exception
-    finally:
-        if conn:
-            conn.close()
-
-
-def delete_notebook(nb_uuid):
-    """ Delete a notebook from the database
-
-    :param nb_uuid: UUID of the notebook to delete
-    :type nb_uuid: str
-    :returns: An sqlite3.Error is an exception occured
-    """
-    conn = None
-
-    try:
-        conn = sqlite3.connect(MAIN_DATABASE_FILE_PATH)
-        cursor = conn.cursor()
-        cursor.execute(DELETE_NOTEBOOK, (uuid_bytes(nb_uuid),))
-        conn.commit()
-    except sqlite3.Error as exception:
-        return exception
-    finally:
-        if conn:
-            conn.close()
-
-
-def get_notebook_list():
-    """Get a list of all existing notebooks
-
-    :return: List of dictionary of name and id of the notebooks
-    """
-    # Select notebook list from database
-    conn = None
-
-    try:
-        # Prepare the connection
-        conn = sqlite3.connect(MAIN_DATABASE_FILE_PATH)
-        cursor = conn.cursor()
-
-        cursor.execute(SELECT_NOTEBOOK_NAME)
-        buffer = cursor.fetchall()
-    except sqlite3.Error as exception:
-        return common.ReturnList(error=exception)
-    finally:
-        if conn:
-            conn.close()
-
-    # Prepare the return format
-
-    notebook_list = []
-
-    for notebook in buffer:
-        notebook_list.append({'uuid': uuid_string(notebook[0]), 'name': notebook[1]})
-
-    return common.ReturnList(lst=notebook_list)
+"""
+Database creation
+"""
 
 
 def create_main_database():
@@ -312,6 +212,115 @@ def create_protocol_db():
             conn.close()
 
 
+"""
+Value format
+"""
+
+
+def uuid_bytes(value):
+    """ Convert an UUID string to bytes
+
+    :param value: UUID string to convert to bytes
+    :type value: str or UUID
+    :return: bytes
+    """
+    if type(value) == str:
+        return uuid.UUID(value).bytes
+    else:
+        return value.bytes
+
+
+def uuid_string(value):
+    """ Convert an UUID bytes to string
+
+    :param value: UUID bytes to convert to string
+    :type value: bytes
+    :return: UUID string
+    """
+    return str(uuid.UUID(bytes=value))
+
+
+"""
+Generic query function
+"""
+
+
+def execute_query(query, **kwargs):
+    """ Execute an sqlite query to the main database that does not return anything
+
+    :param query: sqlite3 query
+    :type query: str
+    :param kwargs: query named placeholder content
+    :returns: cursor.fetchall result
+    """
+    conn = sqlite3.connect(MAIN_DATABASE_FILE_PATH)
+    cursor = conn.cursor()
+    cursor.execute(query, kwargs)
+    buffer = cursor.fetchall()
+    conn.commit()
+    conn.close()
+
+    return buffer
+
+
+"""
+Notebook table query
+"""
+
+
+def create_notebook(nb_name, nb_uuid):
+    """ Create a new notebook
+
+    :param nb_name: Name of the notebook to create
+    :type nb_name: str
+    :param nb_uuid: UUID of the notebook to create
+    :type nb_uuid: UUID
+    """
+    execute_query(INSERT_NOTEBOOK, nb_uuid=uuid_bytes(nb_uuid), nb_name=nb_name)
+
+
+def update_notebook(nb_name, nb_uuid):
+    """ Update a notebook
+
+    :param nb_name: New name for the notebook
+    :type nb_name: str
+    :param nb_uuid: UUID of the notebook to rename
+    :type nb_uuid: str
+    """
+    execute_query(UPDATE_NOTEBOOK_NAME, nb_name=nb_name, nb_uuid=uuid_bytes(nb_uuid))
+
+
+def delete_notebook(nb_uuid):
+    """ Delete a notebook from the database
+
+    :param nb_uuid: UUID of the notebook to delete
+    :type nb_uuid: str
+    """
+    execute_query(DELETE_NOTEBOOK, nb_uuid=uuid_bytes(nb_uuid))
+
+
+def get_notebook_list():
+    """Get a list of all existing notebooks
+
+    :return: [{'uuid': str, 'name' : str}]
+    """
+    # Execute the query
+    buffer = execute_query(SELECT_NOTEBOOK)
+
+    # Return the notebook list
+    notebook_list = []
+
+    for notebook in buffer:
+        notebook_list.append({'uuid': uuid_string(notebook[0]), 'name': notebook[1]})
+
+    return notebook_list
+
+
+"""
+Experiment table query
+"""
+
+
 def create_experiment(exp_name, exp_uuid, exp_obj, nb_uuid):
     """ Create a new experiment in the main database
 
@@ -323,82 +332,9 @@ def create_experiment(exp_name, exp_uuid, exp_obj, nb_uuid):
     :type exp_obj: str
     :param nb_uuid: UUID of the notebook that contains the experiment
     :type nb_uuid: str
-    :returns: An sqlite3.Error is an exception occured
     """
-    conn = None
-
-    try:
-        conn = sqlite3.connect(MAIN_DATABASE_FILE_PATH)
-        cursor = conn.cursor()
-        cursor.execute(INSERT_EXPERIMENT, (uuid_bytes(exp_uuid), uuid_bytes(nb_uuid),
-                                           exp_name, exp_obj))
-        conn.commit()
-    except sqlite3.Error as exception:
-        return exception
-    finally:
-        if conn:
-            conn.close()
-
-
-def get_experiment_list_notebook(nb_uuid):
-    """ Get the experiment list for a specific notebook
-
-    :param nb_uuid: UUID of the notebook
-    :type nb_uuid: str
-    :returns: List of dictionary of name, objective and id of the notebooks
-    """
-
-    # Select notebook list from database
-    conn = None
-
-    try:
-        # Prepare the connection
-        conn = sqlite3.connect(MAIN_DATABASE_FILE_PATH)
-        cursor = conn.cursor()
-
-        cursor.execute(SELECT_NOTEBOOK_EXPERIMENT, (uuid_bytes(nb_uuid),))
-        buffer = cursor.fetchall()
-    except sqlite3.Error as exception:
-        return common.ReturnList(error=exception)
-    finally:
-        if conn:
-            conn.close()
-
-    # Prepare the return format
-
-    experiement_list = []
-
-    for experiment in buffer:
-        experiement_list.append({'uuid': uuid_string(experiment[0]), 'name': experiment[1],
-                                 'objective': experiment[2]})
-
-    return common.ReturnList(lst=experiement_list)
-
-
-def get_experiment_informations(exp_uuid):
-    """ Get informations for an experiment
-
-    :param exp_uuid: Experiment UUID
-    :type exp_uuid: str
-    :returns: Dictionary with the name, objective of the notebook
-    """
-    conn = None
-
-    try:
-        # Select the experiment from the database
-        conn = sqlite3.connect(MAIN_DATABASE_FILE_PATH)
-        cursor = conn.cursor()
-
-        cursor.execute(SELECT_EXPERIMENT, (uuid_bytes('b31d8fb8-28b7-45ca-a780-f33e30b52f42'),))
-        buffer = cursor.fetchall()
-    except sqlite3.Error as exception:
-        return common.ReturnDict(error=exception)
-    finally:
-        if conn:
-            conn.close()
-
-    # Return experiment informations
-    return common.ReturnDict(dct={'name': buffer[0][0], 'objective': buffer[0][1]})
+    execute_query(INSERT_EXPERIMENT, exp_uuid=uuid_bytes(exp_uuid),
+                  nb_uuid=uuid_bytes(nb_uuid), exp_name=exp_name, exp_objective=exp_obj)
 
 
 def update_experiment(exp_uuid, name, objective):
@@ -410,17 +346,48 @@ def update_experiment(exp_uuid, name, objective):
     :type name: str
     :param objective: Experiment objective
     :type objective: str
-    :returns: An sqlite3.Error is an exception occured
     """
-    conn = None
+    execute_query(UPDATE_EXPERIMENT, exp_name=name, exp_objective=objective, exp_uuid=uuid_bytes(exp_uuid))
 
-    try:
-        conn = sqlite3.connect(MAIN_DATABASE_FILE_PATH)
-        cursor = conn.cursor()
-        cursor.execute(UPDATE_EXPERIMENT, (name, objective, uuid_bytes(exp_uuid)))
-        conn.commit()
-    except sqlite3.Error as exception:
-        return exception
-    finally:
-        if conn:
-            conn.close()
+
+def delete_experiment(exp_uuid):
+    """ Delete an experiment from the database
+
+    :param exp_uuid: UUID of the notebook to delete
+    :type exp_uuid: str
+    """
+    execute_query(DELETE_EXPERIMENT, exp_uuid=uuid_bytes(exp_uuid))
+
+
+def get_experiment_list_notebook(nb_uuid):
+    """ Get the experiment list for a specific notebook
+
+    :param nb_uuid: UUID of the notebook
+    :type nb_uuid: str
+    :return: [{'uuid': str, 'name' : str, 'objective': str}]
+    """
+    # Execute the query
+    buffer = execute_query(SELECT_NOTEBOOK_EXPERIMENT, nb_uuid=uuid_bytes(nb_uuid))
+
+    # Return the experiment list
+    experiement_list = []
+
+    for experiment in buffer:
+        experiement_list.append({'uuid': uuid_string(experiment[0]), 'name': experiment[1],
+                                 'objective': experiment[2]})
+
+    return experiement_list
+
+
+def get_experiment_informations(exp_uuid):
+    """ Get informations for an experiment
+
+    :param exp_uuid: Experiment UUID
+    :type exp_uuid: str
+    :return: {'uuid': str, 'name' : str, 'objective': str}
+    """
+    # Execute query
+    buffer = execute_query(SELECT_EXPERIMENT, exp_uuid=uuid_bytes(exp_uuid))
+
+    # Return experiment informations
+    return {'name': buffer[0][0], 'objective': buffer[0][1]}
