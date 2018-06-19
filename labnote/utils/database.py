@@ -5,7 +5,7 @@ import uuid
 
 # Project import
 from labnote.utils import directory
-from labnote.core import common
+from labnote.utils.conversion import uuid_bytes, uuid_string
 
 """
 Database path
@@ -151,93 +151,39 @@ Database creation
 def create_main_database():
     """ Create the labnote database """
 
-    conn = None
+    conn = sqlite3.connect(MAIN_DATABASE_FILE_PATH)
+    conn.isolation_level = None
+    cursor = conn.cursor()
 
-    try:
-        conn = sqlite3.connect(MAIN_DATABASE_FILE_PATH)
-        conn.isolation_level = None
-        cursor = conn.cursor()
-
-        cursor.execute("BEGIN")
-        cursor.execute(SET_MAIN_DB_USER_VERSION)
-        cursor.execute(CREATE_NOTEBOOK_TABLE)
-        cursor.execute(CREATE_EXPERIMENT_TABLE)
-        cursor.execute(CREATE_DATASET_TABLE)
-        cursor.execute(CREATE_PROTOCOL_TABLE)
-        cursor.execute(CREATE_EXPERIMENT_DATASET_TABLE)
-        cursor.execute(CREATE_EXPERIMENT_DATASET_INDEX)
-        cursor.execute(CREATE_EXPERIMENT_PROTOCOL_TABLE)
-        cursor.execute(CREATE_EXPERIMENT_PROTOCOL_INDEX)
-        cursor.execute("COMMIT")
-    except sqlite3.Error as exception:
-        # Try to cleanup the main directory
-        try:
-            directory.cleanup_main_directory()
-        except:
-            pass  # No need to raise any exception as an error message is already shown to the user
-
-        return exception
-    finally:
-        if conn:
-            conn.close()
+    cursor.execute("BEGIN")
+    cursor.execute(SET_MAIN_DB_USER_VERSION)
+    cursor.execute(CREATE_NOTEBOOK_TABLE)
+    cursor.execute(CREATE_EXPERIMENT_TABLE)
+    cursor.execute(CREATE_DATASET_TABLE)
+    cursor.execute(CREATE_PROTOCOL_TABLE)
+    cursor.execute(CREATE_EXPERIMENT_DATASET_TABLE)
+    cursor.execute(CREATE_EXPERIMENT_DATASET_INDEX)
+    cursor.execute(CREATE_EXPERIMENT_PROTOCOL_TABLE)
+    cursor.execute(CREATE_EXPERIMENT_PROTOCOL_INDEX)
+    cursor.execute("COMMIT")
+    conn.close()
 
 
 def create_protocol_db():
     """ Create the protocole database """
 
-    conn = None
+    conn = sqlite3.connect(PROTOCOL_DATABASE_FILE_PATH)
+    conn.isolation_level = None
 
-    try:
-        conn = sqlite3.connect(PROTOCOL_DATABASE_FILE_PATH)
-        conn.isolation_level = None
+    cursor = conn.cursor()
 
-        cursor = conn.cursor()
-
-        cursor.execute("BEGIN")
-        cursor.execute(SET_PROTOCOL_DB_USER_VERSION)
-        cursor.execute(CREATE_PROTOCOL_DB_RESEACH_FIELD_TABLE)
-        cursor.execute(CREATE_PROTOCOL_DB_PROTOCOL_TABLE)
-        cursor.execute(CREATE_PROTOCOL_DB_UPDATE_DATE_TRIGGER)
-        cursor.execute("COMMIT")
-    except sqlite3.Error as exception:
-        # Try to cleanup the main directory
-        try:
-            directory.cleanup_main_directory()
-        except:
-            pass  # No need to raise any exception as an error message is already shown to the user
-
-        return exception
-    finally:
-        if conn:
-            conn.close()
-
-
-"""
-Value format
-"""
-
-
-def uuid_bytes(value):
-    """ Convert an UUID string to bytes
-
-    :param value: UUID string to convert to bytes
-    :type value: str or UUID
-    :return: bytes
-    """
-    if type(value) == str:
-        return uuid.UUID(value).bytes
-    else:
-        return value.bytes
-
-
-def uuid_string(value):
-    """ Convert an UUID bytes to string
-
-    :param value: UUID bytes to convert to string
-    :type value: bytes
-    :return: UUID string
-    """
-    return str(uuid.UUID(bytes=value))
+    cursor.execute("BEGIN")
+    cursor.execute(SET_PROTOCOL_DB_USER_VERSION)
+    cursor.execute(CREATE_PROTOCOL_DB_RESEACH_FIELD_TABLE)
+    cursor.execute(CREATE_PROTOCOL_DB_PROTOCOL_TABLE)
+    cursor.execute(CREATE_PROTOCOL_DB_UPDATE_DATE_TRIGGER)
+    cursor.execute("COMMIT")
+    conn.close()
 
 
 """
