@@ -8,59 +8,6 @@ from labnote.utils import directory, database
 from labnote.core import common
 
 
-def create_experiment(exp_uuid, nb_uuid, body, name, objective):
-    """ Create a new experiment
-
-    This function is responsible of adding the experiment to the database and to create all the required
-    directories
-
-    :param exp_uuid: Experiment uuid
-    :type exp_uuid: UUID
-    :param nb_uuid: Notebook uuid
-    :type nb_uuid: UUID
-    :param body: Experiment body HTML
-    :type body: str
-    :param name: Experiment name
-    :type name: str
-    :param objective: Experiment objective
-    :type objective: str
-    :returns: Exception if an exception occurs
-    """
-    create_experiment_exception = directory.create_exp_directory(exp_uuid, nb_uuid)
-    if not create_experiment_exception:
-        create_experiment_database_exception = database.create_experiment(name, exp_uuid, objective, nb_uuid)
-        if not create_experiment_database_exception:
-            write_experiment_exception = write_experiment(exp_uuid, nb_uuid, encode_experiment(body))
-            if not write_experiment_exception:
-                return None
-            else:
-                return write_experiment_exception
-        else:
-            return create_experiment_database_exception
-    else:
-        return create_experiment_exception
-
-
-def encode_experiment(html):
-    """ Encode experiment data to binary
-
-    :param html: HTLM string to encode to binary
-    :type html: str
-    :returns: Encoded HTML string
-    """
-    return html.encode()
-
-
-def decode_experiment(html):
-    """ Decole experiment data to string
-
-    :param html: HTLM binary to decode
-    :type html: bytes
-    :returns: HTML string
-    """
-    return html.decode()
-
-
 def write_experiment(exp_uuid, nb_uuid, data):
     """ Create a notebook with data
 
@@ -69,17 +16,23 @@ def write_experiment(exp_uuid, nb_uuid, data):
     :param nb_uuid: Notebook uuid
     :type nb_uuid: UUID
     :param data: Notebook data
-    :type data: bytes
+    :type data: str
     """
+
+    # Prepare the experiment path
     notebook_path = os.path.join(directory.NOTEBOOK_DIRECTORY_PATH + "/{}".format(nb_uuid))
     experiment_path = os.path.join(notebook_path + "/{}".format(exp_uuid))
     experiment_file_path = os.path.join(experiment_path + "/{}".format(exp_uuid))
 
     experiment_file = None
 
+    # Encode data
+    encoded_data = encode_experiment(data)
+
+    # Write the experiment to the disk
     try:
         experiment_file = open(experiment_file_path, "wb")
-        experiment_file.write(data)
+        experiment_file.write(encoded_data)
     except OSError as exception:
         return exception
     except IOError as exception:

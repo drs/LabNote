@@ -30,3 +30,28 @@ def uuid_string(value):
     :return: UUID string
     """
     return str(uuid.UUID(bytes=value))
+
+
+"""
+Encoding
+"""
+
+
+def encode_experiment(html):
+    """ Encode experiment data to binary
+
+    :param html: HTLM string to encode to binary
+    :type html: str
+    :returns: Encoded HTML string
+    """
+    return html.encode()
+
+
+def decode_experiment(html):
+    """ Decole experiment data to string
+
+    :param html: HTLM binary to decode
+    :type html: bytes
+    :returns: HTML string
+    """
+    return html.decode()
