@@ -8,7 +8,7 @@ import uuid
 import unittest.mock
 
 # Project import
-from labnote.utils import directory, database, conversion
+from labnote.utils import directory, database, conversion, fsentry
 
 
 class TestDatabaseCreation(unittest.TestCase):
@@ -16,7 +16,7 @@ class TestDatabaseCreation(unittest.TestCase):
         directory.create_default_main_directory()
 
     def tearDown(self):
-        directory.cleanup_main_directory()
+        fsentry.cleanup_main_directory()
 
     def test_main_database_creation(self):
         database.create_main_database()
@@ -56,7 +56,7 @@ class TestDatabaseInsert(unittest.TestCase):
         database.create_protocol_db()
 
     def tearDown(self):
-        directory.cleanup_main_directory()
+        fsentry.cleanup_main_directory()
 
     def test_notebook_creation(self):
         database.create_notebook(self.nb_name, self.nb_uuid)
@@ -113,7 +113,7 @@ class TestDatabaseSelectUpdateDelete(unittest.TestCase):
         database.create_experiment(self.exp_name, self.exp_uuid, self.exp_obj, str(self.nb_uuid))
 
     def tearDown(self):
-        directory.cleanup_main_directory()
+        fsentry.cleanup_main_directory()
 
     def test_notebook_select(self):
         result = database.get_notebook_list()
