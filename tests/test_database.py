@@ -1,3 +1,5 @@
+""" This module checks the database queries """
+
 # Python import
 import unittest
 import os
@@ -5,12 +7,8 @@ import sqlite3
 import uuid
 import unittest.mock
 
-from PyQt5.QtWidgets import QApplication
-
 # Project import
 from labnote.utils import directory, database, conversion
-
-app = QApplication([])
 
 
 class TestDatabaseCreation(unittest.TestCase):

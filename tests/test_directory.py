@@ -1,17 +1,14 @@
+""" This module checks the directory management """
+
 # Python import
 import unittest
 import os
 import uuid
 import shutil
 import unittest.mock
-import errno
-
-from PyQt5.QtWidgets import QApplication
 
 # Project import
 from labnote.utils import directory
-
-app = QApplication([])
 
 
 class TestMainDirectoryCreation(unittest.TestCase):
