@@ -6,11 +6,6 @@ DEFAULT_MAIN_DIRECTORY_PATH = os.path.expanduser("~/Documents/LabNote")
 NOTEBOOK_DIRECTORY_PATH = os.path.join(DEFAULT_MAIN_DIRECTORY_PATH + "/notebook")
 
 
-def cleanup_main_directory():
-    """ Delete the main directory """
-    shutil.rmtree(DEFAULT_MAIN_DIRECTORY_PATH, ignore_errors=True)
-
-
 def create_default_main_directory():
     """ Create the main directory at it's default location """
 
