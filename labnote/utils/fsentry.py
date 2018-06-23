@@ -4,9 +4,16 @@ for every kind of entry. """
 # Python import
 import shutil
 import uuid
+import os
 
 # Projet import
 from labnote.utils import database, directory
+
+
+def check_integrity():
+    """ Create the main directory if it does not exist """
+    if not os.path.isdir(directory.DEFAULT_MAIN_DIRECTORY_PATH):
+        create_main_directory()
 
 
 def create_main_directory():
