@@ -5,8 +5,7 @@ This module contain the classes responsible for launching and managing the LabNo
 # Python import
 import uuid
 import sys
-import threading
-from threading import Thread
+import sqlite3
 
 # PyQt import
 from PyQt5.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QMessageBox, QLabel, QListWidgetItem, QLineEdit, QAction, \
@@ -16,8 +15,8 @@ from PyQt5.QtCore import Qt, QSettings, QByteArray, QTimer
 
 # Project import
 from labnote.ui.ui_mainwindow import Ui_MainWindow
-from labnote.core import stylesheet, sqlite_error, list_widget
-from labnote.utils import integrity, database, directory, experiment
+from labnote.core import stylesheet, list_widget
+from labnote.utils import database, directory, experiment, fsentry
 from labnote.interface import textbox
 from labnote.interface.new_notebook import NewNotebook
 from labnote.resources import resources
@@ -180,54 +179,22 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # Add widget to mainwindow
         self.centralWidget().layout().addWidget(self.no_entry_widget, Qt.AlignHCenter, Qt.AlignCenter)
 
-    @staticmethod
-    def check_files_integrity():
-        """ Check the program files integrity """
-        exception = integrity.check_folder_integrity()
-
-        # Main directory creation exception
-        if exception[0] == integrity.MAIN_DIRECTORY_CREATION_EXCEPTION:
+    def check_integrity(self):
+        """ Check if the main directory and database exist """
+        try:
+            fsentry.check_integrity()
+        except (sqlite3.Error, OSError) as exception:
             message = QMessageBox()
             message.setWindowTitle("LabNote")
-            message.setText("Unexpected error during file structure creation")
-            message.setInformativeText("An unexpected error occured during the creation of the file structure "
-                                       "required to save the user information. "
-                                       "The program will now close. Please delete any LabNote directory in Documents "
-                                       "as it might interfere with a new program installation. "
+            message.setText("Unexpected error occured")
+            message.setInformativeText("An unexpected error occurred while checking the main directory integrity "
                                        "The program will now close.")
-            message.setDetailedText(str(exception[1]))
+            message.setDetailedText(str(exception))
             message.setIcon(QMessageBox.Critical)
             message.setStandardButtons(QMessageBox.Ok)
             message.exec()
 
-            sys.exit("Unexpected error during main directory creation")
-
-        # Main database creation exception
-        elif exception[0] == integrity.MAIN_DATABASE_CREATION_EXCEPTION:
-            message = QMessageBox()
-            message.setWindowTitle("LabNote")
-            message.setText("Unexpected error during main database creation")
-            message.setInformativeText("An unexpected error occurred during the creation of the main database. "
-                                       "The program will now close.")
-            message.setDetailedText(str(exception[1]))
-            message.setIcon(QMessageBox.Critical)
-            message.setStandardButtons(QMessageBox.Ok)
-            message.exec()
-
-            sys.exit("Unexpected error during main database creation")
-
-        elif exception[0] == integrity.PROTOCOLS_DATABASE_CREATION_EXCEPTION:
-            message = QMessageBox()
-            message.setWindowTitle("LabNote")
-            message.setText("Unexpected error during protocol database creation")
-            message.setInformativeText("An unexpected error occurred during the creation of the protocols database. "
-                                       "The program will now close.")
-            message.setDetailedText(str(exception[1]))
-            message.setIcon(QMessageBox.Critical)
-            message.setStandardButtons(QMessageBox.Ok)
-            message.exec()
-
-            sys.exit("Unexpected error during protocol database creation")
+            sys.exit("Unexpected error while checking the main directory integrity")
 
     """
     Notebook list functions
@@ -242,81 +209,26 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def create_notebook(self):
         """ Add a newly created notebook name to the notebook list. """
-        # Ask for the notebook name
+        # Get the notebook name
         nb_name = self.new_notebook.notebook_name
 
-        # Create UUID
-        nb_uuid = uuid.uuid4()
-
-        # Create a directory for the new notebook
-        create_nb_directory_exception = directory.create_nb_directory(nb_uuid)
-
-        if not create_nb_directory_exception:
-            # Add the new notebook to the database
-            create_notebook_exception = database.create_notebook(nb_name, nb_uuid)
-
-            if not create_notebook_exception:
-                # Add the notebook to the notebook list
-                self.show_notebook_list()
-
-                # Select the newly inserted item
-                items = self.lst_notebook.findItems(nb_name, Qt.MatchExactly)
-                self.lst_notebook.setCurrentItem(items[0])
-            # Handle exception thrown during the notebook is added to the database
-            else:
-                # Delete the newly created notebook directory
-                delete_nb_directory_exception = directory.delete_nb_directory(nb_uuid)
-
-                # Show a messagebox that an error happened while the notebook was added to the database
-                # and during the notebook directory deletion
-                if delete_nb_directory_exception:
-                    message = QMessageBox()
-                    message.setWindowTitle("LabNote")
-                    message.setText("Cannot create notebook")
-                    message.setInformativeText(
-                        "An error occurred during the notebook directory creation in the database and the associated"
-                        "files could not be deleted. The notebook with UUID {} should be deleted "
-                        "manually.".format(nb_uuid))
-                    message.setDetailedText("Database exception : \n" + str(create_notebook_exception) + "\n" +
-                                            "Directory deletion : \n" + str(delete_nb_directory_exception))
-                    message.setIcon(QMessageBox.Warning)
-                    message.setStandardButtons(QMessageBox.Ok)
-                    message.exec()
-                # Show a messagebox that an error happened while the notebook was added to the database
-                else:
-                    error_code = sqlite_error.sqlite_err_handler(str(create_notebook_exception))
-
-                    # Show a messagebox
-                    # Show a unique contraint error
-                    if error_code == sqlite_error.UNIQUE_CODE:
-                        message = QMessageBox()
-                        message.setWindowTitle("LabNote")
-                        message.setText("Cannot create notebook")
-                        message.setInformativeText("Another notebook with the same name already exist in the database. "
-                                                   "Please choose another name.")
-                        message.setIcon(QMessageBox.Warning)
-                        message.setStandardButtons(QMessageBox.Ok)
-                        message.exec()
-                    else:
-                        # Show the generic messagebox for unhandled errors
-                        message = QMessageBox()
-                        message.setWindowTitle("LabNote")
-                        message.setText("Cannot create notebook")
-                        message.setInformativeText("An error occurred during the notebook creation in the database.")
-                        message.setDetailedText(str(create_notebook_exception))
-                        message.setIcon(QMessageBox.Warning)
-                        message.setStandardButtons(QMessageBox.Ok)
-                        message.exec()
-        # Show a messagebox if an error happen during the notebook directory creation
-        else:
-            message = QMessageBox()
+        try:
+            fsentry.create_notebook(nb_name)
+        except (sqlite3.Error, OSError) as exception:
+            message = QMessageBox(QMessageBox.Warning, "Cannot create notebook",
+                                  "An error occurred during the notebook creation.", QMessageBox.Ok)
             message.setWindowTitle("LabNote")
-            message.setText("Cannot create notebook")
-            message.setInformativeText("An error occurred during the notebook directory creation.")
-            message.setDetailedText(str(create_nb_directory_exception))
-            message.setIcon(QMessageBox.Warning)
-            message.setStandardButtons(QMessageBox.Ok)
+            message.setDetailedText(str(exception))
             message.exec()
+
+            return
+
+        # Add the notebook to the notebook list
+        self.show_notebook_list()
+
+        # Select the newly inserted item
+        items = self.lst_notebook.findItems(nb_name, Qt.MatchExactly)
+        self.lst_notebook.setCurrentItem(items[0])
 
     def notebook_changed(self):
         """ Update the experiment list when the notebook change """
@@ -484,13 +396,33 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # Create a UUID for the experiment
         exp_uuid = uuid.uuid4()
 
-        # Create the experiment
-        experiment.create_experiment(exp_uuid,
-                                     self.current_nb_uuid,
-                                     self.textbox_widget.textedit.toHtml(),
-                                     self.textbox_widget.title_text_edit.toPlainText() or "Untitled experiment",
-                                     self.textbox_widget.objectives_text_edit.toPlainText())
-        self.show_experiment_list()
+        # Create a directory for the new experiment
+        create_experiment_directory_exception = directory.create_exp_directory(exp_uuid, self.current_nb_uuid)
+
+        if not create_experiment_directory_exception:
+            # Add the new experiment in the database
+            create_experiment_database_exception = database.create_experiment(self.current_exp_name,
+                                                                              exp_uuid,
+                                                                              self.current_exp_objective,
+                                                                              self.current_nb_uuid)
+
+            if not create_experiment_database_exception:
+                write_experiment_exception = experiment.write_experiment(exp_uuid,
+                                                                         self.current_nb_uuid,
+                                                                         self.current_exp_body)
+                if not write_experiment_exception:
+                    # Add the experiment to the experiment list
+                    self.show_experiment_list()
+        # Show a messagebox if an error happen during the experiment directory creation
+        else:
+            message = QMessageBox()
+            message.setWindowTitle("LabNote")
+            message.setText("Cannot create notebook")
+            message.setInformativeText("An error occurred during the experiment directory creation.")
+            message.setDetailedText(str(create_experiment_directory_exception))
+            message.setIcon(QMessageBox.Warning)
+            message.setStandardButtons(QMessageBox.Ok)
+            message.exec()
 
     def experiment_changed(self):
         """ Load the experiment informations when an experiment is selected from the list """
@@ -590,13 +522,25 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def title_changed(self):
         """ Update the current title """
+
+        # Set the current experiment name
         self.current_exp_name = self.textbox_widget.title_text_edit.toPlainText()
         self.name_updated = True
 
+        # Update the current item title in the experiment list
+        widget = self.lst_entry.itemWidget(self.lst_entry.currentItem())
+        widget.set_title(self.current_exp_name)
+
     def objective_changed(self):
         """ Update the current objective """
+
+        # Set the current experiment objective
         self.current_exp_objective = self.textbox_widget.objectives_text_edit.toPlainText()
         self.objective_updated = True
+
+        # Update the current item objective in the experiment list
+        widget = self.lst_entry.itemWidget(self.lst_entry.currentItem())
+        widget.set_subtitle(self.current_exp_objective)
 
     def body_changed(self):
         """ Update the current body """
