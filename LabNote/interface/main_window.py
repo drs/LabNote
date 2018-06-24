@@ -261,31 +261,30 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             message.exec()
 
         if lst:
-            if len(lst):
-                # Add items to the list
-                for notebook in lst:
-                    item = QListWidgetItem(notebook['name'])
-                    item.setData(Qt.UserRole, notebook['uuid'])
-                    self.lst_notebook.addItem(item)
+            # Add items to the list
+            for notebook in lst:
+                item = QListWidgetItem(notebook['name'])
+                item.setData(Qt.UserRole, notebook['uuid'])
+                self.lst_notebook.addItem(item)
 
-                # Order the list
-                self.lst_notebook.sortItems(Qt.AscendingOrder)
-                self.lst_notebook.setCurrentRow(0)
-                self.act_new.setEnabled(True)
-                self.act_new_experiment.setEnabled(True)
+            # Order the list
+            self.lst_notebook.sortItems(Qt.AscendingOrder)
+            self.lst_notebook.setCurrentRow(0)
+            self.act_new.setEnabled(True)
+            self.act_new_experiment.setEnabled(True)
 
-                # Update the current selected notebook uuid
-                self.current_nb_uuid = self.lst_notebook.currentItem().data(Qt.UserRole)
+            # Update the current selected notebook uuid
+            self.current_nb_uuid = self.lst_notebook.currentItem().data(Qt.UserRole)
 
-                self.show_experiment_list()
+            self.show_experiment_list()
 
-                # Sort item in ascending order
-                self.lst_notebook.sortItems(Qt.AscendingOrder)
+            # Sort item in ascending order
+            self.lst_notebook.sortItems(Qt.AscendingOrder)
 
-                # Select the last selected element
-                if selected:
-                    item = self.lst_notebook.findItems(selected, Qt.MatchExactly)
-                    self.lst_notebook.setCurrentItem(item[0])
+            # Select the last selected element
+            if selected:
+                item = self.lst_notebook.findItems(selected, Qt.MatchExactly)
+                self.lst_notebook.setCurrentItem(item[0])
 
     def start_rename_notebook(self):
         """ Make a notebook item editable to allow renaming """
@@ -317,9 +316,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         item.setFlags(item.flags() ^ Qt.ItemIsEditable)
 
         # Update notebook name in the database
-        exception = database.update_notebook_name(item.text(), item.data(Qt.UserRole))
-
-        if exception:
+        try:
+            database.update_notebook(item.text(), item.data(Qt.UserRole))
+        except sqlite3.Error as exception:
             message = QMessageBox()
             message.setWindowTitle("LabNote")
             message.setText("Cannot rename notebook")
@@ -329,6 +328,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             message.setIcon(QMessageBox.Warning)
             message.setStandardButtons(QMessageBox.Ok)
             message.exec()
+
+            return
 
         # Show the notebook list with the updated name
         self.show_notebook_list(selected=item.text())
@@ -355,36 +356,33 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         confirmation_messagebox.setIcon(QMessageBox.Question)
         confirmation_message = confirmation_messagebox.exec()
 
+        # Delete the notebook from the database
         if confirmation_message == QMessageBox.Ok:
-            # Delete the notebook from the database
-            delete_notebook_database_exception = database.delete_notebook(nb_uuid)
-
-            if not delete_notebook_database_exception:
-                # Delete the notebook files
-                delete_notebook_exception = directory.delete_nb_directory(nb_uuid)
-
-                if not delete_notebook_exception:
-                    # Add the notebook to the notebook list
-                    self.show_notebook_list()
-                else:
-                    message = QMessageBox()
-                    message.setWindowTitle("LabNote")
-                    message.setText("Cannot delete notebook")
-                    message.setInformativeText("An error occurred while deleting the notebook directory.")
-                    message.setDetailedText(str(delete_notebook_exception))
-                    message.setIcon(QMessageBox.Warning)
-                    message.setStandardButtons(QMessageBox.Ok)
-                    message.exec()
-            else:
+            try:
+                database.delete_notebook(nb_uuid)
+                directory.delete_nb_directory(nb_uuid)
+            except sqlite3.Error as exception:
                 message = QMessageBox()
                 message.setWindowTitle("LabNote")
                 message.setText("Cannot delete notebook")
                 message.setInformativeText("An error occurred while deleting the notebook in the database. The notebook"
                                            "was not deleted.")
-                message.setDetailedText(str(delete_notebook_database_exception))
+                message.setDetailedText(str(exception))
                 message.setIcon(QMessageBox.Warning)
                 message.setStandardButtons(QMessageBox.Ok)
                 message.exec()
+            except OSError as exception:
+                message = QMessageBox()
+                message.setWindowTitle("LabNote")
+                message.setText("Cannot delete notebook")
+                message.setInformativeText("An error occurred while deleting the notebook {} directory."
+                                           .format(nb_uuid))
+                message.setDetailedText(str(exception))
+                message.setIcon(QMessageBox.Warning)
+                message.setStandardButtons(QMessageBox.Ok)
+                message.exec()
+
+        self.show_notebook_list()
 
     """
     Experiment list functions
