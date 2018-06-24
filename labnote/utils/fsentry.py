@@ -20,7 +20,6 @@ def create_main_directory():
     """ Create the main directory """
     directory.create_default_main_directory()
     database.create_main_database()
-    database.create_protocol_db()
 
 
 def cleanup_main_directory():

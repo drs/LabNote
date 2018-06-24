@@ -63,3 +63,26 @@ class TestFSEntry(unittest.TestCase):
             with self.assertRaises(sqlite3.Error):
                 fsentry.create_notebook(self.nb_name)
 
+    def test_integrity_check(self):
+        fsentry.cleanup_main_directory()
+
+        fsentry.check_integrity()
+        self.assertTrue(os.path.isdir(directory.DEFAULT_MAIN_DIRECTORY_PATH))
+
+    def test_integrity_sqlite_error(self):
+        fsentry.cleanup_main_directory()
+
+        with unittest.mock.patch("labnote.utils.database.sqlite3.connect",
+                                 unittest.mock.MagicMock(side_effect=sqlite3.Error)):
+            with self.assertRaises(sqlite3.Error):
+                fsentry.check_integrity()
+
+    def test_integrity_oserror(self):
+        fsentry.cleanup_main_directory()
+
+        with unittest.mock.patch('os.mkdir') as mock_rmtree:
+            mock_rmtree.side_effect = OSError
+
+            with self.assertRaises(OSError):
+                fsentry.check_integrity()
+

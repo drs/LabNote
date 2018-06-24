@@ -43,6 +43,15 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.setupUi(self)
         self.init_ui()
 
+        # Read program settings
+        self.read_settings()
+
+        # Check files integrity
+        self.check_integrity()
+
+        # Show existing notebook list
+        self.show_notebook_list()
+
     def init_ui(self):
         """ Initialize all the GUI elements """
         # Set style sheet
@@ -112,18 +121,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         # Set no entry widget as default widget
         self.set_no_entry_widget()
-
-        # Read program settings
-        self.read_settings()
-
-        # Check files integrity
-        self.check_files_integrity()
-
-        # Show existing notebook list
-        self.show_notebook_list()
-
-        # Create the autosave timer
-        self.autosave_timer = QTimer()
 
         # Slots connection
         self.btn_add_notebook.clicked.connect(self.open_new_notebook_dialog)
@@ -248,13 +245,25 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # Clear the existing list
         self.lst_notebook.clear()
 
-        # Get the notebook list from the database
-        ret = database.get_notebook_list()
+        lst = None
 
-        if ret.lst:
-            if len(ret.lst):
+        # Get the notebook list from the database
+        try:
+            lst = database.get_notebook_list()
+        except sqlite3.Error as exception:
+            message = QMessageBox()
+            message.setWindowTitle("LabNote")
+            message.setText("Error getting the notebook list")
+            message.setInformativeText("An error occurred while getting the notebook list. ")
+            message.setDetailedText(str(exception))
+            message.setIcon(QMessageBox.Warning)
+            message.setStandardButtons(QMessageBox.Ok)
+            message.exec()
+
+        if lst:
+            if len(lst):
                 # Add items to the list
-                for notebook in ret.lst:
+                for notebook in lst:
                     item = QListWidgetItem(notebook['name'])
                     item.setData(Qt.UserRole, notebook['uuid'])
                     self.lst_notebook.addItem(item)
@@ -277,15 +286,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 if selected:
                     item = self.lst_notebook.findItems(selected, Qt.MatchExactly)
                     self.lst_notebook.setCurrentItem(item[0])
-        elif ret.error:
-            message = QMessageBox()
-            message.setWindowTitle("LabNote")
-            message.setText("Error getting the notebook list")
-            message.setInformativeText("An error occurred while getting the notebook list. ")
-            message.setDetailedText(str(ret.error))
-            message.setIcon(QMessageBox.Warning)
-            message.setStandardButtons(QMessageBox.Ok)
-            message.exec()
 
     def start_rename_notebook(self):
         """ Make a notebook item editable to allow renaming """
