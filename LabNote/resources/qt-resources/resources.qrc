@@ -10,12 +10,13 @@
         <file>icons/main-window/search.png</file>
         <file>icons/main-window/settings.png</file>
         <file>icons/main-window/settings_pressed.png</file>
+        <file>icons/main-window/project.png</file>
     </qresource>
     <qresource prefix="/StyleSheet">
         <file>style-sheet/main_window.qss</file>
         <file>style-sheet/main-window/no_entry_label.qss</file>
-        <file>style-sheet/application.qss</file>
         <file>style-sheet/textbox.qss</file>
+        <file>style-sheet/project.qss</file>
     </qresource>
     <qresource prefix="/Icons/NewNotebook">
         <file>icons/new-notebook/1xnotebook.png</file>

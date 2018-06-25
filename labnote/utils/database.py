@@ -246,6 +246,30 @@ DELETE_EXPERIMENT = """
 DELETE FROM experiment WHERE exp_uuid = :exp_uuid
 """
 
+SELECT_PROJECT = """
+SELECT proj_id, name, description FROM project ORDER BY name ASC
+"""
+
+SELECT_PROJECT_SEARCH = """
+SELECT proj_id, name, description FROM project WHERE name LIKE :name ORDER BY name ASC
+"""
+
+INSERT_PROJECT = """
+INSERT INTO project (name, description) VALUES (:name, :description)
+"""
+
+UPDATE_PROJECT = """
+UPDATE project SET name = :name, description = :description WHERE proj_id = :proj_id
+"""
+
+DELETE_PROJECT = """
+DELETE FROM project WHERE proj_id = :proj_id
+"""
+
+LAST_INSERT_ROWID = """
+SELECT last_insert_rowid()
+"""
+
 """
 Database creation
 """
@@ -287,12 +311,12 @@ Generic query function
 
 
 def execute_query(query, **kwargs):
-    """ Execute an sqlite query to the main database that does not return anything
+    """ Execute an sqlite query to the main database
 
     :param query: sqlite3 query
     :type query: str
     :param kwargs: query named placeholder content
-    :returns: cursor.fetchall result
+    :return: cursor.fetchall result
     """
     conn = sqlite3.connect(MAIN_DATABASE_FILE_PATH)
     cursor = conn.cursor()
@@ -303,6 +327,28 @@ def execute_query(query, **kwargs):
 
     return buffer
 
+
+def execute_query_last_insert_rowid(query, **kwargs):
+    """ Execute an sqlite query to the main database and return the last inserted rowid
+
+    :param query: sqlite3 query
+    :type query: str
+    :param kwargs: query named placeholder content
+    :returns: LAST_INSERT_ROWID() result
+    """
+
+    conn = sqlite3.connect(MAIN_DATABASE_FILE_PATH)
+    conn.isolation_level = None
+    cursor = conn.cursor()
+
+    cursor.execute("BEGIN")
+    cursor.execute(query, kwargs)
+    cursor.execute(LAST_INSERT_ROWID)
+    buffer = cursor.fetchall()[0][0]
+    cursor.execute("COMMIT")
+    conn.close()
+
+    return buffer
 
 """
 Notebook table query
@@ -432,3 +478,66 @@ def get_experiment_informations(exp_uuid):
 
     # Return experiment informations
     return {'name': buffer[0][0], 'objective': buffer[0][1]}
+
+
+"""
+Project table query
+"""
+
+
+def select_project_list(search=None):
+    """ Get a list of all existing project
+
+    :param search: Search string
+    :type search: str
+    :return: [{'id': int, 'name': str, 'description': str}]
+    """
+
+    # Execute the query
+    if search:
+        buffer = execute_query(SELECT_PROJECT_SEARCH, name='{}%'.format(search))
+    else:
+        buffer = execute_query(SELECT_PROJECT)
+
+    # Return the notebook list
+    project_list = []
+
+    for project in buffer:
+        project_list.append({'id': project[0], 'name': project[1], 'description': project[2]})
+
+    return project_list
+
+
+def create_project(name, description):
+    """ Create a new project
+
+    :param name: Project name
+    :type name: str
+    :param description: Project description
+    :type description: str
+    :return: ID of the inserted row
+    """
+    return execute_query_last_insert_rowid(INSERT_PROJECT, name=name, description=description)
+
+
+def update_project(proj_id, name, description):
+    """ Update project information for the specified ID
+
+    :param proj_id: ID of the project to update
+    :type proj_id: int
+    :param name: New project name
+    :type name: str
+    :param description: New project description
+    :type description: str
+    :return: ID of the inserted row
+    """
+    return execute_query_last_insert_rowid(UPDATE_PROJECT, proj_id=proj_id, name=name, description=description)
+
+
+def delete_project(proj_id):
+    """ Delete the project with the specified ID
+
+    :param proj_id: ID of the project to delete
+    :type proj_id: int
+    """
+    execute_query(DELETE_PROJECT, proj_id=proj_id)

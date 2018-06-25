@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file '/Users/samueldrouin/Development/LabNote/LabNote/ui/qt_ui/mainwindow.ui'
+# Form implementation generated from reading ui file '/Users/samueldrouin/Development/LabNote/labnote/ui/qt_ui/mainwindow.ui'
 #
 # Created by: PyQt5 UI code generator 5.10.1
 #
@@ -66,7 +66,7 @@ class Ui_MainWindow(object):
         self.btn_settings.setMinimumSize(QtCore.QSize(0, 0))
         self.btn_settings.setMaximumSize(QtCore.QSize(16777215, 16777215))
         self.btn_settings.setText("")
-        self.btn_settings.setIconSize(QtCore.QSize(21, 14))
+        self.btn_settings.setIconSize(QtCore.QSize(16, 16))
         self.btn_settings.setFlat(True)
         self.btn_settings.setObjectName("btn_settings")
         self.frame_layout.addWidget(self.btn_settings)
@@ -155,6 +155,8 @@ class Ui_MainWindow(object):
         self.act_files.setObjectName("act_files")
         self.act_dataset = QtWidgets.QAction(MainWindow)
         self.act_dataset.setObjectName("act_dataset")
+        self.act_project = QtWidgets.QAction(MainWindow)
+        self.act_project.setObjectName("act_project")
         self.menuFile.addAction(self.act_new_experiment)
         self.menuFile.addSeparator()
         self.menuFile.addAction(self.actionExport_as_PDF)
@@ -171,6 +173,7 @@ class Ui_MainWindow(object):
         self.menubar.addAction(self.menuNotebook.menuAction())
         self.menubar.addAction(self.menuExperiment.menuAction())
         self.menubar.addAction(self.menuData.menuAction())
+        self.experiment_toolbar.addAction(self.act_project)
         self.experiment_toolbar.addAction(self.act_new)
         self.experiment_toolbar.addAction(self.act_duplicate)
         self.data_toolbar.addAction(self.act_share)
@@ -212,4 +215,6 @@ class Ui_MainWindow(object):
         self.act_files.setToolTip(_translate("MainWindow", "Open files window"))
         self.act_dataset.setText(_translate("MainWindow", "Dataset"))
         self.act_dataset.setToolTip(_translate("MainWindow", "Open dataset window"))
+        self.act_project.setText(_translate("MainWindow", "Project"))
+        self.act_project.setToolTip(_translate("MainWindow", "Open the project window"))
 

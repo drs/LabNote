@@ -330,6 +330,7 @@
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
+   <addaction name="act_project"/>
    <addaction name="act_new"/>
    <addaction name="act_duplicate"/>
   </widget>
@@ -464,6 +465,14 @@
    </property>
    <property name="toolTip">
     <string>Open dataset window</string>
+   </property>
+  </action>
+  <action name="act_project">
+   <property name="text">
+    <string>Project</string>
+   </property>
+   <property name="toolTip">
+    <string>Open the project window</string>
    </property>
   </action>
  </widget>

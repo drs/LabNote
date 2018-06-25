@@ -38,3 +38,4 @@ def create_notebook(nb_name):
     nb_uuid = str(uuid.uuid4())
     directory.create_nb_directory(nb_uuid)
     database.create_notebook(nb_name, nb_uuid)
+

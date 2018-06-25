@@ -11,13 +11,13 @@ import sqlite3
 from PyQt5.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QMessageBox, QLabel, QListWidgetItem, QLineEdit, QAction, \
     QSizePolicy, QMenu
 from PyQt5.QtGui import QPixmap, QIcon, QFont
-from PyQt5.QtCore import Qt, QSettings, QByteArray, QTimer
+from PyQt5.QtCore import Qt, QSettings, QByteArray
 
 # Project import
 from labnote.ui.ui_mainwindow import Ui_MainWindow
 from labnote.core import stylesheet, list_widget
 from labnote.utils import database, directory, experiment, fsentry
-from labnote.interface import textbox
+from labnote.interface import textbox, project
 from labnote.interface.new_notebook import NewNotebook
 from labnote.resources import resources
 
@@ -70,10 +70,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.act_files.setIcon(QIcon(":/Icons/MainWindow/icons/main-window/files.png"))
         self.act_dataset.setIcon(QIcon(":/Icons/MainWindow/icons/main-window/dataset.png"))
         self.act_protocols.setIcon(QIcon(":/Icons/MainWindow/icons/main-window/protocols.png"))
+        self.act_project.setIcon(QIcon(":/Icons/MainWindow/icons/main-window/project.png"))
 
         # Set toolbar separator
         empty_widget_1 = QWidget()
-        empty_widget_1.setFixedWidth(190)
+        empty_widget_1.setFixedWidth(130)
         self.experiment_toolbar.insertWidget(self.act_new, empty_widget_1)
 
         empty_widget_2 = QWidget()
@@ -128,6 +129,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.act_new.triggered.connect(self.create_experiment)
         self.act_new_experiment.triggered.connect(self.create_experiment)
         self.lst_entry.itemSelectionChanged.connect(self.experiment_changed)
+        self.act_project.triggered.connect(self.open_project)
 
     """
     General functions
@@ -192,6 +194,14 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             message.exec()
 
             sys.exit("Unexpected error while checking the main directory integrity")
+
+    """
+    Toolbar functions
+    """
+
+    def open_project(self):
+        """ Open the project dialog """
+        project.Project(self)
 
     """
     Notebook list functions
