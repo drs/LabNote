@@ -63,7 +63,7 @@ CREATE_NOTEBOOK_TABLE = """
 CREATE TABLE notebook (
     nb_uuid BLOB (16)     PRIMARY KEY,
     name    VARCHAR (255) NOT NULL,
-    proj_id INTEGER       REFERENCES project (proj_id) 
+    proj_id INTEGER       REFERENCES project (proj_id)  ON DELETE RESTRICT
 )
 """
 
