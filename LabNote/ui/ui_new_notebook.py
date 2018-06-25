@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file '/Users/samueldrouin/SDR Soft/LabNote/LabNote/ui/qt_ui/new_notebook.ui'
+# Form implementation generated from reading ui file '/Users/samueldrouin/Development/LabNote/labnote/ui/qt_ui/new_notebook.ui'
 #
 # Created by: PyQt5 UI code generator 5.10.1
 #
@@ -11,7 +11,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_NewNotebook(object):
     def setupUi(self, NewNotebook):
         NewNotebook.setObjectName("NewNotebook")
-        NewNotebook.resize(450, 137)
+        NewNotebook.resize(450, 173)
         NewNotebook.setMinimumSize(QtCore.QSize(0, 0))
         NewNotebook.setMaximumSize(QtCore.QSize(16777215, 16777215))
         self.horizontalLayout_2 = QtWidgets.QHBoxLayout(NewNotebook)
@@ -38,6 +38,16 @@ class Ui_NewNotebook(object):
         self.txt_name = QtWidgets.QLineEdit(NewNotebook)
         self.txt_name.setObjectName("txt_name")
         self.verticalLayout.addWidget(self.txt_name)
+        self.horizontalLayout_3 = QtWidgets.QHBoxLayout()
+        self.horizontalLayout_3.setObjectName("horizontalLayout_3")
+        self.label = QtWidgets.QLabel(NewNotebook)
+        self.label.setObjectName("label")
+        self.horizontalLayout_3.addWidget(self.label)
+        self.cbx_project = QtWidgets.QComboBox(NewNotebook)
+        self.cbx_project.setObjectName("cbx_project")
+        self.horizontalLayout_3.addWidget(self.cbx_project)
+        self.horizontalLayout_3.setStretch(1, 5)
+        self.verticalLayout.addLayout(self.horizontalLayout_3)
         self.horizontalLayout = QtWidgets.QHBoxLayout()
         self.horizontalLayout.setObjectName("horizontalLayout")
         spacerItem = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
@@ -62,6 +72,7 @@ class Ui_NewNotebook(object):
         self.lbl_new_notebook.setText(_translate("NewNotebook", "New Notebook"))
         self.lbl_name.setText(_translate("NewNotebook", "Enter a name for the new notebook :  "))
         self.txt_name.setPlaceholderText(_translate("NewNotebook", "Notebook name"))
+        self.label.setText(_translate("NewNotebook", "Project : "))
         self.btn_cancel.setText(_translate("NewNotebook", "Cancel"))
         self.btn_create.setText(_translate("NewNotebook", "Create"))
 

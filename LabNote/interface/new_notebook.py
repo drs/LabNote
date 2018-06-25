@@ -2,11 +2,17 @@
 This module contains classes that create a new notebook
 """
 
-from PyQt5.QtWidgets import QDialog
+# Python import
+import sqlite3
+
+# PyQt import
+from PyQt5.QtWidgets import QDialog, QMessageBox
 from PyQt5.QtGui import QPixmap, QRegExpValidator
 from PyQt5.QtCore import QRegExp
 
+# Project import
 from labnote.ui.ui_new_notebook import Ui_NewNotebook
+from labnote.utils import database
 
 
 class NewNotebook(QDialog, Ui_NewNotebook):
@@ -33,8 +39,12 @@ class NewNotebook(QDialog, Ui_NewNotebook):
         validator = QRegExpValidator(QRegExp("^[0-9a-zA-ZÀ-ÿ -._]+$"))
         self.txt_name.setValidator(validator)
 
-        # Instance variable that contain the notebook name
-        self.notebook_name = ""
+        # Instance variable that contain the notebook informations
+        self.notebook_name = None
+        self.project_id = None
+
+        # Show the project list
+        self.show_project_list()
 
         # Connect slots
         self.btn_cancel.clicked.connect(self.reject)
@@ -47,3 +57,30 @@ class NewNotebook(QDialog, Ui_NewNotebook):
         else:
             self.btn_create.setEnabled(False)
         self.notebook_name = text
+        self.project_id = self.cbx_project.currentData()
+
+    def show_project_list(self):
+        """ Get a list of all the projects
+
+        :return: [str] of the projects
+        """
+        buffer = None
+
+        # Get project list from the database
+        try:
+            buffer = database.select_project_list()
+        except sqlite3.Error as exception:
+            message = QMessageBox()
+            message.setWindowTitle("LabNote")
+            message.setText("Error getting the project list")
+            message.setInformativeText("An error occurred while getting the project list. ")
+            message.setDetailedText(str(exception))
+            message.setIcon(QMessageBox.Warning)
+            message.setStandardButtons(QMessageBox.Ok)
+            message.exec()
+
+        # Show the notebook list
+        self.cbx_project.addItem('', None)
+        if buffer:
+            for project in buffer:
+                self.cbx_project.addItem(project['name'], project['id'])

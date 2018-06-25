@@ -27,15 +27,17 @@ def cleanup_main_directory():
     shutil.rmtree(directory.DEFAULT_MAIN_DIRECTORY_PATH, ignore_errors=True)
 
 
-def create_notebook(nb_name):
+def create_notebook(nb_name, proj_id):
     """ Create a notebook
 
     :param nb_name: Notebook name
     :type nb_name: str
+    :param proj_id: Project ID for the notebook
+    :type proj_id: int
     """
 
     # Create UUID
     nb_uuid = str(uuid.uuid4())
     directory.create_nb_directory(nb_uuid)
-    database.create_notebook(nb_name, nb_uuid)
+    database.create_notebook(nb_name, nb_uuid, proj_id)
 

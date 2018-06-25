@@ -214,7 +214,7 @@ SELECT nb_uuid, name FROM notebook ORDER BY name ASC
 """
 
 INSERT_NOTEBOOK = """
-INSERT INTO notebook (nb_uuid, name) VALUES (:nb_uuid, :name)
+INSERT INTO notebook (nb_uuid, name, proj_id) VALUES (:nb_uuid, :name, :proj_id)
 """
 
 INSERT_EXPERIMENT = """
@@ -355,15 +355,17 @@ Notebook table query
 """
 
 
-def create_notebook(name, nb_uuid):
+def create_notebook(name, nb_uuid, proj_id=None):
     """ Create a new notebook
 
     :param name: Name of the notebook to create
     :type name: str
     :param nb_uuid: UUID of the notebook to create
     :type nb_uuid: UUID
+    :param proj_id: Project id for the notebook
+    :type proj_id: int
     """
-    execute_query(INSERT_NOTEBOOK, nb_uuid=uuid_bytes(nb_uuid), name=name)
+    execute_query(INSERT_NOTEBOOK, nb_uuid=uuid_bytes(nb_uuid), name=name, proj_id=proj_id)
 
 
 def update_notebook(name, nb_uuid):

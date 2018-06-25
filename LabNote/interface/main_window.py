@@ -54,8 +54,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def init_ui(self):
         """ Initialize all the GUI elements """
-        # Set style sheet
-        stylesheet.set_style_sheet(self, ":/StyleSheet/style-sheet/main_window.qss")
 
         # Set window title
         self.setWindowTitle("LabNote")
@@ -92,6 +90,12 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.txt_search.setPlaceholderText("Search")
         self.txt_search.addAction(search_icon, QLineEdit.LeadingPosition)
         self.txt_search.setFixedWidth(300)
+        self.txt_search.setStyleSheet(
+            """ QLineEdit {
+                border-radius: 2px;
+                border: none;
+                height: 22px;
+            }""")
         self.search_toolbar.addWidget(self.txt_search)
 
         empty_widget_4 = QWidget()
@@ -122,6 +126,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         # Set no entry widget as default widget
         self.set_no_entry_widget()
+
+        # Set style sheet
+        stylesheet.set_style_sheet(self, ":/StyleSheet/style-sheet/main_window.qss")
 
         # Slots connection
         self.btn_add_notebook.clicked.connect(self.open_new_notebook_dialog)
@@ -218,9 +225,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         """ Add a newly created notebook name to the notebook list. """
         # Get the notebook name
         nb_name = self.new_notebook.notebook_name
+        proj_id = self.new_notebook.project_id
 
         try:
-            fsentry.create_notebook(nb_name)
+            fsentry.create_notebook(nb_name, proj_id)
         except (sqlite3.Error, OSError) as exception:
             message = QMessageBox(QMessageBox.Warning, "Cannot create notebook",
                                   "An error occurred during the notebook creation.", QMessageBox.Ok)

@@ -106,9 +106,3 @@ QListWidget#lst_entry::item {
 QListView#lst_entry::item:selected {
     border-radius: 2px;
 }
-
-QLineEdit {
-    border-radius: 2px;
-    border: none;
-    height: 22px;
-}
