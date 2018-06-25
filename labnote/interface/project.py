@@ -13,7 +13,7 @@ from PyQt5.QtCore import Qt
 # Project import
 from labnote.ui.ui_project import Ui_Project
 from labnote.utils import database
-from labnote.core import sqlite_error, stylesheet, delegate
+from labnote.core import sqlite_error, stylesheet
 
 
 class Project(QDialog, Ui_Project):
@@ -46,7 +46,6 @@ class Project(QDialog, Ui_Project):
         self.table.horizontalHeader().setStretchLastSection(True)
         self.table.horizontalHeader().setMinimumSectionSize(200)
         self.table.setShowGrid(False)
-        #self.table.setItemDelegate(delegate.NoFocusDelegate())
 
         # Search text edit
         search_icon = QIcon(":/Icons/MainWindow/icons/main-window/search.png")
