@@ -22,9 +22,6 @@ if __name__ == "__main__":
     # Set application icon
     app.setWindowIcon(QIcon(":/Icons/App/icons/main/appicon.png"))
 
-    # Set application stylesheet
-    stylesheet.set_style_sheet(app, ":/StyleSheet/style-sheet/application.qss")
-
     # Afficher la fenêtre principale
     main_window = MainWindow()
     main_window.show()
