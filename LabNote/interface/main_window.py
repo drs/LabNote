@@ -65,10 +65,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.act_new.setIcon(QIcon(":/Icons/MainWindow/icons/main-window/new-experiment.png"))
         self.act_duplicate.setIcon(QIcon(":/Icons/MainWindow/icons/main-window/duplicate.png"))
         self.act_share.setIcon(QIcon(":/Icons/MainWindow/icons/main-window/share.png"))
-        self.act_files.setIcon(QIcon(":/Icons/MainWindow/icons/main-window/files.png"))
         self.act_dataset.setIcon(QIcon(":/Icons/MainWindow/icons/main-window/dataset.png"))
         self.act_protocols.setIcon(QIcon(":/Icons/MainWindow/icons/main-window/protocols.png"))
         self.act_project.setIcon(QIcon(":/Icons/MainWindow/icons/main-window/project.png"))
+        self.act_library.setIcon(QIcon(":/Icons/MainWindow/icons/main-window/library.png"))
+        self.act_samples.setIcon(QIcon(":/Icons/MainWindow/icons/main-window/sample.png"))
 
         # Set toolbar separator
         empty_widget_1 = QWidget()

@@ -3,7 +3,6 @@
         <file>icons/main-window/no_entry_selected.png</file>
         <file>icons/main-window/dataset.png</file>
         <file>icons/main-window/duplicate.png</file>
-        <file>icons/main-window/files.png</file>
         <file>icons/main-window/protocols.png</file>
         <file>icons/main-window/share.png</file>
         <file>icons/main-window/new-experiment.png</file>
@@ -11,6 +10,8 @@
         <file>icons/main-window/settings.png</file>
         <file>icons/main-window/settings_pressed.png</file>
         <file>icons/main-window/project.png</file>
+        <file>icons/main-window/library.png</file>
+        <file>icons/main-window/sample.png</file>
     </qresource>
     <qresource prefix="/StyleSheet">
         <file>style-sheet/main_window.qss</file>

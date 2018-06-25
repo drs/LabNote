@@ -296,7 +296,6 @@
      <string>Data</string>
     </property>
     <addaction name="act_protocols"/>
-    <addaction name="act_files"/>
     <addaction name="act_dataset"/>
    </widget>
    <addaction name="menuFile"/>
@@ -361,7 +360,7 @@
    </attribute>
    <addaction name="act_share"/>
    <addaction name="act_protocols"/>
-   <addaction name="act_files"/>
+   <addaction name="act_library"/>
    <addaction name="act_dataset"/>
   </widget>
   <widget class="QToolBar" name="search_toolbar">
@@ -383,6 +382,7 @@
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
+   <addaction name="act_samples"/>
   </widget>
   <action name="act_new">
    <property name="text">
@@ -451,14 +451,6 @@
     <string>Open protocole window</string>
    </property>
   </action>
-  <action name="act_files">
-   <property name="text">
-    <string>Files</string>
-   </property>
-   <property name="toolTip">
-    <string>Open files window</string>
-   </property>
-  </action>
   <action name="act_dataset">
    <property name="text">
     <string>Dataset</string>
@@ -473,6 +465,22 @@
    </property>
    <property name="toolTip">
     <string>Open the project window</string>
+   </property>
+  </action>
+  <action name="act_library">
+   <property name="text">
+    <string>Library</string>
+   </property>
+   <property name="toolTip">
+    <string>Open library</string>
+   </property>
+  </action>
+  <action name="act_samples">
+   <property name="text">
+    <string>Samples</string>
+   </property>
+   <property name="toolTip">
+    <string>Open samples</string>
    </property>
   </action>
  </widget>
