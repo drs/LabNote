@@ -7,7 +7,7 @@ import sqlite3
 
 # PyQt import
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QDialog, QMessageBox, QTableWidgetItem, QLineEdit
+from PyQt5.QtWidgets import QDialog, QMessageBox, QTableWidgetItem, QLineEdit, QAbstractItemView
 from PyQt5.QtCore import Qt
 
 # Project import
@@ -20,9 +20,12 @@ class Project(QDialog, Ui_Project):
     """
     Class responsible of managing the project window interface.
     """
+
+    # Class variable initialization
+    current_text = None
+
     def __init__(self, parent=None):
         super(Project, self).__init__(parent)
-
         # Initialize the GUI
         self.setupUi(self)
         self.init_ui()
@@ -46,6 +49,7 @@ class Project(QDialog, Ui_Project):
         self.table.horizontalHeader().setStretchLastSection(True)
         self.table.horizontalHeader().setMinimumSectionSize(200)
         self.table.setShowGrid(False)
+        self.table.setSelectionMode(QAbstractItemView.NoSelection)
 
         # Search text edit
         search_icon = QIcon(":/Icons/MainWindow/icons/main-window/search.png")
@@ -55,15 +59,18 @@ class Project(QDialog, Ui_Project):
 
         # Connect slots
         self.btn_close.clicked.connect(self.close)
-        self.table.cellChanged.connect(self.save_change)
         self.txt_search.textChanged.connect(self.show_project_list)
+        self.table.currentCellChanged.connect(self.cell_changed)
+
+    def cell_changed(self, row, column, old_row, old_column):
+        """ Save the current cell text """
+        if self.current_text is not None and not self.table.item(old_row, old_column).text() == self.current_text:
+            if not self.save_change(old_row, old_column):
+                self.table.editItem(self.table.item(old_row, old_column))
+        self.current_text = self.table.item(row, column).text()
 
     def show_project_list(self):
         """ Show the list of all existing project """
-
-        # Block all signals for the table
-        self.table.blockSignals(True)
-
         project_list = None
         search = (self.txt_search.text() or None)
 
@@ -105,40 +112,35 @@ class Project(QDialog, Ui_Project):
             if not search:
                 self.add_empty_row()
 
-        # Unblock all signal for the table
-        self.blockSignals(False)
-
     def add_empty_row(self):
         """ Create a last empty row """
-        # Block all signals for the table
-        self.table.blockSignals(True)
-
         # Add the row
         self.table.setRowCount(self.table.rowCount()+1)
         self.table.setItem(self.table.rowCount()-1, 0, QTableWidgetItem(''))
         self.table.setItem(self.table.rowCount()-1, 1, QTableWidgetItem(''))
         self.table.setItem(self.table.rowCount()-1, 2, QTableWidgetItem(''))
 
-        # Unblock all signals for the table
-        self.table.blockSignals(False)
-
-    def save_change(self, row):
+    def save_change(self, row, column):
         """ Save changes in the database
 
         :param row: Row that changed
         :type row: int
         """
-        inserted_id = None
         id = self.table.item(row, 0).text()
         name = self.table.item(row, 1).text()
         description = self.table.item(row, 2).text()
 
         # Save changes in database
         try:
-            if row + 1 == self.table.rowCount():
+            if row + 1 == self.table.rowCount() and not self.table.item(row, column).text() == "":
                 inserted_id = database.create_project(name, description)
-            else:
-                inserted_id = database.update_project(id, name, description)
+                self.table.item(row, 0).setText(str(inserted_id))
+                self.add_empty_row()
+            elif not row + 1 == self.table.rowCount() and not self.table.item(row, column).text() == "":
+                database.update_project(id, name, description)
+            elif not row + 1 == self.table.rowCount() and self.table.item(row, column).text() == "":
+                database.delete_project(id)
+                self.table.removeRow(row)
         except sqlite3.Error as exception:
             error_code = sqlite_error.sqlite_err_handler(str(exception))
 
@@ -150,6 +152,9 @@ class Project(QDialog, Ui_Project):
                 message.setIcon(QMessageBox.Information)
                 message.setStandardButtons(QMessageBox.Ok)
                 message.exec()
+
+                self.table.item(row, column).setText(self.current_text)
+                return False
             elif error_code == sqlite_error.NOT_NULL_CODE:
                 message = QMessageBox()
                 message.setWindowTitle("LabNote")
@@ -158,6 +163,9 @@ class Project(QDialog, Ui_Project):
                 message.setIcon(QMessageBox.Information)
                 message.setStandardButtons(QMessageBox.Ok)
                 message.exec()
+
+                self.table.item(row, column).setText(self.current_text)
+                return False
             else:
                 message = QMessageBox()
                 message.setWindowTitle("LabNote")
@@ -167,15 +175,4 @@ class Project(QDialog, Ui_Project):
                 message.setIcon(QMessageBox.Warning)
                 message.setStandardButtons(QMessageBox.Ok)
                 message.exec()
-
-        # Update the newly inserted item id
-        if not id:
-            if inserted_id:
-                # Block all signals for the table
-                self.table.blockSignals(True)
-
-                self.table.item(row, 0).setText(str(inserted_id))
-
-                # Unblock all signals for the table
-                self.table.blockSignals(False)
-            self.add_empty_row()
+        return True
