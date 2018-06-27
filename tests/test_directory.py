@@ -37,6 +37,9 @@ class TestSubdirectoryCreation(unittest.TestCase):
     def test_main_notebook_directory_creation(self):
         self.assertTrue(os.path.isdir(directory.NOTEBOOK_DIRECTORY_PATH))
 
+    def test_main_references_directory_creation(self):
+        self.assertTrue(os.path.isdir(directory.REFERENCES_DIRECTORY_PATH))
+
     def test_notebook_directory_creation(self):
         # Create a directory
         nb_uuid = str(uuid.uuid4())

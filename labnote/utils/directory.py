@@ -4,6 +4,7 @@ import shutil
 
 DEFAULT_MAIN_DIRECTORY_PATH = os.path.expanduser("~/Documents/LabNote")
 NOTEBOOK_DIRECTORY_PATH = os.path.join(DEFAULT_MAIN_DIRECTORY_PATH + "/notebook")
+REFERENCES_DIRECTORY_PATH = os.path.join(DEFAULT_MAIN_DIRECTORY_PATH + "/references")
 
 
 def create_default_main_directory():
@@ -11,7 +12,8 @@ def create_default_main_directory():
 
     # Create the defaults directories
     os.mkdir(DEFAULT_MAIN_DIRECTORY_PATH)
-    os.mkdir(os.path.join(NOTEBOOK_DIRECTORY_PATH))
+    os.mkdir(NOTEBOOK_DIRECTORY_PATH)
+    os.mkdir(REFERENCES_DIRECTORY_PATH)
 
 
 def create_nb_directory(nb_uuid):
