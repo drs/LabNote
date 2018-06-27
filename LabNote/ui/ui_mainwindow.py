@@ -57,7 +57,6 @@ class Ui_MainWindow(object):
         font.setBold(False)
         font.setWeight(50)
         self.btn_add_notebook.setFont(font)
-        self.btn_add_notebook.setToolTip("")
         self.btn_add_notebook.setStyleSheet("")
         self.btn_add_notebook.setFlat(False)
         self.btn_add_notebook.setObjectName("btn_add_notebook")
@@ -190,6 +189,7 @@ class Ui_MainWindow(object):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
         self.lbl_notebook.setText(_translate("MainWindow", "Notebook"))
+        self.btn_add_notebook.setToolTip(_translate("MainWindow", "Create a new notebook"))
         self.btn_add_notebook.setText(_translate("MainWindow", "+"))
         self.menuFile.setTitle(_translate("MainWindow", "File"))
         self.menuNotebook.setTitle(_translate("MainWindow", "Notebook"))

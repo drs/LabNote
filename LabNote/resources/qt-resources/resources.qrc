@@ -18,6 +18,7 @@
         <file>style-sheet/main-window/no_entry_label.qss</file>
         <file>style-sheet/textbox.qss</file>
         <file>style-sheet/project.qss</file>
+        <file>style-sheet/library.qss</file>
     </qresource>
     <qresource prefix="/Icons/NewNotebook">
         <file>icons/new-notebook/1xnotebook.png</file>

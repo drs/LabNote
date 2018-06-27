@@ -130,7 +130,7 @@
             </font>
            </property>
            <property name="toolTip">
-            <string/>
+            <string>Create a new notebook</string>
            </property>
            <property name="styleSheet">
             <string notr="true"/>

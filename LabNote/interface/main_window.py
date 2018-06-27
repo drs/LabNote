@@ -17,7 +17,7 @@ from PyQt5.QtCore import Qt, QSettings, QByteArray
 from labnote.ui.ui_mainwindow import Ui_MainWindow
 from labnote.core import stylesheet, list_widget
 from labnote.utils import database, directory, experiment, fsentry
-from labnote.interface import textbox, project
+from labnote.interface import textbox, project, library
 from labnote.interface.new_notebook import NewNotebook
 from labnote.resources import resources
 
@@ -138,6 +138,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.act_new_experiment.triggered.connect(self.create_experiment)
         self.lst_entry.itemSelectionChanged.connect(self.experiment_changed)
         self.act_project.triggered.connect(self.open_project)
+        self.act_library.triggered.connect(self.open_library)
 
     """
     General functions
@@ -201,6 +202,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             message.setStandardButtons(QMessageBox.Ok)
             message.exec()
 
+            fsentry.cleanup_main_directory()
+
             sys.exit("Unexpected error while checking the main directory integrity")
 
     """
@@ -210,6 +213,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def open_project(self):
         """ Open the project dialog """
         project.Project(self)
+
+    def open_library(self):
+        """ Open the library dialog """
+        library.Library(self)
 
     """
     Notebook list functions
