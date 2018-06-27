@@ -88,21 +88,46 @@ BEGIN
 END;
 """
 
+CREATE_REF_CATEGORY_TABLE = """
+CREATE TABLE ref_category (
+    category_id INTEGER       PRIMARY KEY AUTOINCREMENT,
+    name        VARCHAR (255) UNIQUE
+                              NOT NULL
+)
+"""
+
+CREATE_REF_SUBCATEGORY_TABLE = """
+CREATE TABLE ref_subcategory (
+    subcategory_id INTEGER       PRIMARY KEY AUTOINCREMENT,
+    name           VARCHAR (255) UNIQUE
+                                 NOT NULL,
+    category_id    INTEGER       REFERENCES ref_category (category_id) ON DELETE NO ACTION
+                                 NOT NULL
+)
+"""
+
 CREATE_REFS_TABLE = """
 CREATE TABLE refs (
-    ref_uuid  BLOB (16)     PRIMARY KEY,
-    title     VARCHAR (255),
-    publisher VARCHAR (255),
-    year      INTEGER,
-    author    VARCHAR (255),
-    editor    VARCHAR (255),
-    volume    INTEGER,
-    address   VARCHAR (255),
-    edition   INTEGER,
-    journal   VARCHAR (255),
-    chapter   VARCHAR (255),
-    pages     VARCHAR (16),
-    issue     INTEGER
+    ref_uuid       BLOB (16)     PRIMARY KEY,
+    ref_key        VARCHAR (255) NOT NULL
+                                 UNIQUE,
+    title          VARCHAR (255),
+    publisher      VARCHAR (255),
+    year           INTEGER,
+    author         VARCHAR (255),
+    editor         VARCHAR (255),
+    volume         INTEGER,
+    address        VARCHAR (255),
+    edition        INTEGER,
+    journal        VARCHAR (255),
+    chapter        VARCHAR (255),
+    pages          VARCHAR (16),
+    issue          INTEGER,
+    description    TEXT,
+    abstract       TEXT,
+    subcategory_id INTEGER       REFERENCES ref_subcategory (subcategory_id) ON DELETE RESTRICT,
+    category_id    INTEGER       REFERENCES ref_subcategory (subcategory_id) ON DELETE RESTRICT
+                                 NOT NULL
 )
 """
 
@@ -290,6 +315,8 @@ def create_main_database():
     cursor.execute(CREATE_NOTEBOOK_TABLE)
     cursor.execute(CREATE_PROTOCOL_TABLE)
     cursor.execute(CREATE_PROTOCOL_TABLE_TRIGGER)
+    cursor.execute(CREATE_REF_CATEGORY_TABLE)
+    cursor.execute(CREATE_REF_SUBCATEGORY_TABLE)
     cursor.execute(CREATE_REFS_TABLE)
     cursor.execute(CREATE_SAMPLE_NUMBER_TABLE)
     cursor.execute(CREATE_TAGS_TABLE)
