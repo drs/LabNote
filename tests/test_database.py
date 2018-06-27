@@ -53,7 +53,7 @@ class TestDatabaseInsert(unittest.TestCase):
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM notebook")
 
-        self.assertEqual(len(cursor.fetchall()), 1)
+        self.assertEqual(cursor.fetchall(), [(conversion.uuid_bytes(self.nb_uuid), 'Notebook', None)])
 
     def test_notebook_creation_error(self):
         with unittest.mock.patch("labnote.utils.database.sqlite3.connect",
@@ -69,9 +69,12 @@ class TestDatabaseInsert(unittest.TestCase):
 
         conn = sqlite3.connect(database.MAIN_DATABASE_FILE_PATH)
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM experiment")
+        cursor.execute("SELECT exp_uuid, name, nb_uuid, objective FROM experiment")
 
-        self.assertEqual(len(cursor.fetchall()), 1)
+        self.assertEqual(cursor.fetchall(), [(conversion.uuid_bytes(self.exp_uuid),
+                                              self.exp_name,
+                                              conversion.uuid_bytes(self.nb_uuid),
+                                              self.exp_obj)])
 
     def test_experiment_creation_error(self):
         database.create_notebook(self.nb_name, self.nb_uuid)
@@ -172,8 +175,11 @@ class TestDatabaseSelectUpdateDelete(unittest.TestCase):
 
         conn = sqlite3.connect(database.MAIN_DATABASE_FILE_PATH)
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM experiment")
-        self.assertEqual(len(cursor.fetchall()), 1)
+        cursor.execute("SELECT exp_uuid, name, nb_uuid, objective FROM experiment")
+        self.assertEqual(cursor.fetchall(), [(conversion.uuid_bytes(self.exp_uuid),
+                                             new_name,
+                                              conversion.uuid_bytes(self.nb_uuid),
+                                              new_objective)])
 
     def test_update_experiment_error(self):
         new_name = 'Experiment 1'
