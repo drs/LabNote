@@ -9,6 +9,7 @@ QTreeView::branch:selected {
 
 QTreeView::item:selected {
     background-color: rgb(212, 212, 212);
+    color: black;
 }
 
 QTreeView::branch::closed::has-children {
