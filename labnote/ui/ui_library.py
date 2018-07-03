@@ -12,8 +12,13 @@ class Ui_Library(object):
     def setupUi(self, Library):
         Library.setObjectName("Library")
         Library.resize(700, 400)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(Library.sizePolicy().hasHeightForWidth())
+        Library.setSizePolicy(sizePolicy)
         Library.setMinimumSize(QtCore.QSize(700, 400))
-        Library.setSizeGripEnabled(False)
+        Library.setSizeGripEnabled(True)
         self.verticalLayout_2 = QtWidgets.QVBoxLayout(Library)
         self.verticalLayout_2.setContentsMargins(0, 0, 0, 0)
         self.verticalLayout_2.setSpacing(0)
@@ -115,10 +120,10 @@ class Ui_Library(object):
 
         self.retranslateUi(Library)
         QtCore.QMetaObject.connectSlotsByName(Library)
-        Library.setTabOrder(self.txt_key, self.btn_add)
-        Library.setTabOrder(self.btn_add, self.txt_search)
-        Library.setTabOrder(self.txt_search, self.comboBox)
-        Library.setTabOrder(self.comboBox, self.btn_save)
+        Library.setTabOrder(self.txt_key, self.comboBox)
+        Library.setTabOrder(self.comboBox, self.txt_search)
+        Library.setTabOrder(self.txt_search, self.btn_add)
+        Library.setTabOrder(self.btn_add, self.btn_save)
         Library.setTabOrder(self.btn_save, self.btn_manage)
 
     def retranslateUi(self, Library):

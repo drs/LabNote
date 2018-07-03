@@ -9,7 +9,7 @@ import uuid
 
 # PyQt import
 from PyQt5.QtWidgets import QDialog, QGridLayout, QLabel, QLineEdit, QMenu, QAction, QMessageBox, QFormLayout,\
-    QAbstractItemView, QTreeView
+    QAbstractItemView, QTreeView, QWidget, QVBoxLayout
 from PyQt5.QtCore import Qt, QRegExp, QModelIndex, QSettings, pyqtSignal
 from PyQt5.QtGui import QFont, QRegExpValidator, QStandardItemModel, QStandardItem, QColor
 
@@ -58,12 +58,17 @@ class Library(QDialog, Ui_Library):
     def init_ui(self):
         self.setWindowTitle("LabNote - Library")
         self.setSizeGripEnabled(True)
+        self.read_settings()
 
         # Create the treeview
         self.treeview = TreeView()
         self.treeview.setSelectionBehavior(QAbstractItemView.SelectRows)
         stylesheet.set_style_sheet(self.treeview, ":/StyleSheet/style-sheet/library/treeview.qss")
         self.frame.layout().insertWidget(1, self.treeview)
+
+        # Create the pdf widget
+        self.pdf_widget = PDFBorderWidget()
+        self.main_frame.layout().addWidget(self.pdf_widget)
 
         # Set style sheet
         stylesheet.set_style_sheet(self, ":/StyleSheet/style-sheet/library.qss")
@@ -1094,7 +1099,25 @@ class Library(QDialog, Ui_Library):
 
     def closeEvent(self, event):
         self.save_treeview_state()
+        self.save_settings()
         event.accept()
+
+    def save_settings(self):
+        """ Save the dialog geometry """
+        settings = QSettings("Samuel Drouin", "LabNote")
+        settings.beginGroup("Library")
+        settings.setValue("Geometry", self.saveGeometry())
+        settings.setValue("Maximized", self.isMaximized())
+        settings.endGroup()
+
+    def read_settings(self):
+        """ Restore the dialog geometry """
+        settings = QSettings("Samuel Drouin", "LabNote")
+        settings.beginGroup("Library")
+        self.restoreGeometry(settings.value("Geometry", self.saveGeometry()))
+        if settings.value("Maximized", self.isMaximized()):
+            self.showMaximized()
+        settings.endGroup()
 
     def save_treeview_state(self):
         """ Save the treeview expanded state """
@@ -1145,6 +1168,31 @@ class TreeView(QTreeView):
 
         self.drop_finished.emit(index)
         QTreeView.dropEvent(self, event)
+
+
+class PDFBorderWidget(QWidget):
+    """ Widget that hold the widget that accept PDF """
+    def __init__(self):
+        super(PDFBorderWidget, self).__init__()
+        self.init_ui()
+
+    def init_ui(self):
+        layout = QVBoxLayout()
+        layout.setContentsMargins(20, 60, 20, 60)
+        border_widget = QWidget()
+        border_widget_layout = QVBoxLayout()
+        lbl_no_pdf = QLabel("Drop PDF here")
+        lbl_no_pdf.setStyleSheet("color: rgb(172, 172, 172)")
+        lbl_no_pdf.setWordWrap(True)
+        border_widget_layout.addWidget(lbl_no_pdf)
+        border_widget.setStyleSheet(".QWidget { border: 1.5px dashed rgb(172, 172, 172) }")
+        border_widget.setLayout(border_widget_layout)
+        border_widget.setAcceptDrops(True)
+        layout.addWidget(border_widget)
+        self.setLayout(layout)
+
+        self.setMinimumWidth(100)
+
 
 class StandardItemModel(QStandardItemModel):
     """ Custom standard item model class """

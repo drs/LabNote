@@ -10,6 +10,12 @@
     <height>400</height>
    </rect>
   </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
+  </property>
   <property name="minimumSize">
    <size>
     <width>700</width>
@@ -20,7 +26,7 @@
    <string>Dialog</string>
   </property>
   <property name="sizeGripEnabled">
-   <bool>false</bool>
+   <bool>true</bool>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_2">
    <property name="spacing">
@@ -315,9 +321,9 @@
  </widget>
  <tabstops>
   <tabstop>txt_key</tabstop>
-  <tabstop>btn_add</tabstop>
-  <tabstop>txt_search</tabstop>
   <tabstop>comboBox</tabstop>
+  <tabstop>txt_search</tabstop>
+  <tabstop>btn_add</tabstop>
   <tabstop>btn_save</tabstop>
   <tabstop>btn_manage</tabstop>
  </tabstops>
