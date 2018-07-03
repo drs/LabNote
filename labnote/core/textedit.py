@@ -11,6 +11,7 @@ from PyQt5.QtGui import QTextCursor, QTextCharFormat, QColor
 
 # Project import
 from labnote.resources import resources
+from labnote.core import stylesheet
 
 
 class TextEdit(QTextEdit):
@@ -28,6 +29,11 @@ class TextEdit(QTextEdit):
     # Signals
     delete_tag = pyqtSignal(str)
     create_tag = pyqtSignal(str)
+
+    def __init__(self):
+        super(TextEdit, self).__init__()
+        # Set style sheet
+        stylesheet.set_style_sheet(self, ":/StyleSheet/style-sheet/textedit.qss")
 
     def insertFromMimeData(self, source):
         """ Insert plain text only when pasting """

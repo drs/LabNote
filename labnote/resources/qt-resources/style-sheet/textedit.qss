@@ -1,0 +1,8 @@
+QTextEdit {
+    border-color: rgb(206, 206, 206);
+}
+
+QTextEdit:disabled {
+    background: white;
+    border-color: rgb(221, 221, 221)
+}
