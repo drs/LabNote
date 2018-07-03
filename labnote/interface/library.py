@@ -122,6 +122,7 @@ class Library(QDialog, Ui_Library):
         # Manage list
         self.show_list()
         self.treeview.header().hide()
+        self.treeview.setEditTriggers(QAbstractItemView.NoEditTriggers)
         # self.treeview.setDragDropMode(QAbstractItemView.InternalMove)
 
     def init_connection(self):
@@ -1067,7 +1068,6 @@ class Library(QDialog, Ui_Library):
         settings = QSettings("Samuel Drouin", "LabNote")
         settings.beginGroup("Library")
         settings.setValue("ExpandedItem", expanded_item)
-        settings.setValue("SelectedItem", self.treeview.currentIndex().data(QT_StateRole))
         settings.endGroup()
 
     def restore_treeview_state(self):
@@ -1088,12 +1088,6 @@ class Library(QDialog, Ui_Library):
 
                 if match:
                     self.treeview.setExpanded(match[0], True)
-
-        if selected_item:
-            match = self.treeview.model().match(self.treeview.model().index(0, 0), QT_StateRole,
-                                                selected_item, 1, Qt.MatchRecursive)
-            if match:
-                self.treeview.setCurrentIndex(match[0])
 
 
 class TreeView(QTreeView):
