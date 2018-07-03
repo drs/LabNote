@@ -1,11 +1,12 @@
 # Python import
 import sqlite3
 import os
-import uuid
+from collections import namedtuple
 
 # Project import
 from labnote.utils import directory
 from labnote.utils.conversion import uuid_bytes, uuid_string
+from labnote.core import data
 
 """
 Database path
@@ -99,18 +100,19 @@ CREATE TABLE ref_category (
 CREATE_REF_SUBCATEGORY_TABLE = """
 CREATE TABLE ref_subcategory (
     subcategory_id INTEGER       PRIMARY KEY AUTOINCREMENT,
-    name           VARCHAR (255) UNIQUE
+    name           VARCHAR (255) NOT NULL,
+    category_id    INTEGER       REFERENCES ref_category (category_id) ON DELETE RESTRICT
                                  NOT NULL,
-    category_id    INTEGER       REFERENCES ref_category (category_id) ON DELETE NO ACTION
-                                 NOT NULL
+    UNIQUE (name, category_id)
 )
 """
 
 CREATE_REFS_TABLE = """
 CREATE TABLE refs (
     ref_uuid       BLOB (16)     PRIMARY KEY,
-    ref_key        VARCHAR (255) NOT NULL
-                                 UNIQUE,
+    ref_key        VARCHAR (255) NOT NULL       UNIQUE,
+    ref_type       INTEGER       NOT NULL,
+    file_attached  BOOLEAN       NOT NULL       DEFAULT FALSE,
     title          VARCHAR (255),
     publisher      VARCHAR (255),
     year           INTEGER,
@@ -295,6 +297,78 @@ LAST_INSERT_ROWID = """
 SELECT last_insert_rowid()
 """
 
+INSERT_REF_CATEGORY = """
+INSERT INTO ref_category (name) VALUES (:name)
+"""
+
+UPDATE_REF_CATEGORY = """
+UPDATE ref_category SET name = :name WHERE category_id = :category_id
+"""
+
+DELETE_REF_CATEGORY = """
+DELETE FROM ref_category WHERE category_id = :category_id
+"""
+
+INSERT_REF_SUBCATEGORY = """
+INSERT INTO ref_subcategory (name, category_id) VALUES (:name, :category_id)
+"""
+
+UPDATE_REF_SUBCATEGORY = """
+UPDATE ref_subcategory SET name = :name, category_id = :category_id WHERE subcategory_id = :subcategory_id
+"""
+
+DELETE_REF_SUBCATEGORY = """
+DELETE FROM ref_subcategory WHERE subcategory_id = :subcategory_id
+"""
+
+SELECT_REF_CATEGORY = """
+SELECT category_id, name FROM ref_category ORDER BY name ASC
+"""
+
+SELECT_REF_SUBCATEGORY = """
+SELECT subcategory_id, name, category_id FROM ref_subcategory ORDER BY category_id ASC, name ASC
+"""
+
+SELECT_REFS = """
+SELECT ref_uuid, title, author, year, category_id, subcategory_id FROM refs ORDER BY category_id ASC, 
+subcategory_id ASC
+"""
+
+INSERT_REF = """
+INSERT INTO refs (ref_uuid, ref_key, ref_type, file_attached, title, publisher, year, author, editor, volume, address, 
+edition, journal, chapter, pages, issue, description, abstract, subcategory_id, category_id) 
+VALUES 
+(:ref_uuid, :ref_key, :ref_type, :file_attached, :title, :publisher, :year, :author, :editor, :volume, :address, 
+:edition, :journal, :chapter, :pages, :issue, :description, :abstract, :subcategory_id, :category_id)
+"""
+
+SELECT_REF = """
+SELECT ref_uuid, ref_key, ref_type, file_attached, title, publisher, year, author, editor, volume, address, 
+edition, journal, chapter, pages, issue, description, abstract FROM refs
+WHERE ref_uuid = :ref_uuid
+"""
+
+UPDATE_REF = """
+UPDATE refs SET 
+  ref_key = :ref_key,
+  ref_type = :ref_type,
+  title = :title,
+  publisher = :publisher,
+  year = :year,
+  author = :author,
+  editor = :editor,
+  volume = :volume,
+  address = :address,
+  edition = :edition,
+  journal = :journal,
+  chapter = :chapter,
+  pages = :pages,
+  issue = :issue,
+  description = :description,
+  abstract = :abstract
+WHERE ref_uuid = :ref_uuid
+"""
+
 """
 Database creation
 """
@@ -346,6 +420,7 @@ def execute_query(query, **kwargs):
     :return: cursor.fetchall result
     """
     conn = sqlite3.connect(MAIN_DATABASE_FILE_PATH)
+    conn.execute("PRAGMA foreign_keys = ON;")
     cursor = conn.cursor()
     cursor.execute(query, kwargs)
     buffer = cursor.fetchall()
@@ -366,6 +441,7 @@ def execute_query_last_insert_rowid(query, **kwargs):
 
     conn = sqlite3.connect(MAIN_DATABASE_FILE_PATH)
     conn.isolation_level = None
+    conn.execute("PRAGMA foreign_keys = ON")
     cursor = conn.cursor()
 
     cursor.execute("BEGIN")
@@ -570,3 +646,187 @@ def delete_project(proj_id):
     :type proj_id: int
     """
     execute_query(DELETE_PROJECT, proj_id=proj_id)
+
+
+"""
+References and related table query
+"""
+
+
+def insert_ref_category(name):
+    """ Create a reference new category
+
+    :param name: Category name
+    :type name: str
+    """
+    execute_query(INSERT_REF_CATEGORY, name=name)
+
+
+def update_ref_category(name, category_id):
+    """ Update a reference category name
+
+    :param name: Updated category name
+    :type name: str
+    :param category_id: ID of the category to update
+    :type category_id: int
+    """
+    execute_query(UPDATE_REF_CATEGORY, name=name, category_id=category_id)
+
+
+def delete_ref_category(category_id):
+    """ Delete a reference category
+
+    :param category_id: ID of the category to delete
+    :type category_id: int
+    """
+    execute_query(DELETE_REF_CATEGORY, category_id=category_id)
+
+
+def insert_ref_subcategory(name, category_id):
+    """ Create a new reference subcategory
+
+    :param name: Subcategory name
+    :type name: str
+    :param category_id: Parent category
+    :type category_id: int
+    """
+    execute_query(INSERT_REF_SUBCATEGORY, name=name, category_id=category_id)
+
+
+def update_ref_subcategory(name, category_id, subcategory_id):
+    """ Update a reference subcategory name or category
+
+    :param name: Updated subcategory name
+    :type name: str
+    :param category_id: Updated subcategory parent category
+    :type category_id: int
+    :param subcategory_id: ID of the subcategory to update
+    :type subcategory_id: int
+    """
+    execute_query(UPDATE_REF_SUBCATEGORY, name=name, category_id=category_id, subcategory_id=subcategory_id)
+
+
+def delete_ref_subcategory(subcategory_id):
+    """ Delete a reference subcategory
+
+    :param subcategory_id: ID of the subcategory to delete
+    :type subcategory_id: int
+    """
+    execute_query(DELETE_REF_SUBCATEGORY, subcategory_id=subcategory_id)
+
+
+def select_ref_category():
+    """ Select add the reference categorie """
+
+    buffer = execute_query(SELECT_REF_CATEGORY)
+
+    # Return the category list
+    category_list = []
+
+    for category in buffer:
+        category_list.append({'id': category[0], 'name': category[1]})
+
+    return category_list
+
+
+def select_reference_category():
+    """ Select all the references """
+
+    # Execute the query
+    conn = sqlite3.connect(MAIN_DATABASE_FILE_PATH)
+    conn.isolation_level = None
+    cursor = conn.cursor()
+
+    cursor.execute("BEGIN")
+    cursor.execute(SELECT_REF_CATEGORY)
+    category_buffer = cursor.fetchall()
+    cursor.execute(SELECT_REF_SUBCATEGORY)
+    subcategory_buffer = cursor.fetchall()
+    cursor.execute(SELECT_REFS)
+    reference_buffer = cursor.fetchall()
+    cursor.execute("END")
+    conn.close()
+
+    # Return the references list
+    Category = namedtuple('Category', ['id', 'name', 'subcategory', 'reference'])
+    SubCategory = namedtuple('Subcategory', ['id', 'name', 'reference'])
+    Reference = namedtuple('Reference', ['uuid', 'title', 'author', 'year'])
+
+    category_list = []
+
+    if category_buffer:
+        for category in category_buffer:
+            category_id = category[0]
+            category_name = category[1]
+
+            subcategory_list = []
+            if subcategory_buffer:
+                for subcategory in subcategory_buffer:
+                    if subcategory[2] == category_id:
+                        subcategory_id = subcategory[0]
+                        subcategory_name = subcategory[1]
+
+                        reference_list = []
+                        if reference_buffer:
+                            for reference in reference_buffer:
+                                if reference[4] == category_id and reference[5] == subcategory_id:
+                                    reference_uuid = data.uuid_string(reference[0])
+                                    reference_title = reference[1]
+                                    reference_author = reference[2]
+                                    reference_year = reference[3]
+
+                                    reference_list.append(Reference(reference_uuid, reference_title,
+                                                                    reference_author, reference_year))
+                        subcategory_list.append(SubCategory(subcategory_id, subcategory_name, reference_list))
+
+            reference_list = []
+            if reference_buffer:
+                for reference in reference_buffer:
+                    if reference[4] == category_id and reference[5] == None:
+                        reference_uuid = data.uuid_string(reference[0])
+                        reference_title = reference[1]
+                        reference_author = reference[2]
+                        reference_year = reference[3]
+
+                        reference_list.append(Reference(reference_uuid, reference_title,
+                                                        reference_author, reference_year))
+            category_list.append(Category(category_id, category_name, subcategory_list, reference_list))
+    return category_list
+
+
+def insert_ref(ref_uuid, ref_key, ref_type, category_id, subcategory_id=None, file_attached=False, title=None,
+               publisher=None, year=None, author=None, editor=None, volume=None, address=None, edition=None,
+               journal=None, chapter=None, pages=None, issue=None, description=None, abstract=None):
+    """ Insert a reference """
+    execute_query(INSERT_REF, ref_uuid=ref_uuid, ref_key=ref_key, ref_type=ref_type, file_attached=file_attached,
+                  title=title, publisher=publisher, year=year, author=author, editor=editor, volume=volume,
+                  address=address, edition=edition, journal=journal, chapter=chapter, pages=pages, issue=issue,
+                  description=description, abstract=abstract, subcategory_id=subcategory_id, category_id=category_id)
+
+
+def update_ref(ref_uuid, ref_key, ref_type, title=None, publisher=None, year=None, author=None, editor=None,
+               volume=None, address=None, edition=None, journal=None, chapter=None, pages=None, issue=None,
+               description=None, abstract=None):
+    """ Update a reference """
+    execute_query(UPDATE_REF, ref_key=ref_key, ref_type=ref_type, title=title, publisher=publisher, year=year,
+                  author=author, editor=editor, volume=volume, address=address, edition=edition, journal=journal,
+                  chapter=chapter, pages=pages, issue=issue, description=description, abstract=abstract,
+                  ref_uuid=data.uuid_bytes(ref_uuid))
+
+
+def select_reference(ref_uuid):
+    """ Select data for a specific reference
+
+    :param ref_uuid: Reference UUID
+    :type ref_uuid: str
+    :return: Reference informations
+    """
+
+    buffer = execute_query(SELECT_REF, ref_uuid=data.uuid_bytes(ref_uuid))
+
+    # Return the category list
+    return {'uuid': data.uuid_string(buffer[0][0]), 'key': buffer[0][1], 'type': buffer[0][2], 'file': buffer[0][3],
+            'title': buffer[0][4], 'publisher': buffer[0][5], 'year': buffer[0][6], 'author': buffer[0][7],
+            'editor': buffer[0][8], 'volume': buffer[0][9], 'place': buffer[0][10], 'edition': buffer[0][11],
+            'journal': buffer[0][12], 'chapter': buffer[0][13], 'pages': buffer[0][14], 'issue': buffer[0][15],
+            'description': buffer[0][16], 'abstract': buffer[0][17]}

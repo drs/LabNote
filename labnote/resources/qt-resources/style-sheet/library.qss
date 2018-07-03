@@ -22,12 +22,6 @@ QFrame#main_frame {
     border-right: none;
 }
 
-
-QTreeView#treeview {
-    border: none;
-    background-color: rgb(246, 246, 246);
-}
-
 /*
 TreeView button
 */
@@ -86,8 +80,6 @@ QPushButton::menu-indicator {
 /*
 Search lineedit
 */
-
-/* Line edit */
 
 QLineEdit#txt_search {
     border-radius: 2px;
