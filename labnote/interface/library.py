@@ -10,7 +10,7 @@ import uuid
 # PyQt import
 from PyQt5.QtWidgets import QDialog, QGridLayout, QLabel, QLineEdit, QMenu, QAction, QMessageBox, QFormLayout,\
     QAbstractItemView, QTreeView
-from PyQt5.QtCore import Qt, QRegExp, QModelIndex, QSettings
+from PyQt5.QtCore import Qt, QRegExp, QModelIndex, QSettings, pyqtSignal
 from PyQt5.QtGui import QFont, QRegExpValidator, QStandardItemModel, QStandardItem, QColor
 
 # Project import
@@ -124,7 +124,7 @@ class Library(QDialog, Ui_Library):
         self.show_list()
         self.treeview.header().hide()
         self.treeview.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        # self.treeview.setDragDropMode(QAbstractItemView.InternalMove)
+        self.treeview.setDragDropMode(QAbstractItemView.InternalMove)
 
     def init_connection(self):
         self.comboBox.currentTextChanged.connect(self.show_field)
@@ -132,6 +132,23 @@ class Library(QDialog, Ui_Library):
         self.btn_save.clicked.connect(self.process_reference)
         self.treeview.collapsed.connect(self.save_treeview_state)
         self.treeview.expanded.connect(self.save_treeview_state)
+        self.treeview.drop_finished.connect(self.drop_finished)
+
+    def drop_finished(self, index):
+        """ Update an item information after a drag and drop mouvement """
+        category = self.get_category(index)
+        subcategory = self.get_subcategory(index)
+
+        try:
+            database.update_reference_category(self.treeview.selectedIndexes()[0].data(Qt.UserRole),
+                                               category, subcategory)
+        except sqlite3.Error as exception:
+            message = QMessageBox(QMessageBox.Warning, "Error while loading data",
+                                  "An error occurred while loading the reference data.", QMessageBox.Ok)
+            message.setWindowTitle("LabNote")
+            message.setDetailedText(str(exception))
+            message.exec()
+            return
 
     def selection_changed(self):
         # Get the category informations
@@ -239,6 +256,7 @@ class Library(QDialog, Ui_Library):
                 category_item.setData(self.prepare_category_data_string(category.id), QT_StateRole)
                 category_item.setData(LEVEL_CATEGORY, QT_LevelRole)
                 category_item.setFont(QFont(self.font().family(), 12, QFont.Bold))
+                category_item.setDragEnabled(False)
                 root.appendRow(category_item)
 
                 if category.subcategory:
@@ -247,6 +265,7 @@ class Library(QDialog, Ui_Library):
                         subcategory_item.setData(subcategory.id, Qt.UserRole)
                         subcategory_item.setData(self.prepare_subcategory_data_string(subcategory.id), QT_StateRole)
                         subcategory_item.setData(LEVEL_SUBCATEGORY, QT_LevelRole)
+                        subcategory_item.setDragEnabled(False)
                         category_item.appendRow(subcategory_item)
 
                         if subcategory.reference:
@@ -501,8 +520,8 @@ class Library(QDialog, Ui_Library):
             try:
                 database.delete_reference(ref_uuid=ref_uuid)
             except sqlite3.Error as exception:
-                message = QMessageBox(QMessageBox.Warning, "Error deleting the subcategory",
-                                      "An error occurred while deleting the subcategory.", QMessageBox.Ok)
+                message = QMessageBox(QMessageBox.Warning, "Unable to delete reference",
+                                      "An error occurred while deleting the reference.", QMessageBox.Ok)
                 message.setWindowTitle("LabNote")
                 message.setDetailedText(str(exception))
                 message.exec()
@@ -1114,6 +1133,18 @@ class Library(QDialog, Ui_Library):
 
 class TreeView(QTreeView):
     """ Custom tree view class """
+
+    drop_finished = pyqtSignal(QModelIndex)
+
+    def dropEvent(self, event):
+        index = self.indexAt(event.pos())
+
+        if not index.isValid():
+            event.setDropAction(Qt.IgnoreAction)
+            return
+
+        self.drop_finished.emit(index)
+        QTreeView.dropEvent(self, event)
 
 class StandardItemModel(QStandardItemModel):
     """ Custom standard item model class """

@@ -373,6 +373,13 @@ DELETE_REF = """
 DELETE FROM refs WHERE ref_uuid=:ref_uuid
 """
 
+UPDATE_REFERENCE_CATEGORY = """
+UPDATE refs SET 
+category_id = :category_id,
+subcategory_id = :subcategory_id
+WHERE ref_uuid = :ref_uuid
+"""
+
 """
 Database creation
 """
@@ -843,3 +850,12 @@ def delete_reference(ref_uuid):
     :type ref_uuid: str
     """
     execute_query(DELETE_REF, ref_uuid=data.uuid_bytes(ref_uuid))
+
+
+def update_reference_category(ref_uuid, category_id, subcategory_id=None):
+    """ Update reference category and subcategory
+
+    This function is used when the reference is moved by drag and drop in the treeview
+    """
+    execute_query(UPDATE_REFERENCE_CATEGORY, category_id=category_id, subcategory_id=subcategory_id,
+                  ref_uuid=data.uuid_bytes(ref_uuid))
