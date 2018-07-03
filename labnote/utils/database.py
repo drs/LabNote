@@ -369,6 +369,10 @@ UPDATE refs SET
 WHERE ref_uuid = :ref_uuid
 """
 
+DELETE_REF = """
+DELETE FROM refs WHERE ref_uuid=:ref_uuid
+"""
+
 """
 Database creation
 """
@@ -830,3 +834,12 @@ def select_reference(ref_uuid):
             'editor': buffer[0][8], 'volume': buffer[0][9], 'place': buffer[0][10], 'edition': buffer[0][11],
             'journal': buffer[0][12], 'chapter': buffer[0][13], 'pages': buffer[0][14], 'issue': buffer[0][15],
             'description': buffer[0][16], 'abstract': buffer[0][17]}
+
+
+def delete_reference(ref_uuid):
+    """ Delete a reference from the database
+
+    :param ref_uuid: Reference UUID
+    :type ref_uuid: str
+    """
+    execute_query(DELETE_REF, ref_uuid=data.uuid_bytes(ref_uuid))

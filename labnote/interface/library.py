@@ -109,6 +109,11 @@ class Library(QDialog, Ui_Library):
         self.act_delete_subcategory.triggered.connect(self.delete_subcategory)
         self.act_delete_subcategory.setEnabled(False)
         self.manage_menu.addAction(self.act_delete_subcategory)
+        self.manage_menu.addSeparator()
+        self.act_delete_reference = QAction("Delete reference", self)
+        self.act_delete_reference.triggered.connect(self.delete_reference)
+        self.act_delete_reference.setEnabled(False)
+        self.manage_menu.addAction(self.act_delete_reference)
         self.btn_manage.setMenu(self.manage_menu)
 
         # Focus policy
@@ -141,19 +146,21 @@ class Library(QDialog, Ui_Library):
             self.act_update_category.setEnabled(True)
             self.act_delete_category.setEnabled(True)
         elif hierarchy_level == 2:
-            self.act_update_subcategory.setEnabled(True)
-            self.act_delete_subcategory.setEnabled(True)
             self.act_update_category.setEnabled(False)
             self.act_delete_category.setEnabled(False)
             if index.data(QT_LevelRole) == LEVEL_REFERENCE:
                 self.show_reference_details(index.data(Qt.UserRole))
+                self.act_delete_reference.setEnabled(True)
+            else:
+                self.act_update_subcategory.setEnabled(True)
+                self.act_delete_subcategory.setEnabled(True)
         elif hierarchy_level == 3:
             self.act_update_subcategory.setEnabled(False)
             self.act_delete_subcategory.setEnabled(False)
             self.act_update_category.setEnabled(False)
             self.act_delete_category.setEnabled(False)
-            if index.data(QT_LevelRole) == LEVEL_REFERENCE:
-                self.show_reference_details(index.data(Qt.UserRole))
+            self.act_delete_reference.setEnabled(True)
+            self.show_reference_details(index.data(Qt.UserRole))
 
     def show_reference_details(self, uuid):
         """ Show a reference details when it is selected """
@@ -454,6 +461,7 @@ class Library(QDialog, Ui_Library):
             subcategory.accepted.connect(self.show_list)
 
     def delete_subcategory(self):
+        """ Delete a subcategory """
         # Get the subcategory informations
         index = self.treeview.selectionModel().currentIndex()
 
@@ -481,6 +489,24 @@ class Library(QDialog, Ui_Library):
                     message.setDetailedText(str(exception))
                     message.exec()
                     return
+            self.show_list()
+
+    def delete_reference(self):
+        """ Delete a reference """
+        index = self.treeview.selectionModel().currentIndex()
+
+        if self.is_reference(index):
+            ref_uuid = index.data(Qt.UserRole)
+
+            try:
+                database.delete_reference(ref_uuid=ref_uuid)
+            except sqlite3.Error as exception:
+                message = QMessageBox(QMessageBox.Warning, "Error deleting the subcategory",
+                                      "An error occurred while deleting the subcategory.", QMessageBox.Ok)
+                message.setWindowTitle("LabNote")
+                message.setDetailedText(str(exception))
+                message.exec()
+                return
             self.show_list()
 
     def delete_layout(self, layout):
@@ -1088,7 +1114,6 @@ class Library(QDialog, Ui_Library):
 
 class TreeView(QTreeView):
     """ Custom tree view class """
-
 
 class StandardItemModel(QStandardItemModel):
     """ Custom standard item model class """
