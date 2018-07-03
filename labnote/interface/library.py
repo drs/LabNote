@@ -61,12 +61,8 @@ class Library(QDialog, Ui_Library):
 
         # Create the treeview
         self.treeview = TreeView()
-        self.treeview.setStyleSheet("""
-        QTreeView {
-            border: none;
-            background-color: rgb(246, 246, 246);
-        }
-        """)
+        self.treeview.setSelectionBehavior(QAbstractItemView.SelectRows)
+        stylesheet.set_style_sheet(self.treeview, ":/StyleSheet/style-sheet/library/treeview.qss")
         self.frame.layout().insertWidget(1, self.treeview)
 
         # Set style sheet
