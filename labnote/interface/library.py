@@ -6,18 +6,20 @@ This module contain the classes responsible for launching and managing the libra
 import sip
 import sqlite3
 import uuid
+import os
 
 # PyQt import
 from PyQt5.QtWidgets import QDialog, QGridLayout, QLabel, QLineEdit, QMenu, QAction, QMessageBox, QFormLayout,\
     QAbstractItemView, QTreeView, QWidget, QVBoxLayout
-from PyQt5.QtCore import Qt, QRegExp, QModelIndex, QSettings, pyqtSignal
-from PyQt5.QtGui import QFont, QRegExpValidator, QStandardItemModel, QStandardItem, QColor
+from PyQt5.QtCore import Qt, QRegExp, QModelIndex, QSettings, pyqtSignal, QFileInfo
+from PyQt5.QtGui import QFont, QRegExpValidator, QStandardItemModel, QStandardItem, QColor, QPixmap, QPainter, QPen, \
+    QBrush
 
 # Project import
 from labnote.ui.ui_library import Ui_Library
 from labnote.core import stylesheet, textedit, sqlite_error, data
 from labnote.interface.dialog.category import Category, Subcategory
-from labnote.utils import database
+from labnote.utils import database, fsentry, directory
 
 # Constant definition
 
@@ -45,6 +47,10 @@ class Library(QDialog, Ui_Library):
     grid_layout = None
     creating_reference = False  # True when a new reference is created
 
+    # Signals definition
+    pdf_added = pyqtSignal(str)
+    pdf_deleted = pyqtSignal()
+
     def __init__(self, parent=None):
         super(Library, self).__init__(parent)
         # Initialize the GUI
@@ -67,8 +73,14 @@ class Library(QDialog, Ui_Library):
         self.frame.layout().insertWidget(1, self.treeview)
 
         # Create the pdf widget
-        self.pdf_widget = PDFBorderWidget()
-        self.main_frame.layout().addWidget(self.pdf_widget)
+        self.pdf_box = QWidget()
+        layout = QVBoxLayout()
+        layout.setContentsMargins(20, 60, 20, 60)
+        self.pdf_widget = PDFWidget()
+        layout.addWidget(self.pdf_widget)
+        self.pdf_box.setLayout(layout)
+        self.pdf_box.setFixedWidth(180)
+        self.main_frame.layout().addWidget(self.pdf_box)
 
         # Set style sheet
         stylesheet.set_style_sheet(self, ":/StyleSheet/style-sheet/library.qss")
@@ -138,6 +150,73 @@ class Library(QDialog, Ui_Library):
         self.treeview.collapsed.connect(self.save_treeview_state)
         self.treeview.expanded.connect(self.save_treeview_state)
         self.treeview.drop_finished.connect(self.drop_finished)
+        self.pdf_widget.pdf_dropped.connect(self.add_pdf)
+        self.pdf_widget.delete.connect(self.remove_pdf)
+        self.pdf_added.connect(self.pdf_widget.show_pdf)
+        self.pdf_deleted.connect(self.pdf_widget.remove_pdf)
+
+    def add_pdf(self, file):
+        """ Add a PDF to a reference
+
+        :param file: PDF file URL
+        :type file: str
+        """
+        index = self.treeview.selectionModel().currentIndex()
+        ref_uuid = index.data(Qt.UserRole)
+
+        try:
+            fsentry.add_reference_pdf(ref_uuid=ref_uuid, file=file)
+        except sqlite3.Error as exception:
+            message = QMessageBox(QMessageBox.Warning, "Error while saving reference",
+                                  "An error occurred while saving the reference PDF in the database.", QMessageBox.Ok)
+            message.setWindowTitle("LabNote")
+            message.setDetailedText(str(exception))
+            message.exec()
+            return
+        except OSError as exception:
+            try:
+                database.update_reference_file(ref_uuid=ref_uuid, file_attached=False)
+            except sqlite3.Error as exception:
+                message = QMessageBox(QMessageBox.Warning, "Error while saving reference",
+                                      "An error occurred while saving the reference PDF and cleaning up the reference "
+                                      "from the database.", QMessageBox.Ok)
+                message.setWindowTitle("LabNote")
+                message.setDetailedText(str(exception))
+                message.exec()
+                return
+
+            message = QMessageBox(QMessageBox.Warning, "Error while saving reference",
+                                  "An error occurred while saving the reference PDF file.", QMessageBox.Ok)
+            message.setWindowTitle("LabNote")
+            message.setDetailedText(str(exception))
+            message.exec()
+            return
+
+        self.pdf_added.emit(file)
+
+    def remove_pdf(self):
+        """ Remove the PDF from the database and file structure """
+        index = self.treeview.selectionModel().currentIndex()
+        ref_uuid = index.data(Qt.UserRole)
+        try:
+            fsentry.delete_reference_file(ref_uuid=ref_uuid)
+        except sqlite3.Error as exception:
+            message = QMessageBox(QMessageBox.Warning, "Error while deleting reference",
+                                  "An error occurred while deleting the reference PDF in the database.", QMessageBox.Ok)
+            message.setWindowTitle("LabNote")
+            message.setDetailedText(str(exception))
+            message.exec()
+            return
+        except OSError as exception:
+            if exception.errno != 2:
+                message = QMessageBox(QMessageBox.Warning, "Error while deleting reference",
+                                      "An error occurred while deleting the reference PDF file. Please delete the reference"
+                                      " {} manually.".format(ref_uuid), QMessageBox.Ok)
+                message.setWindowTitle("LabNote")
+                message.setDetailedText(str(exception))
+                message.exec()
+                return
+        self.pdf_deleted.emit()
 
     def drop_finished(self, index):
         """ Update an item information after a drag and drop mouvement """
@@ -198,6 +277,7 @@ class Library(QDialog, Ui_Library):
 
         self.enable_all(True)
 
+        # Show the fields
         if reference['type'] == TYPE_ARTICLE:
             self.txt_key.setText(data.receive_string(reference['key']))
             self.txt_author.setText(data.receive_string(reference['author']))
@@ -235,6 +315,11 @@ class Library(QDialog, Ui_Library):
             self.txt_edition.settext(data.receive_string(reference['edition']))
             self.txt_description.setHtml(data.receive_string(reference['description']))
             self.txt_abstract.setHtml(data.receive_string(reference['abstract']))
+
+        # Show the PDF file
+        if reference['file']:
+            file = os.path.join(directory.REFERENCES_DIRECTORY_PATH + "/{}".format(uuid))
+            self.pdf_widget.show_pdf(file=file)
 
     def show_list(self):
         """ Show the category, subcategory and references list """
@@ -306,6 +391,8 @@ class Library(QDialog, Ui_Library):
             self.txt_key.clear()
             self.creating_reference = True
             self.enable_all(True)
+            self.pdf_widget.clear_form()
+            self.pdf_widget.setEnabled(False)
 
     def clear_form(self):
         """ Clear all data in the form """
@@ -313,6 +400,7 @@ class Library(QDialog, Ui_Library):
         self.txt_key.clear()
         self.article_field()
         self.enable_all(False)
+        self.pdf_widget.clear_form()
 
     def get_category(self, index):
         """ Return a category id
@@ -555,6 +643,7 @@ class Library(QDialog, Ui_Library):
         self.txt_key.setEnabled(enable)
         self.comboBox.setEnabled(enable)
         self.btn_save.setEnabled(enable)
+        self.pdf_widget.setEnabled(enable)
 
         if self.grid_layout is not None:
             for position in range(0, self.grid_layout.count()):
@@ -633,6 +722,7 @@ class Library(QDialog, Ui_Library):
                                                 publisher=publisher, address=place, volume=volume, pages=pages,
                                                 edition=edition, description=description, abstract=abstract,
                                                 chapter=chapter, editor=editor, ref_type=TYPE_CHAPTER)
+                        self.pdf_widget.setEnabled(True)
                     except sqlite3.Error as exception:
                         error_code = sqlite_error.sqlite_err_handler(str(exception))
 
@@ -1170,28 +1260,194 @@ class TreeView(QTreeView):
         QTreeView.dropEvent(self, event)
 
 
-class PDFBorderWidget(QWidget):
-    """ Widget that hold the widget that accept PDF """
+class PDFWidget(QWidget):
+    """ Widget that accept PDF drop """
+
+    # Global variable
+    contains_file = False
+    file = None
+
+    # Signals
+    pdf_dropped = pyqtSignal(str)
+    delete = pyqtSignal()
+
     def __init__(self):
-        super(PDFBorderWidget, self).__init__()
+        super(PDFWidget, self).__init__()
         self.init_ui()
+        self.init_connection()
+        self.setAcceptDrops(True)
 
     def init_ui(self):
         layout = QVBoxLayout()
-        layout.setContentsMargins(20, 60, 20, 60)
-        border_widget = QWidget()
-        border_widget_layout = QVBoxLayout()
-        lbl_no_pdf = QLabel("Drop PDF here")
-        lbl_no_pdf.setStyleSheet("color: rgb(172, 172, 172)")
-        lbl_no_pdf.setWordWrap(True)
-        border_widget_layout.addWidget(lbl_no_pdf)
-        border_widget.setStyleSheet(".QWidget { border: 1.5px dashed rgb(172, 172, 172) }")
-        border_widget.setLayout(border_widget_layout)
-        border_widget.setAcceptDrops(True)
-        layout.addWidget(border_widget)
+        widget = QWidget()
+        widget.setStyleSheet(self.setStyleSheet(".QWidget { "
+                                                "   border: 1.5px dashed rgb(172, 172, 172); "
+                                                "   border-radius: 5px"
+                                                "}"))
+
+        widget_layout = QVBoxLayout()
+        self.lbl_no_pdf = PDFLabel()
+        widget_layout.addWidget(self.lbl_no_pdf, alignment=Qt.AlignCenter)
+        widget.setLayout(widget_layout)
+
+        layout.addWidget(widget)
         self.setLayout(layout)
 
-        self.setMinimumWidth(100)
+        self.setAcceptDrops(True)
+
+    def init_connection(self):
+        self.lbl_no_pdf.double_clicked.connect(self.open_pdf)
+        self.lbl_no_pdf.delete.connect(self.delete_reference)
+
+    def delete_reference(self):
+        self.delete.emit()
+
+    def dragEnterEvent(self, event):
+        if not self.contains_file:
+            if event.mimeData().hasUrls():
+                url = event.mimeData().urls()[0]
+                suffix = QFileInfo(url.fileName()).completeSuffix()
+                if suffix == "pdf":
+                    event.acceptProposedAction()
+
+    def dropEvent(self, event):
+        file = event.mimeData().urls()[0].toLocalFile()
+        self.contains_file = True
+        self.pdf_dropped.emit(file)
+
+    def open_pdf(self):
+        """ Open the pdf when the file is double clicked """
+        if os.path.isfile(self.file):
+            os.system("open {}".format(self.file))
+        else:
+            message = QMessageBox()
+            message.setWindowTitle("LabNote")
+            message.setText("Unable to locate file")
+            message.setInformativeText("The reference PDF is not in the reference folder.")
+            message.setIcon(QMessageBox.Information)
+            message.setStandardButtons(QMessageBox.No | QMessageBox.Yes)
+            message.setDefaultButton(QMessageBox.Yes)
+            ret = message.exec()
+
+            if ret == QMessageBox.Yes:
+                self.delete.emit()
+
+    def show_pdf(self, file):
+        """ Show a PDF image """
+        self.file = file
+        self.lbl_no_pdf.set_icon()
+
+    def remove_pdf(self):
+        """ Remove the PDF """
+        self.file = None
+        self.lbl_no_pdf.set_text()
+
+    def clear_form(self):
+        """ Clear all the widget element """
+        self.lbl_no_pdf.set_text()
+        self.contains_file = False
+
+
+class PDFLabel(QLabel):
+    """ Label that contains the PDF image """
+
+    # Signals
+    double_clicked = pyqtSignal()
+    delete = pyqtSignal()
+
+    def __init__(self):
+        super(PDFLabel, self).__init__()
+        self.setWordWrap(True)
+        self.set_text()
+        self.setFocusPolicy(Qt.ClickFocus)
+
+    def mouseDoubleClickEvent(self, event):
+        self.double_clicked.emit()
+        self.set_icon()
+        QLabel().mouseDoubleClickEvent(event)
+
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_Backspace:
+            self.delete.emit()
+        QLabel().keyPressEvent(event)
+
+    def focusInEvent(self, event):
+        self.set_selected_icon()
+        QLabel().focusInEvent(event)
+
+    def focusOutEvent(self, event):
+        self.set_icon()
+        QLabel().focusOutEvent(event)
+
+    def set_text(self):
+        """ Set default text """
+        self.clear()
+        self.setText("Drop PDF here")
+        self.setStyleSheet("color: rgb(172, 172, 172)")
+        self.setMinimumSize(0, 0)
+        self.setMaximumSize(16777215, 16777215)
+
+    def set_icon(self):
+        """ Set PDF icon """
+        image = QPixmap(":/Icons/Library/icons/library/1xpdf.png")
+        if self.devicePixelRatio() == 2:
+            image = QPixmap(":/Icons/Library/icons/library/2xpdf.png")
+            image.setDevicePixelRatio(self.devicePixelRatio())
+
+        self.setText("")
+        self.setFixedSize(64, 64)
+        self.setPixmap(image)
+
+    def set_selected_icon(self):
+        """ Set PDF icon """
+        image = QPixmap(":/Icons/Library/icons/library/1xpdf.png")
+        if self.devicePixelRatio() == 2:
+            image = QPixmap(":/Icons/Library/icons/library/2xpdf.png")
+            image.setDevicePixelRatio(self.devicePixelRatio())
+
+        rect = QPainter(image)
+        rect.setCompositionMode(QPainter.CompositionMode_DestinationOver)
+        pen = QPen()
+        pen.setColor(QColor(140, 140, 140))
+        pen.setWidth(1)
+        pen.setStyle(Qt.SolidLine)
+        brush = QBrush()
+        brush.setColor(QColor(140, 140, 140))
+        brush.setStyle(Qt.SolidPattern)
+        rect.setBrush(brush)
+        rect.setPen(pen)
+        rect.drawRoundedRect(2, 2, 60, 60, 5, 5)
+        rect.end()
+
+        rect = QPainter(image)
+        rect.setCompositionMode(QPainter.CompositionMode_DestinationOver)
+        pen = QPen()
+        pen.setColor(Qt.white)
+        pen.setWidth(1)
+        pen.setStyle(Qt.SolidLine)
+        brush = QBrush()
+        brush.setColor(Qt.white)
+        brush.setStyle(Qt.SolidPattern)
+        rect.setBrush(brush)
+        rect.setPen(pen)
+        rect.drawRoundedRect(0, 0, 64, 64, 5, 5)
+        rect.end()
+
+        # painter = QPainter(image)
+        # pen = QPen()
+        # pen.setColor(Qt.black)
+        # pen.setWidth(1)
+        # pen.setStyle(Qt.DashLine)
+        # painter.setPen(pen)
+        # painter.drawLine(0, 0, 64, 0)
+        # painter.drawLine(0, 64, 64, 64)
+        # painter.drawLine(0, 0, 0, 64)
+        # painter.drawLine(64, 0, 64, 64)
+        # painter.end()
+
+        self.setText("")
+        self.setFixedSize(64, 64)
+        self.setPixmap(image)
 
 
 class StandardItemModel(QStandardItemModel):

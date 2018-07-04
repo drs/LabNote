@@ -35,5 +35,7 @@
     <qresource prefix="/Icons/Library">
         <file>icons/library/branch-close.png</file>
         <file>icons/library/branch-open.png</file>
+        <file>icons/library/1xpdf.png</file>
+        <file>icons/library/2xpdf.png</file>
     </qresource>
 </RCC>

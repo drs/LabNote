@@ -7,7 +7,7 @@ import uuid
 import os
 
 # Projet import
-from labnote.utils import database, directory
+from labnote.utils import database, directory, files
 
 
 def check_integrity():
@@ -41,3 +41,24 @@ def create_notebook(nb_name, proj_id):
     directory.create_nb_directory(nb_uuid)
     database.create_notebook(nb_name, nb_uuid, proj_id)
 
+
+def add_reference_pdf(ref_uuid, file):
+    """ Add a reference PDF in the file structure and the database
+
+    :param ref_uuid: Reference UUID
+    :type ref_uuid: str
+    :param file: Orignal file path
+    :type file: str
+    """
+    database.update_reference_file(ref_uuid=ref_uuid, file_attached=True)
+    files.copy_reference(ref_uuid=ref_uuid, file=file)
+
+
+def delete_reference_file(ref_uuid):
+    """ Delete a reference PDF in the file structure and the database
+
+    :param ref_uuid: Reference UUID
+    :type ref_uuid: str
+    """
+    database.update_reference_file(ref_uuid=ref_uuid, file_attached=False)
+    files.delete_reference(ref_uuid=ref_uuid)

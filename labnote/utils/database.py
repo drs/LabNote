@@ -380,6 +380,13 @@ subcategory_id = :subcategory_id
 WHERE ref_uuid = :ref_uuid
 """
 
+UPDATE_REFERENCE_FILE = """
+UPDATE refs SET
+file_attached = :file_attached
+WHERE ref_uuid = :ref_uuid
+"""
+
+
 """
 Database creation
 """
@@ -859,3 +866,8 @@ def update_reference_category(ref_uuid, category_id, subcategory_id=None):
     """
     execute_query(UPDATE_REFERENCE_CATEGORY, category_id=category_id, subcategory_id=subcategory_id,
                   ref_uuid=data.uuid_bytes(ref_uuid))
+
+
+def update_reference_file(ref_uuid, file_attached):
+    """ Update the reference when a file is attached or removed """
+    execute_query(UPDATE_REFERENCE_FILE, file_attached=file_attached, ref_uuid=data.uuid_bytes(ref_uuid))
