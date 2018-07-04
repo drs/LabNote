@@ -17,7 +17,8 @@ from PyQt5.QtGui import QFont, QRegExpValidator, QStandardItemModel, QStandardIt
 
 # Project import
 from labnote.ui.ui_library import Ui_Library
-from labnote.core import stylesheet, textedit, sqlite_error, data
+from labnote.core import stylesheet, sqlite_error, data
+from labnote.interface.widget.textedit import TextEdit
 from labnote.interface.dialog.category import Category, Subcategory
 from labnote.utils import database, fsentry, directory
 from labnote.interface.widget.lineedit import LineEdit, NumberLineEdit, YearLineEdit, PagesLineEdit
@@ -886,7 +887,7 @@ class Library(QDialog, Ui_Library):
         self.lbl_description = QLabel("Description")
         self.lbl_description.setAlignment(Qt.AlignTop | Qt.AlignLeft)
         self.grid_layout.addWidget(self.lbl_description, 7, 0)
-        self.txt_description = textedit.TextEdit()
+        self.txt_description = TextEdit()
         self.txt_description.create_tag.connect(self.add_tag)
         self.txt_description.delete_tag.connect(self.remove_tag)
         self.grid_layout.addWidget(self.txt_description, 7, 1)
@@ -894,7 +895,7 @@ class Library(QDialog, Ui_Library):
         self.lbl_abstract = QLabel("Abstract")
         self.lbl_abstract.setAlignment(Qt.AlignTop | Qt.AlignLeft)
         self.grid_layout.addWidget(self.lbl_abstract, 8, 0)
-        self.txt_abstract = textedit.TextEdit()
+        self.txt_abstract = TextEdit()
         self.txt_abstract.create_tag.connect(self.add_tag)
         self.txt_abstract.delete_tag.connect(self.remove_tag)
         self.grid_layout.addWidget(self.txt_abstract, 8, 1)
@@ -1063,14 +1064,14 @@ class Library(QDialog, Ui_Library):
 
         self.lbl_description = QLabel("Description")
         self.grid_layout.addWidget(self.lbl_description, 8, 0)
-        self.txt_description = textedit.TextEdit()
+        self.txt_description = TextEdit()
         self.txt_description.create_tag.connect(self.add_tag)
         self.txt_description.delete_tag.connect(self.remove_tag)
         self.grid_layout.addWidget(self.txt_description, 8, 1)
 
         self.lbl_abstract = QLabel("Abstract")
         self.grid_layout.addWidget(self.lbl_abstract, 9, 0)
-        self.txt_abstract = textedit.TextEdit()
+        self.txt_abstract = TextEdit()
         self.txt_abstract.create_tag.connect(self.add_tag)
         self.txt_abstract.delete_tag.connect(self.remove_tag)
         self.grid_layout.addWidget(self.txt_abstract, 9, 1)
@@ -1154,14 +1155,14 @@ class Library(QDialog, Ui_Library):
 
         self.lbl_description = QLabel("Description")
         self.grid_layout.addWidget(self.lbl_description, 10, 0)
-        self.txt_description = textedit.TextEdit()
+        self.txt_description = TextEdit()
         self.txt_description.create_tag.connect(self.add_tag)
         self.txt_description.delete_tag.connect(self.remove_tag)
         self.grid_layout.addWidget(self.txt_description, 10, 1)
 
         self.lbl_abstract = QLabel("Abstract")
         self.grid_layout.addWidget(self.lbl_abstract, 11, 0)
-        self.txt_abstract = textedit.TextEdit()
+        self.txt_abstract = TextEdit()
         self.txt_abstract.create_tag.connect(self.add_tag)
         self.txt_abstract.delete_tag.connect(self.remove_tag)
         self.grid_layout.addWidget(self.txt_abstract, 11, 1)
