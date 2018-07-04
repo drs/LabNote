@@ -10,10 +10,10 @@ import os
 
 # PyQt import
 from PyQt5.QtWidgets import QDialog, QGridLayout, QLabel, QMenu, QAction, QMessageBox,\
-    QAbstractItemView, QTreeView, QWidget, QVBoxLayout
+    QAbstractItemView, QTreeView, QWidget, QVBoxLayout, QLineEdit
 from PyQt5.QtCore import Qt, QRegExp, QModelIndex, QSettings, pyqtSignal, QFileInfo
 from PyQt5.QtGui import QFont, QRegExpValidator, QStandardItemModel, QStandardItem, QColor, QPixmap, QPainter, QPen, \
-    QBrush
+    QBrush, QIcon
 
 # Project import
 from labnote.ui.ui_library import Ui_Library
@@ -83,6 +83,19 @@ class Library(QDialog, Ui_Library):
         self.pdf_box.setLayout(layout)
         self.pdf_box.setFixedWidth(180)
         self.main_frame.layout().addWidget(self.pdf_box)
+
+        # Set search widget in toolbar
+        search_icon = QIcon(":/Icons/MainWindow/icons/main-window/search.png")
+
+        self.txt_search.setPlaceholderText("Search")
+        self.txt_search.addAction(search_icon, QLineEdit.LeadingPosition)
+        self.txt_search.setFixedWidth(300)
+        self.txt_search.setStyleSheet(
+            """ QLineEdit {
+                border-radius: 2px;
+                border: none;
+                height: 22px;
+            }""")
 
         # Set style sheet
         stylesheet.set_style_sheet(self, ":/StyleSheet/style-sheet/library.qss")
