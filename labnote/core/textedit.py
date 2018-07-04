@@ -27,7 +27,7 @@ class TextEdit(QTextEdit):
     completer_status = False
 
     # Signals
-    delete_tag = pyqtSignal(str)
+    delete_tag = pyqtSignal(list)
     create_tag = pyqtSignal(str)
 
     def __init__(self):
@@ -82,12 +82,18 @@ class TextEdit(QTextEdit):
 
         # Handle delete a tag when the completer is inactive
         if event.key() == Qt.Key_Backspace and not self.completer_status:
-            if self.textCursor().charFormat().isAnchor():
-                if self.textCursor().hasSelection():
-                    self.delete_tag.emit(self.textCursor().charFormat().anchorHref())
-                    QTextEdit.keyPressEvent(self, event)
-                    return
-                else:
+            cursor = self.textCursor()
+            if cursor.hasSelection():
+                tag_list = set([])
+                for position in range(cursor.selectionStart(), cursor.selectionEnd()):
+                    cursor.setPosition(position, QTextCursor.MoveAnchor)
+                    if cursor.charFormat().isAnchor():
+                        tag_list.add(cursor.charFormat().anchorHref())
+                self.delete_tag.emit(list(tag_list))
+                QTextEdit.keyPressEvent(self, event)
+                return
+            else:
+                if self.textCursor().charFormat().isAnchor():
                     self.select_anchor()
                     return
 
@@ -193,7 +199,7 @@ class TextEdit(QTextEdit):
             cursor.mergeCharFormat(format)
 
             self.stop_completer()
-            self.create_tag.emit(old_text)
+            self.create_tag.emit("tag/{}".format(old_text))
         elif len(args) == 2 and isinstance(args[0], int) and isinstance(args[1], int):
             cursor.setPosition(args[0])
             cursor.setPosition(args[1], QTextCursor.KeepAnchor)
@@ -208,7 +214,7 @@ class TextEdit(QTextEdit):
             cursor.setPosition(args[1], QTextCursor.KeepAnchor)
             format.setAnchorHref("tag/{}".format(old_text))
             cursor.mergeCharFormat(format)
-            self.create_tag.emit(old_text)
+            self.create_tag.emit("tag/{}".format(old_text))
 
     def select_anchor(self):
         """ Select an anchor in the textedit """
