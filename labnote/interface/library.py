@@ -9,7 +9,7 @@ import uuid
 import os
 
 # PyQt import
-from PyQt5.QtWidgets import QDialog, QGridLayout, QLabel, QLineEdit, QMenu, QAction, QMessageBox, QFormLayout,\
+from PyQt5.QtWidgets import QDialog, QGridLayout, QLabel, QMenu, QAction, QMessageBox,\
     QAbstractItemView, QTreeView, QWidget, QVBoxLayout
 from PyQt5.QtCore import Qt, QRegExp, QModelIndex, QSettings, pyqtSignal, QFileInfo
 from PyQt5.QtGui import QFont, QRegExpValidator, QStandardItemModel, QStandardItem, QColor, QPixmap, QPainter, QPen, \
@@ -20,6 +20,7 @@ from labnote.ui.ui_library import Ui_Library
 from labnote.core import stylesheet, textedit, sqlite_error, data
 from labnote.interface.dialog.category import Category, Subcategory
 from labnote.utils import database, fsentry, directory
+from labnote.interface.widget.lineedit import LineEdit, NumberLineEdit, YearLineEdit, PagesLineEdit
 
 # Constant definition
 
@@ -154,6 +155,14 @@ class Library(QDialog, Ui_Library):
         self.pdf_widget.delete.connect(self.remove_pdf)
         self.pdf_added.connect(self.pdf_widget.show_pdf)
         self.pdf_deleted.connect(self.pdf_widget.remove_pdf)
+
+    def add_tag(self, tag):
+        """ Add tag to the reference """
+        print("ADD {}".format(tag))
+
+    def remove_tag(self, tag):
+        """ Remove tag to the reference """
+        print("REMOVE {}".format(tag))
 
     def add_pdf(self, file):
         """ Add a PDF to a reference
@@ -878,12 +887,16 @@ class Library(QDialog, Ui_Library):
         self.lbl_description.setAlignment(Qt.AlignTop | Qt.AlignLeft)
         self.grid_layout.addWidget(self.lbl_description, 7, 0)
         self.txt_description = textedit.TextEdit()
+        self.txt_description.create_tag.connect(self.add_tag)
+        self.txt_description.delete_tag.connect(self.remove_tag)
         self.grid_layout.addWidget(self.txt_description, 7, 1)
 
         self.lbl_abstract = QLabel("Abstract")
         self.lbl_abstract.setAlignment(Qt.AlignTop | Qt.AlignLeft)
         self.grid_layout.addWidget(self.lbl_abstract, 8, 0)
         self.txt_abstract = textedit.TextEdit()
+        self.txt_abstract.create_tag.connect(self.add_tag)
+        self.txt_abstract.delete_tag.connect(self.remove_tag)
         self.grid_layout.addWidget(self.txt_abstract, 8, 1)
 
         if fields:
@@ -1051,11 +1064,15 @@ class Library(QDialog, Ui_Library):
         self.lbl_description = QLabel("Description")
         self.grid_layout.addWidget(self.lbl_description, 8, 0)
         self.txt_description = textedit.TextEdit()
+        self.txt_description.create_tag.connect(self.add_tag)
+        self.txt_description.delete_tag.connect(self.remove_tag)
         self.grid_layout.addWidget(self.txt_description, 8, 1)
 
         self.lbl_abstract = QLabel("Abstract")
         self.grid_layout.addWidget(self.lbl_abstract, 9, 0)
         self.txt_abstract = textedit.TextEdit()
+        self.txt_abstract.create_tag.connect(self.add_tag)
+        self.txt_abstract.delete_tag.connect(self.remove_tag)
         self.grid_layout.addWidget(self.txt_abstract, 9, 1)
 
         if fields:
@@ -1138,11 +1155,15 @@ class Library(QDialog, Ui_Library):
         self.lbl_description = QLabel("Description")
         self.grid_layout.addWidget(self.lbl_description, 10, 0)
         self.txt_description = textedit.TextEdit()
+        self.txt_description.create_tag.connect(self.add_tag)
+        self.txt_description.delete_tag.connect(self.remove_tag)
         self.grid_layout.addWidget(self.txt_description, 10, 1)
 
         self.lbl_abstract = QLabel("Abstract")
         self.grid_layout.addWidget(self.lbl_abstract, 11, 0)
         self.txt_abstract = textedit.TextEdit()
+        self.txt_abstract.create_tag.connect(self.add_tag)
+        self.txt_abstract.delete_tag.connect(self.remove_tag)
         self.grid_layout.addWidget(self.txt_abstract, 11, 1)
 
         if fields:
@@ -1452,37 +1473,3 @@ class StandardItemModel(QStandardItemModel):
     """ Custom standard item model class """
     def get_persistant_index_list(self):
         return self.persistentIndexList()
-
-
-class LineEdit(QLineEdit):
-    """ Lineedit used in the form """
-    def __init__(self):
-        super(LineEdit, self).__init__()
-        self.setAttribute(Qt.WA_MacShowFocusRect, 0)
-
-
-class YearLineEdit(LineEdit):
-    """ Lineedit used for the year """
-    def __init__(self):
-        super(YearLineEdit, self).__init__()
-
-        validator = QRegExpValidator(QRegExp("^[0-9]{4}$"))
-        self.setValidator(validator)
-
-
-class NumberLineEdit(LineEdit):
-    """ Lineedit used in the number only fields """
-    def __init__(self):
-        super(NumberLineEdit, self).__init__()
-
-        validator = QRegExpValidator(QRegExp("^[0-9]{5}$"))
-        self.setValidator(validator)
-
-
-class PagesLineEdit(LineEdit):
-    """ Lineedit used for the pages """
-    def __init__(self):
-        super(PagesLineEdit, self).__init__()
-
-        validator = QRegExpValidator(QRegExp("^[0-9]{0,5}( - |-)[0-9]{0,5}"))
-        self.setValidator(validator)
