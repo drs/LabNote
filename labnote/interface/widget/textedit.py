@@ -5,9 +5,9 @@ This module contains the textedit subclasses used in LabNote software
 # Python import
 
 # PyQt import
-from PyQt5.QtWidgets import QTextEdit, QCompleter
+from PyQt5.QtWidgets import QTextEdit, QCompleter, QWidget
 from PyQt5.QtCore import Qt, QStringListModel, pyqtSignal
-from PyQt5.QtGui import QTextCursor, QTextCharFormat, QColor
+from PyQt5.QtGui import QTextCursor, QTextCharFormat, QColor, QPainter, QBrush, QPen
 
 # Project import
 from labnote.resources import resources
@@ -25,6 +25,7 @@ class TextEdit(QTextEdit):
     start_position = -1
     completer = None
     completer_status = False
+    launch = True  # Changed to false when the text is first formatted
 
     # Signals
     delete_tag = pyqtSignal(list)
@@ -34,6 +35,27 @@ class TextEdit(QTextEdit):
         super(TextEdit, self).__init__()
         # Set style sheet
         stylesheet.set_style_sheet(self, ":/StyleSheet/style-sheet/textedit.qss")
+        self.textChanged.connect(self.set_base_format)
+
+    def set_base_format(self):
+        """ Set the TextEdit base format """
+        self.blockSignals(True)
+
+        cursor = self.textCursor()
+        cursor.setPosition(0)
+        cursor.movePosition(QTextCursor.End, QTextCursor.KeepAnchor)
+
+        # Set the initial format
+        if self.launch:
+            fmt = QTextCharFormat()
+            fmt.setFontUnderline(False)
+            fmt.setForeground(Qt.black)
+
+            cursor.mergeCharFormat(fmt)
+            self.launch = False
+
+        self.blockSignals(False)
+        self.textChanged.disconnect(self.set_base_format)
 
     def insertFromMimeData(self, source):
         """ Insert plain text only when pasting """
@@ -43,15 +65,6 @@ class TextEdit(QTextEdit):
         """ Handle keypress event for the completer """
         is_tag = ((event.modifiers() == Qt.ControlModifier) and event.key() == Qt.Key_T)
         ctrlOrShift = event.modifiers() == (Qt.ControlModifier or Qt.ShiftModifier)
-
-        # Ignore keys that must be send to completer
-        if self.completer:
-            if self.completer.popup().isVisible():
-                if event.key() == Qt.Key_Enter or event.key() == Qt.Key_Return or\
-                        event.key() == Qt.Key_Escape or event.key() == Qt.Key_Tab or\
-                        event.key() == Qt.Key_Backtab:
-                    event.ignore()
-                    return
 
         # Start the tag completer when the shortcut is pressed
         if is_tag:
@@ -63,21 +76,6 @@ class TextEdit(QTextEdit):
             elif not self.completer_status:
                 self.start_completer()
             else:
-                return
-
-        # Handle delete when the tag completer is active
-        if event.key() == Qt.Key_Backspace and self.completer_status:
-            if self.textCursor().hasSelection():
-                QTextEdit.keyPressEvent(self, event)
-                self.stop_completer()
-                return
-            else:
-                current_position = self.textCursor().position()
-                cursor = self.textCursor()
-                cursor.setPosition(self.start_position)
-                cursor.setPosition(current_position, QTextCursor.KeepAnchor)
-                self.setTextCursor(cursor)
-                self.completer.popup().hide()
                 return
 
         # Handle delete a tag when the completer is inactive
@@ -97,30 +95,49 @@ class TextEdit(QTextEdit):
                     self.select_anchor()
                     return
 
-        # Stop if the return modifier is pressed with the completer open
-        if self.completer_status and (ctrlOrShift or not event.text()):
+        # Stop if the completer is not active
+        if not self.completer_status:
+            QTextEdit.keyPressEvent(self, event)
             return
 
-        # Add the tag if space is pressed
-        if self.completer_status and event.text():
-            char = event.text()[0]
-            if self.is_space(char):
-                self.format_completion()
+        # Stop if the return modifier is pressed with the completer open
+        if ctrlOrShift or not event.text():
+            return
+
+        # Ignore keys that must be send to completer
+        if self.completer.popup().isVisible():
+            if event.key() == Qt.Key_Enter or event.key() == Qt.Key_Return or\
+                    event.key() == Qt.Key_Escape or event.key() == Qt.Key_Tab or\
+                    event.key() == Qt.Key_Backtab:
+                        event.ignore()
+                        return
+
+        # Handle delete when the tag completer is active
+        if event.key() == Qt.Key_Backspace:
+            if self.textCursor().hasSelection():
+                QTextEdit.keyPressEvent(self, event)
                 self.stop_completer()
                 return
+            else:
+                current_position = self.textCursor().position()
+                cursor = self.textCursor()
+                cursor.setPosition(self.start_position)
+                cursor.setPosition(current_position, QTextCursor.KeepAnchor)
+                self.setTextCursor(cursor)
+                self.completer.popup().hide()
+                return
+
+        # Add the tag if space is pressed
+        if self.is_space(event.text()[0]) or self.is_word_separator(event.text()[0]) or \
+                event.key() == Qt.Key_Enter or event.key() == Qt.Key_Return or\
+                event.key() == Qt.Key_Escape or event.key() == Qt.Key_Tab or\
+                event.key() == Qt.Key_Backtab:
+            self.format_completion()
+            self.stop_completer()
+            return
 
         # Handle all other key events normally
         QTextEdit.keyPressEvent(self, event)
-
-        # Stop if the tag completer is not active
-        if not self.completer_status:
-            return
-
-        # Stop the completer on end of word
-        if event.text():
-            char = event.text()[0]
-            if self.is_word_separator(char):
-                self.stop_completer()
 
         # Show the tag completer
         completion_prefix = self.text_under_cursor()
