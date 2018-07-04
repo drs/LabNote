@@ -86,7 +86,12 @@ class TextEdit(QTextEdit):
                 for position in range(cursor.selectionStart(), cursor.selectionEnd()):
                     cursor.setPosition(position, QTextCursor.MoveAnchor)
                     if cursor.charFormat().isAnchor():
-                        tag_list.add(cursor.charFormat().anchorHref())
+                        href = cursor.charFormat().anchorHref().split('/')
+                        prefix = href[0]
+                        value = href[1]
+
+                        if prefix == 'tag':
+                            tag_list.add(value)
                 self.delete_tag.emit(list(tag_list))
                 QTextEdit.keyPressEvent(self, event)
                 return
@@ -216,7 +221,7 @@ class TextEdit(QTextEdit):
             cursor.mergeCharFormat(format)
 
             self.stop_completer()
-            self.create_tag.emit("tag/{}".format(old_text))
+            self.create_tag.emit(old_text)
         elif len(args) == 2 and isinstance(args[0], int) and isinstance(args[1], int):
             cursor.setPosition(args[0])
             cursor.setPosition(args[1], QTextCursor.KeepAnchor)
@@ -231,7 +236,7 @@ class TextEdit(QTextEdit):
             cursor.setPosition(args[1], QTextCursor.KeepAnchor)
             format.setAnchorHref("tag/{}".format(old_text))
             cursor.mergeCharFormat(format)
-            self.create_tag.emit("tag/{}".format(old_text))
+            self.create_tag.emit(old_text)
 
     def select_anchor(self):
         """ Select an anchor in the textedit """
