@@ -5,9 +5,11 @@ for every kind of entry. """
 import shutil
 import uuid
 import os
+import sqlite3
 
 # Projet import
 from labnote.utils import database, directory, files
+from labnote.core import data
 
 
 def check_integrity():
@@ -50,15 +52,58 @@ def add_reference_pdf(ref_uuid, file):
     :param file: Orignal file path
     :type file: str
     """
-    database.update_reference_file(ref_uuid=ref_uuid, file_attached=True)
-    files.copy_reference(ref_uuid=ref_uuid, file=file)
+    conn = None
+    exception = None
+
+    try:
+        conn = sqlite3.connect(database.MAIN_DATABASE_FILE_PATH)
+        cursor = conn.cursor()
+        cursor.execute(database.UPDATE_REFERENCE_FILE, {'file_attached': True, 'ref_uuid': data.uuid_bytes(ref_uuid)})
+
+        reference_file = files.reference_file_path(ref_uuid=ref_uuid)
+        shutil.copy2(file, reference_file)
+    except sqlite3.Error:
+        exception = True
+        raise
+    except OSError:
+        if conn:
+            conn.rollback()
+        exception = True
+        raise
+    finally:
+        if not exception:
+            if conn:
+                conn.commit()
+        if conn:
+            conn.close()
 
 
-def delete_reference_file(ref_uuid):
+def delete_reference_pdf(ref_uuid):
     """ Delete a reference PDF in the file structure and the database
 
     :param ref_uuid: Reference UUID
     :type ref_uuid: str
     """
-    database.update_reference_file(ref_uuid=ref_uuid, file_attached=False)
-    files.delete_reference(ref_uuid=ref_uuid)
+    conn = None
+    exception = None
+
+    try:
+        conn = sqlite3.connect(database.MAIN_DATABASE_FILE_PATH)
+        cursor = conn.cursor()
+        cursor.execute(database.UPDATE_REFERENCE_FILE, {'file_attached': False, 'ref_uuid': data.uuid_bytes(ref_uuid)})
+
+        reference_file = files.reference_file_path(ref_uuid=ref_uuid)
+        os.remove(reference_file)
+    except sqlite3.Error:
+        exception = True
+        raise
+    except OSError:
+        if conn:
+            conn.rollback()
+        exception = True
+        raise
+    finally:
+        if not exception:
+            conn.commit()
+        if conn:
+            conn.close()

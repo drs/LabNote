@@ -34,24 +34,10 @@ def copy_file_to_data(nb_uuid, exp_uuid, path):
         return exception
 
 
-def copy_reference(ref_uuid, file):
-    """ Copy a reference file to the file structure
-
-    :param ref_uuid: Reference UUID
-    :type ref_uuid: str
-    :param file: Original file path
-    :type file: str
-    """
-
-    reference_file = os.path.join(directory.REFERENCES_DIRECTORY_PATH + "/{}".format(ref_uuid))
-    shutil.copy2(file, reference_file)
-
-
-def delete_reference(ref_uuid):
-    """ Delete a reference from the file structure
+def reference_file_path(ref_uuid):
+    """ Return the path to a reference file
 
     :param ref_uuid: Reference UUID
     :type ref_uuid: str
     """
-    reference_file = os.path.join(directory.REFERENCES_DIRECTORY_PATH + "/{}".format(ref_uuid))
-    os.remove(reference_file)
+    return os.path.join(directory.REFERENCES_DIRECTORY_PATH + "/{}".format(ref_uuid))

@@ -386,6 +386,22 @@ file_attached = :file_attached
 WHERE ref_uuid = :ref_uuid
 """
 
+INSERT_TAG = """
+INSERT OR IGNORE INTO tags (name) VALUES (:name)
+"""
+
+INSERT_TAG_REF = """
+INSERT INTO refs_tag (ref_uuid, tag_id) VALUES (:ref_uuid, (SELECT tag_id FROM tags WHERE name = :name))
+"""
+
+DELETE_TAG = """
+DELETE FROM tags WHERE name = :name
+"""
+
+DELETE_TAG_REF = """
+DELETE FROM refs_tag WHERE tag_id = (SELECT tag_id FROM tags WHERE name = :name)
+"""
+
 
 """
 Database creation
@@ -868,6 +884,45 @@ def update_reference_category(ref_uuid, category_id, subcategory_id=None):
                   ref_uuid=data.uuid_bytes(ref_uuid))
 
 
-def update_reference_file(ref_uuid, file_attached):
-    """ Update the reference when a file is attached or removed """
-    execute_query(UPDATE_REFERENCE_FILE, file_attached=file_attached, ref_uuid=data.uuid_bytes(ref_uuid))
+def insert_tag_ref(ref_uuid, name):
+    """ Insert the reference tag
+
+    :param ref_uuid: Reference UUID
+    :type ref_uuid: str
+    :param name: Tag name
+    :type name: str
+    """
+
+    # Execute the query
+    conn = sqlite3.connect(MAIN_DATABASE_FILE_PATH)
+    conn.isolation_level = None
+    conn.execute("PRAGMA foreign_keys = ON")
+    cursor = conn.cursor()
+
+    cursor.execute("BEGIN")
+    cursor.execute(INSERT_TAG, {'name': name})
+    cursor.execute(INSERT_TAG_REF, {'ref_uuid': ref_uuid, 'name': name})
+    cursor.execute("END")
+    conn.close()
+
+
+def delete_tag_ref(ref_uuid, name):
+    """ Insert the reference tag
+
+    :param ref_uuid: Reference UUID
+    :type ref_uuid: str
+    :param name: Tag name
+    :type name: str
+    """
+
+    # Execute the query
+    conn = sqlite3.connect(MAIN_DATABASE_FILE_PATH)
+    conn.isolation_level = None
+    conn.execute("PRAGMA foreign_keys = ON")
+    cursor = conn.cursor()
+
+    cursor.execute("BEGIN")
+    cursor.execute(DELETE_TAG, {'name': name})
+    cursor.execute(DELETE_TAG_REF, {'name': name})
+    cursor.execute("END")
+    conn.close()

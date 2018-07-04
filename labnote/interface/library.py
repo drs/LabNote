@@ -176,27 +176,9 @@ class Library(QDialog, Ui_Library):
 
         try:
             fsentry.add_reference_pdf(ref_uuid=ref_uuid, file=file)
-        except sqlite3.Error as exception:
-            message = QMessageBox(QMessageBox.Warning, "Error while saving reference",
-                                  "An error occurred while saving the reference PDF in the database.", QMessageBox.Ok)
-            message.setWindowTitle("LabNote")
-            message.setDetailedText(str(exception))
-            message.exec()
-            return
-        except OSError as exception:
-            try:
-                database.update_reference_file(ref_uuid=ref_uuid, file_attached=False)
-            except sqlite3.Error as exception:
-                message = QMessageBox(QMessageBox.Warning, "Error while saving reference",
-                                      "An error occurred while saving the reference PDF and cleaning up the reference "
-                                      "from the database.", QMessageBox.Ok)
-                message.setWindowTitle("LabNote")
-                message.setDetailedText(str(exception))
-                message.exec()
-                return
-
-            message = QMessageBox(QMessageBox.Warning, "Error while saving reference",
-                                  "An error occurred while saving the reference PDF file.", QMessageBox.Ok)
+        except (sqlite3.Error, OSError) as exception:
+            message = QMessageBox(QMessageBox.Warning, "Unable to save reference",
+                                  "An error occurred while saving the reference PDF.", QMessageBox.Ok)
             message.setWindowTitle("LabNote")
             message.setDetailedText(str(exception))
             message.exec()
@@ -209,23 +191,15 @@ class Library(QDialog, Ui_Library):
         index = self.treeview.selectionModel().currentIndex()
         ref_uuid = index.data(Qt.UserRole)
         try:
-            fsentry.delete_reference_file(ref_uuid=ref_uuid)
-        except sqlite3.Error as exception:
-            message = QMessageBox(QMessageBox.Warning, "Error while deleting reference",
-                                  "An error occurred while deleting the reference PDF in the database.", QMessageBox.Ok)
+            fsentry.delete_reference_pdf(ref_uuid=ref_uuid)
+        except (sqlite3.Error, OSError) as exception:
+            message = QMessageBox(QMessageBox.Warning, "Unable to delete reference",
+                                  "An error occurred while deleting the reference PDF.", QMessageBox.Ok)
             message.setWindowTitle("LabNote")
             message.setDetailedText(str(exception))
             message.exec()
             return
-        except OSError as exception:
-            if exception.errno != 2:
-                message = QMessageBox(QMessageBox.Warning, "Error while deleting reference",
-                                      "An error occurred while deleting the reference PDF file. Please delete the reference"
-                                      " {} manually.".format(ref_uuid), QMessageBox.Ok)
-                message.setWindowTitle("LabNote")
-                message.setDetailedText(str(exception))
-                message.exec()
-                return
+
         self.pdf_deleted.emit()
 
     def drop_finished(self, index):
