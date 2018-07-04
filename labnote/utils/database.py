@@ -453,13 +453,11 @@ def execute_query(query, **kwargs):
     :param kwargs: query named placeholder content
     :return: cursor.fetchall result
     """
-    conn = sqlite3.connect(MAIN_DATABASE_FILE_PATH)
-    conn.execute("PRAGMA foreign_keys = ON;")
-    cursor = conn.cursor()
-    cursor.execute(query, kwargs)
-    buffer = cursor.fetchall()
-    conn.commit()
-    conn.close()
+    with sqlite3.connect(MAIN_DATABASE_FILE_PATH) as conn:
+        conn.execute("PRAGMA foreign_keys = ON;")
+        cursor = conn.cursor()
+        cursor.execute(query, kwargs)
+        buffer = cursor.fetchall()
 
     return buffer
 
