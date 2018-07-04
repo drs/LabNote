@@ -1317,20 +1317,21 @@ class PDFWidget(QWidget):
 
     def open_pdf(self):
         """ Open the pdf when the file is double clicked """
-        if os.path.isfile(self.file):
-            os.system("open {}".format(self.file))
-        else:
-            message = QMessageBox()
-            message.setWindowTitle("LabNote")
-            message.setText("Unable to locate file")
-            message.setInformativeText("The reference PDF is not in the reference folder.")
-            message.setIcon(QMessageBox.Information)
-            message.setStandardButtons(QMessageBox.No | QMessageBox.Yes)
-            message.setDefaultButton(QMessageBox.Yes)
-            ret = message.exec()
+        if self.contains_file:
+            if os.path.isfile(self.file):
+                os.system("open {}".format(self.file))
+            else:
+                message = QMessageBox()
+                message.setWindowTitle("LabNote")
+                message.setText("Unable to locate file")
+                message.setInformativeText("The reference PDF is not in the reference folder.")
+                message.setIcon(QMessageBox.Information)
+                message.setStandardButtons(QMessageBox.No | QMessageBox.Yes)
+                message.setDefaultButton(QMessageBox.Yes)
+                ret = message.exec()
 
-            if ret == QMessageBox.Yes:
-                self.delete.emit()
+                if ret == QMessageBox.Yes:
+                    self.delete.emit()
 
     def show_pdf(self, file):
         """ Show a PDF image """
@@ -1351,6 +1352,9 @@ class PDFWidget(QWidget):
 class PDFLabel(QLabel):
     """ Label that contains the PDF image """
 
+    # Global variable
+    contains_file = False
+
     # Signals
     double_clicked = pyqtSignal()
     delete = pyqtSignal()
@@ -1363,7 +1367,8 @@ class PDFLabel(QLabel):
 
     def mouseDoubleClickEvent(self, event):
         self.double_clicked.emit()
-        self.set_icon()
+        if self.contains_file:
+            self.set_icon()
         QLabel().mouseDoubleClickEvent(event)
 
     def keyPressEvent(self, event):
@@ -1372,16 +1377,19 @@ class PDFLabel(QLabel):
         QLabel().keyPressEvent(event)
 
     def focusInEvent(self, event):
-        self.set_selected_icon()
+        if self.contains_file:
+            self.set_selected_icon()
         QLabel().focusInEvent(event)
 
     def focusOutEvent(self, event):
-        self.set_icon()
+        if self.contains_file:
+            self.set_icon()
         QLabel().focusOutEvent(event)
 
     def set_text(self):
         """ Set default text """
         self.clear()
+        self.contains_file = False
         self.setText("Drop PDF here")
         self.setStyleSheet("color: rgb(172, 172, 172)")
         self.setMinimumSize(0, 0)
@@ -1394,6 +1402,7 @@ class PDFLabel(QLabel):
             image = QPixmap(":/Icons/Library/icons/library/2xpdf.png")
             image.setDevicePixelRatio(self.devicePixelRatio())
 
+        self.contains_file = True
         self.setText("")
         self.setFixedSize(64, 64)
         self.setPixmap(image)
@@ -1433,18 +1442,7 @@ class PDFLabel(QLabel):
         rect.drawRoundedRect(0, 0, 64, 64, 5, 5)
         rect.end()
 
-        # painter = QPainter(image)
-        # pen = QPen()
-        # pen.setColor(Qt.black)
-        # pen.setWidth(1)
-        # pen.setStyle(Qt.DashLine)
-        # painter.setPen(pen)
-        # painter.drawLine(0, 0, 64, 0)
-        # painter.drawLine(0, 64, 64, 64)
-        # painter.drawLine(0, 0, 0, 64)
-        # painter.drawLine(64, 0, 64, 64)
-        # painter.end()
-
+        self.contains_file = True
         self.setText("")
         self.setFixedSize(64, 64)
         self.setPixmap(image)
