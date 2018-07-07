@@ -25,7 +25,7 @@ class SearchLineEdit(LineEdit):
         # Set icon
         search_icon = QIcon(":/Icons/MainWindow/icons/main-window/search.png")
         self.addAction(search_icon, QLineEdit.LeadingPosition)
-        stylesheet.set_style_sheet(self, ":/StyleSheet/style-sheet/general/search.qss")
+        stylesheet.set_style_sheet(self, ":/StyleSheet/Widget/style-sheet/widget/search.qss")
 
 
 class YearLineEdit(LineEdit):

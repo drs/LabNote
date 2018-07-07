@@ -21,7 +21,6 @@
         <file>style-sheet/library.qss</file>
         <file>style-sheet/textedit.qss</file>
         <file>style-sheet/library/treeview.qss</file>
-        <file>style-sheet/general/search.qss</file>
     </qresource>
     <qresource prefix="/Icons/NewNotebook">
         <file>icons/new-notebook/1xnotebook.png</file>
@@ -38,5 +37,8 @@
         <file>icons/library/branch-open.png</file>
         <file>icons/library/1xpdf.png</file>
         <file>icons/library/2xpdf.png</file>
+    </qresource>
+    <qresource prefix="/StyleSheet/Widget">
+        <file>style-sheet/widget/search.qss</file>
     </qresource>
 </RCC>
