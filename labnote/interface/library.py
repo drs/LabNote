@@ -48,6 +48,7 @@ class Library(QDialog, Ui_Library):
     # Class variable
     grid_layout = None
     creating_reference = False  # True when a new reference is created
+    tag_list = []
 
     # Signals definition
     pdf_added = pyqtSignal(str)
@@ -170,13 +171,48 @@ class Library(QDialog, Ui_Library):
         self.pdf_added.connect(self.pdf_widget.show_pdf)
         self.pdf_deleted.connect(self.pdf_widget.remove_pdf)
 
+    def get_tag_list(self):
+        """ Get the list of all tag """
+        tag_list = []
+
+        try:
+            tag_list = database.select_tag_list()
+        except sqlite3.Error as exception:
+            message = QMessageBox(QMessageBox.Warning, "Unable to get tag list",
+                                  "An error occurred while getting the tag list.", QMessageBox.Ok)
+            message.setWindowTitle("LabNote")
+            message.setDetailedText(str(exception))
+            message.exec()
+            return
+
+        self.tag_list = tag_list
+
     def add_tag(self, tag):
         """ Add tag to the reference """
-        print("ADD {}".format(tag))
+        index = self.treeview.selectionModel().currentIndex()
+        ref_uuid = index.data(Qt.UserRole)
 
-    def remove_tag(self, tag):
+        try:
+            database.insert_tag_ref(ref_uuid=ref_uuid, name=tag)
+        except sqlite3.Error as exception:
+            message = QMessageBox(QMessageBox.Warning, "Unable to add tag",
+                                  "An error occurred while adding the tag.", QMessageBox.Ok)
+            message.setWindowTitle("LabNote")
+            message.setDetailedText(str(exception))
+            message.exec()
+
+    def remove_tag(self, tags):
         """ Remove tag to the reference """
-        print("REMOVE {}".format(tag))
+
+        try:
+            for tag in tags:
+                database.delete_tag_ref(name=tag)
+        except sqlite3.Error as exception:
+            message = QMessageBox(QMessageBox.Warning, "Unable to remove tag",
+                                  "An error occurred while removing the tag.", QMessageBox.Ok)
+            message.setWindowTitle("LabNote")
+            message.setDetailedText(str(exception))
+            message.exec()
 
     def add_pdf(self, file):
         """ Add a PDF to a reference
@@ -877,7 +913,7 @@ class Library(QDialog, Ui_Library):
         self.lbl_description = QLabel("Description")
         self.lbl_description.setAlignment(Qt.AlignTop | Qt.AlignLeft)
         self.grid_layout.addWidget(self.lbl_description, 7, 0)
-        self.txt_description = TextEdit()
+        self.txt_description = TextEdit(self.tag_list)
         self.txt_description.create_tag.connect(self.add_tag)
         self.txt_description.delete_tag.connect(self.remove_tag)
         self.grid_layout.addWidget(self.txt_description, 7, 1)
@@ -885,7 +921,7 @@ class Library(QDialog, Ui_Library):
         self.lbl_abstract = QLabel("Abstract")
         self.lbl_abstract.setAlignment(Qt.AlignTop | Qt.AlignLeft)
         self.grid_layout.addWidget(self.lbl_abstract, 8, 0)
-        self.txt_abstract = TextEdit()
+        self.txt_abstract = TextEdit(self.tag_list)
         self.txt_abstract.create_tag.connect(self.add_tag)
         self.txt_abstract.delete_tag.connect(self.remove_tag)
         self.grid_layout.addWidget(self.txt_abstract, 8, 1)
@@ -1054,14 +1090,14 @@ class Library(QDialog, Ui_Library):
 
         self.lbl_description = QLabel("Description")
         self.grid_layout.addWidget(self.lbl_description, 8, 0)
-        self.txt_description = TextEdit()
+        self.txt_description = TextEdit(self.tag_list)
         self.txt_description.create_tag.connect(self.add_tag)
         self.txt_description.delete_tag.connect(self.remove_tag)
         self.grid_layout.addWidget(self.txt_description, 8, 1)
 
         self.lbl_abstract = QLabel("Abstract")
         self.grid_layout.addWidget(self.lbl_abstract, 9, 0)
-        self.txt_abstract = TextEdit()
+        self.txt_abstract = TextEdit(self.tag_list)
         self.txt_abstract.create_tag.connect(self.add_tag)
         self.txt_abstract.delete_tag.connect(self.remove_tag)
         self.grid_layout.addWidget(self.txt_abstract, 9, 1)
@@ -1145,14 +1181,14 @@ class Library(QDialog, Ui_Library):
 
         self.lbl_description = QLabel("Description")
         self.grid_layout.addWidget(self.lbl_description, 10, 0)
-        self.txt_description = TextEdit()
+        self.txt_description = TextEdit(self.tag_list)
         self.txt_description.create_tag.connect(self.add_tag)
         self.txt_description.delete_tag.connect(self.remove_tag)
         self.grid_layout.addWidget(self.txt_description, 10, 1)
 
         self.lbl_abstract = QLabel("Abstract")
         self.grid_layout.addWidget(self.lbl_abstract, 11, 0)
-        self.txt_abstract = TextEdit()
+        self.txt_abstract = TextEdit(self.tag_list)
         self.txt_abstract.create_tag.connect(self.add_tag)
         self.txt_abstract.delete_tag.connect(self.remove_tag)
         self.grid_layout.addWidget(self.txt_abstract, 11, 1)

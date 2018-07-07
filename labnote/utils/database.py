@@ -391,7 +391,7 @@ INSERT OR IGNORE INTO tags (name) VALUES (:name)
 """
 
 INSERT_TAG_REF = """
-INSERT INTO refs_tag (ref_uuid, tag_id) VALUES (:ref_uuid, (SELECT tag_id FROM tags WHERE name = :name))
+INSERT OR IGNORE INTO refs_tag (ref_uuid, tag_id) VALUES (:ref_uuid, (SELECT tag_id FROM tags WHERE name = :name))
 """
 
 DELETE_TAG = """
@@ -400,6 +400,10 @@ DELETE FROM tags WHERE name = :name
 
 DELETE_TAG_REF = """
 DELETE FROM refs_tag WHERE tag_id = (SELECT tag_id FROM tags WHERE name = :name)
+"""
+
+SELECT_TAG = """
+SELECT name FROM tags
 """
 
 
@@ -892,35 +896,45 @@ def insert_tag_ref(ref_uuid, name):
     """
 
     # Execute the query
-    conn = sqlite3.connect(MAIN_DATABASE_FILE_PATH)
-    conn.isolation_level = None
-    conn.execute("PRAGMA foreign_keys = ON")
-    cursor = conn.cursor()
+    with sqlite3.connect(MAIN_DATABASE_FILE_PATH) as conn:
+        conn.isolation_level = None
+        cursor = conn.cursor()
 
-    cursor.execute("BEGIN")
-    cursor.execute(INSERT_TAG, {'name': name})
-    cursor.execute(INSERT_TAG_REF, {'ref_uuid': ref_uuid, 'name': name})
-    cursor.execute("END")
-    conn.close()
+        cursor.execute("BEGIN")
+        cursor.execute(INSERT_TAG, {'name': name})
+        cursor.execute(INSERT_TAG_REF, {'ref_uuid': ref_uuid, 'name': name})
+        cursor.execute("END")
 
 
-def delete_tag_ref(ref_uuid, name):
+def delete_tag_ref(name):
     """ Insert the reference tag
 
-    :param ref_uuid: Reference UUID
-    :type ref_uuid: str
     :param name: Tag name
     :type name: str
     """
 
     # Execute the query
-    conn = sqlite3.connect(MAIN_DATABASE_FILE_PATH)
-    conn.isolation_level = None
-    conn.execute("PRAGMA foreign_keys = ON")
-    cursor = conn.cursor()
+    with sqlite3.connect(MAIN_DATABASE_FILE_PATH) as conn:
+        conn.isolation_level = None
+        conn.execute("PRAGMA foreign_keys = ON")
+        cursor = conn.cursor()
 
-    cursor.execute("BEGIN")
-    cursor.execute(DELETE_TAG, {'name': name})
-    cursor.execute(DELETE_TAG_REF, {'name': name})
-    cursor.execute("END")
-    conn.close()
+        cursor.execute("BEGIN")
+        cursor.execute(DELETE_TAG_REF, {'name': name})
+        cursor.execute(DELETE_TAG, {'name': name})
+        cursor.execute("END")
+
+
+def select_tag_list():
+    """ Get all the tag from the database """
+
+    # Execute the query
+    buffer = execute_query(SELECT_TAG)
+
+    # Return the tag list
+    tag_list = []
+
+    for tag in buffer:
+        tag_list.append({'name': tag[0]})
+
+    return tag_list

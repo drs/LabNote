@@ -5,9 +5,9 @@ This module contains the textedit subclasses used in LabNote software
 # Python import
 
 # PyQt import
-from PyQt5.QtWidgets import QTextEdit, QCompleter, QWidget
+from PyQt5.QtWidgets import QTextEdit, QCompleter
 from PyQt5.QtCore import Qt, QStringListModel, pyqtSignal
-from PyQt5.QtGui import QTextCursor, QTextCharFormat, QColor, QPainter, QBrush, QPen
+from PyQt5.QtGui import QTextCursor, QTextCharFormat, QColor
 
 # Project import
 from labnote.resources import resources
@@ -26,13 +26,17 @@ class TextEdit(QTextEdit):
     completer = None
     completer_status = False
     launch = True  # Changed to false when the text is first formatted
+    tag_list = []
 
     # Signals
     delete_tag = pyqtSignal(list)
     create_tag = pyqtSignal(str)
 
-    def __init__(self):
+    def __init__(self, tag_list):
         super(TextEdit, self).__init__()
+
+        self.tag_list = tag_list
+
         # Set style sheet
         stylesheet.set_style_sheet(self, ":/StyleSheet/style-sheet/textedit.qss")
         self.textChanged.connect(self.set_base_format)
@@ -158,7 +162,7 @@ class TextEdit(QTextEdit):
 
     def start_completer(self):
         completer = QCompleter()
-        completer.setModel(QStringListModel(['tag_1', 'tag_2', 'tag_3']))
+        completer.setModel(QStringListModel(self.tag_list))
         completer.setModelSorting(QCompleter.CaseInsensitivelySortedModel)
         completer.setCaseSensitivity(Qt.CaseInsensitive)
         completer.setWrapAround(False)
@@ -221,6 +225,7 @@ class TextEdit(QTextEdit):
             cursor.mergeCharFormat(format)
 
             self.stop_completer()
+            self.tag_list.append(old_text)
             self.create_tag.emit(old_text)
         elif len(args) == 2 and isinstance(args[0], int) and isinstance(args[1], int):
             cursor.setPosition(args[0])
@@ -236,6 +241,8 @@ class TextEdit(QTextEdit):
             cursor.setPosition(args[1], QTextCursor.KeepAnchor)
             format.setAnchorHref("tag/{}".format(old_text))
             cursor.mergeCharFormat(format)
+
+            self.tag_list.append(old_text)
             self.create_tag.emit(old_text)
 
     def select_anchor(self):
