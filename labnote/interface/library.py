@@ -231,6 +231,8 @@ class Library(QDialog, Ui_Library):
             message.exec()
             return
 
+        self.show_list()
+
     def selection_changed(self):
         # Get the category informations
         self.clear_form()
@@ -409,6 +411,7 @@ class Library(QDialog, Ui_Library):
         hierarchy_level = self.get_hierarchy_level(index)
 
         if hierarchy_level == 1:
+            print(index.data(Qt.UserRole))
             return index.data(Qt.UserRole)
         elif hierarchy_level == 2:
             return index.parent().data(Qt.UserRole)
@@ -1256,17 +1259,18 @@ class Library(QDialog, Ui_Library):
 class TreeView(QTreeView):
     """ Custom tree view class """
 
+    last_index_data = None
+
     drop_finished = pyqtSignal(QModelIndex)
 
     def dropEvent(self, event):
         index = self.indexAt(event.pos())
-
         if not index.isValid():
             event.setDropAction(Qt.IgnoreAction)
             return
 
+        event.acceptProposedAction()
         self.drop_finished.emit(index)
-        QTreeView.dropEvent(self, event)
 
 
 class PDFWidget(QWidget):
