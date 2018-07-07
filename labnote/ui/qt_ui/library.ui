@@ -45,7 +45,7 @@
     <number>0</number>
    </property>
    <item>
-    <layout class="QHBoxLayout" name="horizontalLayout_3">
+    <layout class="QHBoxLayout" name="layout_title">
      <property name="leftMargin">
       <number>12</number>
      </property>
@@ -84,13 +84,6 @@
         </size>
        </property>
       </spacer>
-     </item>
-     <item>
-      <widget class="QLineEdit" name="txt_search">
-       <property name="placeholderText">
-        <string>Search</string>
-       </property>
-      </widget>
      </item>
     </layout>
    </item>
@@ -322,7 +315,6 @@
  <tabstops>
   <tabstop>txt_key</tabstop>
   <tabstop>comboBox</tabstop>
-  <tabstop>txt_search</tabstop>
   <tabstop>btn_add</tabstop>
   <tabstop>btn_save</tabstop>
   <tabstop>btn_manage</tabstop>

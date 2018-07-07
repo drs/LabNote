@@ -14,6 +14,7 @@ from PyQt5.QtCore import Qt
 from labnote.ui.ui_project import Ui_Project
 from labnote.utils import database
 from labnote.core import sqlite_error, stylesheet
+from labnote.interface.widget.lineedit import SearchLineEdit
 
 
 class Project(QDialog, Ui_Project):
@@ -52,10 +53,8 @@ class Project(QDialog, Ui_Project):
         self.table.setSelectionMode(QAbstractItemView.NoSelection)
 
         # Search text edit
-        search_icon = QIcon(":/Icons/MainWindow/icons/main-window/search.png")
-        self.txt_search.addAction(search_icon, QLineEdit.LeadingPosition)
-        self.txt_search.setFixedWidth(250)
-        self.txt_search.setAttribute(Qt.WA_MacShowFocusRect, 0)
+        self.txt_search = SearchLineEdit()
+        self.layout_title.insertWidget(3, self.txt_search)
 
         # Connect slots
         self.btn_close.clicked.connect(self.close)

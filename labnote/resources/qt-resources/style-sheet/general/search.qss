@@ -1,0 +1,11 @@
+/*
+Search lineedit
+*/
+
+QLineEdit {
+    min-width: 300px;
+    max-width: 300px;
+    border-radius: 2px;
+    border: none;
+    height: 22px;
+}

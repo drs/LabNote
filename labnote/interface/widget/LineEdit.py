@@ -3,7 +3,10 @@
 # PyQt import
 from PyQt5.QtWidgets import QLineEdit
 from PyQt5.QtCore import Qt, QRegExp
-from PyQt5.QtGui import QRegExpValidator
+from PyQt5.QtGui import QRegExpValidator, QIcon
+
+# Project import
+from labnote.core import stylesheet
 
 
 class LineEdit(QLineEdit):
@@ -11,6 +14,18 @@ class LineEdit(QLineEdit):
     def __init__(self):
         super(LineEdit, self).__init__()
         self.setAttribute(Qt.WA_MacShowFocusRect, 0)
+
+
+class SearchLineEdit(LineEdit):
+    """ Search line edit """
+    def __init__(self):
+        super(SearchLineEdit, self).__init__()
+        self.setPlaceholderText("Search")
+
+        # Set icon
+        search_icon = QIcon(":/Icons/MainWindow/icons/main-window/search.png")
+        self.addAction(search_icon, QLineEdit.LeadingPosition)
+        stylesheet.set_style_sheet(self, ":/StyleSheet/style-sheet/general/search.qss")
 
 
 class YearLineEdit(LineEdit):

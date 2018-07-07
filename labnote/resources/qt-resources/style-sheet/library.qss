@@ -76,13 +76,3 @@ QPushButton::menu-indicator {
     height: 0px;
 	width: 0px;
 }
-
-/*
-Search lineedit
-*/
-
-QLineEdit#txt_search {
-    border-radius: 2px;
-    border: none;
-    height: 22px;
-}

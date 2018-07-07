@@ -1,11 +1,3 @@
-/* Line edit */
-
-QLineEdit {
-    border-radius: 2px;
-    border: none;
-    height: 22px;
-}
-
 /* Table view */
 
 QTableView {

@@ -21,7 +21,7 @@ from labnote.core import stylesheet, sqlite_error, data
 from labnote.interface.widget.textedit import TextEdit
 from labnote.interface.dialog.category import Category, Subcategory
 from labnote.utils import database, fsentry, directory
-from labnote.interface.widget.lineedit import LineEdit, NumberLineEdit, YearLineEdit, PagesLineEdit
+from labnote.interface.widget.lineedit import LineEdit, NumberLineEdit, YearLineEdit, PagesLineEdit, SearchLineEdit
 
 # Constant definition
 
@@ -69,6 +69,10 @@ class Library(QDialog, Ui_Library):
         self.setSizeGripEnabled(True)
         self.read_settings()
 
+        # Add the search LineEdit
+        self.txt_search = SearchLineEdit()
+        self.layout_title.insertWidget(3, self.txt_search)
+
         # Create the treeview
         self.treeview = TreeView()
         self.treeview.setSelectionBehavior(QAbstractItemView.SelectRows)
@@ -85,26 +89,12 @@ class Library(QDialog, Ui_Library):
         self.pdf_box.setFixedWidth(180)
         self.main_frame.layout().addWidget(self.pdf_box)
 
-        # Set search widget in toolbar
-        search_icon = QIcon(":/Icons/MainWindow/icons/main-window/search.png")
-
-        self.txt_search.setPlaceholderText("Search")
-        self.txt_search.addAction(search_icon, QLineEdit.LeadingPosition)
-        self.txt_search.setFixedWidth(300)
-        self.txt_search.setStyleSheet(
-            """ QLineEdit {
-                border-radius: 2px;
-                border: none;
-                height: 22px;
-            }""")
-
         # Set style sheet
         stylesheet.set_style_sheet(self, ":/StyleSheet/style-sheet/library.qss")
 
         # Remove focus rectangle
         self.treeview.setAttribute(Qt.WA_MacShowFocusRect, 0)
         self.txt_key.setAttribute(Qt.WA_MacShowFocusRect, 0)
-        self.txt_search.setAttribute(Qt.WA_MacShowFocusRect, 0)
 
         # Key size
         self.lbl_key.setFixedSize(102, 21)

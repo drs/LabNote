@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file '/Users/samueldrouin/Development/LabNote/labnote/ui/qt_ui/library.ui'
 #
-# Created by: PyQt5 UI code generator 5.10.1
+# Created by: PyQt5 UI code generator 5.11.2
 #
 # WARNING! All changes made in this file will be lost!
 
@@ -23,9 +23,9 @@ class Ui_Library(object):
         self.verticalLayout_2.setContentsMargins(0, 0, 0, 0)
         self.verticalLayout_2.setSpacing(0)
         self.verticalLayout_2.setObjectName("verticalLayout_2")
-        self.horizontalLayout_3 = QtWidgets.QHBoxLayout()
-        self.horizontalLayout_3.setContentsMargins(12, 10, 12, 6)
-        self.horizontalLayout_3.setObjectName("horizontalLayout_3")
+        self.layout_title = QtWidgets.QHBoxLayout()
+        self.layout_title.setContentsMargins(12, 10, 12, 6)
+        self.layout_title.setObjectName("layout_title")
         self.label_2 = QtWidgets.QLabel(Library)
         font = QtGui.QFont()
         font.setPointSize(16)
@@ -33,13 +33,10 @@ class Ui_Library(object):
         font.setWeight(75)
         self.label_2.setFont(font)
         self.label_2.setObjectName("label_2")
-        self.horizontalLayout_3.addWidget(self.label_2)
+        self.layout_title.addWidget(self.label_2)
         spacerItem = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
-        self.horizontalLayout_3.addItem(spacerItem)
-        self.txt_search = QtWidgets.QLineEdit(Library)
-        self.txt_search.setObjectName("txt_search")
-        self.horizontalLayout_3.addWidget(self.txt_search)
-        self.verticalLayout_2.addLayout(self.horizontalLayout_3)
+        self.layout_title.addItem(spacerItem)
+        self.verticalLayout_2.addLayout(self.layout_title)
         self.main_frame = QtWidgets.QFrame(Library)
         self.main_frame.setFrameShape(QtWidgets.QFrame.StyledPanel)
         self.main_frame.setFrameShadow(QtWidgets.QFrame.Raised)
@@ -121,8 +118,7 @@ class Ui_Library(object):
         self.retranslateUi(Library)
         QtCore.QMetaObject.connectSlotsByName(Library)
         Library.setTabOrder(self.txt_key, self.comboBox)
-        Library.setTabOrder(self.comboBox, self.txt_search)
-        Library.setTabOrder(self.txt_search, self.btn_add)
+        Library.setTabOrder(self.comboBox, self.btn_add)
         Library.setTabOrder(self.btn_add, self.btn_save)
         Library.setTabOrder(self.btn_save, self.btn_manage)
 
@@ -130,7 +126,6 @@ class Ui_Library(object):
         _translate = QtCore.QCoreApplication.translate
         Library.setWindowTitle(_translate("Library", "Dialog"))
         self.label_2.setText(_translate("Library", "Library"))
-        self.txt_search.setPlaceholderText(_translate("Library", "Search"))
         self.lbl_bookshelf.setText(_translate("Library", "Bookshelf"))
         self.btn_add.setText(_translate("Library", "+"))
         self.lbl_key.setText(_translate("Library", "Key "))

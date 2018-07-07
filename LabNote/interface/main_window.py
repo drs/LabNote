@@ -19,6 +19,7 @@ from labnote.core import stylesheet, list_widget
 from labnote.utils import database, directory, experiment, fsentry
 from labnote.interface import textbox, project, library
 from labnote.interface.new_notebook import NewNotebook
+from labnote.interface.widget.lineedit import SearchLineEdit
 from labnote.resources import resources
 
 
@@ -87,16 +88,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # Set search widget in toolbar
         search_icon = QIcon(":/Icons/MainWindow/icons/main-window/search.png")
 
-        self.txt_search = QLineEdit()
-        self.txt_search.setPlaceholderText("Search")
-        self.txt_search.addAction(search_icon, QLineEdit.LeadingPosition)
-        self.txt_search.setFixedWidth(300)
-        self.txt_search.setStyleSheet(
-            """ QLineEdit {
-                border-radius: 2px;
-                border: none;
-                height: 22px;
-            }""")
+        self.txt_search = SearchLineEdit()
         self.search_toolbar.addWidget(self.txt_search)
 
         empty_widget_4 = QWidget()
@@ -123,7 +115,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # Remove focus rectangle
         self.lst_notebook.setAttribute(Qt.WA_MacShowFocusRect, 0)
         self.lst_entry.setAttribute(Qt.WA_MacShowFocusRect, 0)
-        self.txt_search.setAttribute(Qt.WA_MacShowFocusRect, 0)
 
         # Set no entry widget as default widget
         self.set_no_entry_widget()
