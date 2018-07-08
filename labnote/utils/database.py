@@ -136,13 +136,16 @@ CREATE TABLE refs (
 CREATE_SAMPLE_NUMBER_TABLE = """
 CREATE TABLE sample_number (
     spl_id      INTEGER       PRIMARY KEY AUTOINCREMENT,
-    proj_id     INTEGER       REFERENCES project (proj_id),
+    custom_id   VARCHAR (255),
     description VARCHAR (255),
     treatment_1 VARCHAR (255),
     treatment_2 VARCHAR (255),
     treatment_3 VARCHAR (255),
     treatment_4 VARCHAR (255),
     treatment_5 VARCHAR (255),
+    origin      VARCHAR (255),
+    location    VARCHAR (255),
+    date        DATE,
     note        TEXT
 )
 """
