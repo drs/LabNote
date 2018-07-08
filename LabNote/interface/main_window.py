@@ -17,7 +17,7 @@ from PyQt5.QtCore import Qt, QSettings, QByteArray
 from labnote.ui.ui_mainwindow import Ui_MainWindow
 from labnote.core import stylesheet, list_widget
 from labnote.utils import database, directory, experiment, fsentry
-from labnote.interface import textbox, project, library
+from labnote.interface import textbox, project, library, sample
 from labnote.interface.new_notebook import NewNotebook
 from labnote.interface.widget.lineedit import SearchLineEdit
 from labnote.resources import resources
@@ -43,6 +43,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # Initialize the GUI
         self.setupUi(self)
         self.init_ui()
+        self.init_connection()
 
         # Read program settings
         self.read_settings()
@@ -122,7 +123,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # Set style sheet
         stylesheet.set_style_sheet(self, ":/StyleSheet/style-sheet/main_window.qss")
 
-        # Slots connection
+    def init_connection(self):
         self.btn_add_notebook.clicked.connect(self.open_new_notebook_dialog)
         self.lst_notebook.itemSelectionChanged.connect(self.notebook_changed)
         self.act_new.triggered.connect(self.create_experiment)
@@ -130,6 +131,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.lst_entry.itemSelectionChanged.connect(self.experiment_changed)
         self.act_project.triggered.connect(self.open_project)
         self.act_library.triggered.connect(self.open_library)
+        self.act_samples.triggered.connect(self.open_sample_number)
 
     """
     General functions
@@ -208,6 +210,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def open_library(self):
         """ Open the library dialog """
         library.Library(self)
+
+    def open_sample_number(self):
+        """ Open the sample number dialog """
+        sample_number.SampleNumber(self)
 
     """
     Notebook list functions

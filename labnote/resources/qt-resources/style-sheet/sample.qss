@@ -1,0 +1,23 @@
+/* Table view */
+
+QTableWidget {
+    border: none;
+    border-bottom: 0.5px solid rgb(196, 196, 196);
+    border-top: 0.5px solid rgb(196, 196, 196);
+}
+
+QTableWidget::item {
+    border-bottom: 0.5px solid rgb(246, 246, 246)
+}
+
+/*  view */
+
+QHeaderView {
+    border: none;
+    border-bottom: 0.5px solid rgb(196, 196, 196);
+}
+
+QHeaderView::section {
+    border: none;
+    height: 22px;
+}
