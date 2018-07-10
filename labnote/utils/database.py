@@ -137,6 +137,7 @@ CREATE_SAMPLE_TABLE = """
 CREATE TABLE sample (
     spl_id      INTEGER       PRIMARY KEY AUTOINCREMENT,
     custom_id   VARCHAR (255),
+    project VARCHAR (255),
     description VARCHAR (255),
     treatment_1 VARCHAR (255),
     treatment_2 VARCHAR (255),
@@ -145,7 +146,7 @@ CREATE TABLE sample (
     treatment_5 VARCHAR (255),
     origin      VARCHAR (255),
     location    VARCHAR (255),
-    spl_date    DATE,
+    spl_date    VARCHAR (24),
     note        TEXT
 )
 """
@@ -410,13 +411,13 @@ SELECT name FROM tags
 """
 
 SELECT_SAMPLE = """
-SELECT spl_id, custom_id, description, treatment_1, treatment_2, treatment_3, treatment_4, treatment_5,
+SELECT spl_id, custom_id, project, description, treatment_1, treatment_2, treatment_3, treatment_4, treatment_5,
 origin, location, spl_date, note
 FROM sample ORDER BY spl_id ASC
 """
 
 SELECT_SAMPLE_SEARCH = """
-SELECT spl_id, custom_id, description, treatment_1, treatment_2, treatment_3, treatment_4, treatment_5,
+SELECT spl_id, custom_id, project, description, treatment_1, treatment_2, treatment_3, treatment_4, treatment_5,
 origin, location, spl_date, note
 FROM sample 
 WHERE custom_id == :search OR description LIKE :search 
@@ -426,12 +427,22 @@ ORDER BY spl_id ASC
 """
 
 INSERT_SAMPLE = """
-INSERT INTO sample (custom_id, description, treatment_1, treatment_2, treatment_3, origin) 
-VALUES (:custom_id, :description, :treatment_1, :treatment_2, :treatment_3, :origin)
+INSERT INTO sample (custom_id, project, description, treatment_1, treatment_2, treatment_3, treatment_4, treatment_5, 
+origin, location, spl_date, note) VALUES (:custom_id, :project, :description, :treatment_1, :treatment_2, :treatment_3, 
+:treatment_4, :treatment_5, :origin, :location, :spl_date, :note)
+"""
+
+CREATE_SAMPLE = """
+INSERT INTO sample (custom_id, project, description) 
+VALUES (:custom_id, :project, :description)
 """
 
 UPDATE_SAMPLE_CUSTOM_ID = """
 UPDATE sample SET custom_id = :custom_id WHERE spl_id = :spl_id
+"""
+
+UPDATE_SAMPLE_PROJECT = """
+UPDATE sample SET project = :project WHERE spl_id = :spl_id
 """
 
 UPDATE_SAMPLE_DESCRIPTION = """
@@ -1043,34 +1054,38 @@ def select_sample(search):
         sample_list.append({
             'id': sample[0],
             'custom_id': sample[1],
-            'description': sample[2],
-            'treatment_1': sample[3],
-            'treatment_2': sample[4],
-            'treatment_3': sample[5],
-            'treatment_4': sample[6],
-            'treatment_5': sample[7],
-            'origin': sample[8],
-            'location': sample[9],
-            'date': sample[10],
-            'note': sample[11]
+            'project': sample[2],
+            'description': sample[3],
+            'treatment_1': sample[4],
+            'treatment_2': sample[5],
+            'treatment_3': sample[6],
+            'treatment_4': sample[7],
+            'treatment_5': sample[8],
+            'origin': sample[9],
+            'location': sample[10],
+            'date': sample[11],
+            'note': sample[12]
         })
 
     return sample_list
 
 
-def create_sample(custom_id=None, description=None, treatment_1=None, treatment_2=None,
-                  treatment_3=None, origin=None):
-    """ Create a new sample in the database """
-    return execute_query_last_insert_rowid(INSERT_SAMPLE, custom_id=custom_id, description=description,
-                                           treatment_1=treatment_1, treatment_2=treatment_2,
-                                           treatment_3=treatment_3, origin=origin)
+def create_sample(custom_id=None, project=None, description=None):
+    """ Create a new sample in the database
+
+    This function is called when a new incomplete sample is inserted. Only one value should be inserted when using this
+    function.
+    """
+    return execute_query_last_insert_rowid(CREATE_SAMPLE, custom_id=custom_id, description=description, project=project)
 
 
 def update_sample(spl_id, custom_id=None, description=None, treatment_1=None, treatment_2=None, treatment_3=None,
-                  treatment_4=None, treatment_5=None, origin=None, location=None, date=None, note=None):
+                  treatment_4=None, treatment_5=None, origin=None, location=None, date=None, note=None, project=None):
     """ Update sample information for the specified ID """
     if custom_id:
         execute_query(UPDATE_SAMPLE_CUSTOM_ID, custom_id=custom_id, spl_id=spl_id)
+    elif project:
+        execute_query(UPDATE_SAMPLE_PROJECT, project=project, spl_id=spl_id)
     elif description:
         execute_query(UPDATE_SAMPLE_DESCRIPTION, description=description, spl_id=spl_id)
     elif treatment_1:
@@ -1100,3 +1115,14 @@ def delete_sample(spl_id):
     :type spl_id: int
     """
     execute_query(DELETE_SAMPLE, spl_id=spl_id)
+
+
+def insert_sample(custom_id=None, project=None, description=None, treatment_1=None, treatment_2=None, treatment_3=None,
+                  treatment_4=None, treatment_5=None, origin=None, location=None, date=None, note=None):
+    """ Insert a sample in the database
+
+    This function is called when a complete sample is inserted.
+    """
+    execute_query(INSERT_SAMPLE, custom_id=custom_id, project=project, description=description, treatment_1=treatment_1,
+                  treatment_2=treatment_2, treatment_3=treatment_3, treatment_4=treatment_4, treatment_5=treatment_5,
+                  origin=origin, location=location, spl_date=date, note=note)

@@ -21,3 +21,32 @@ QHeaderView::section {
     border: none;
     height: 22px;
 }
+
+QPushButton {
+    text-align:left;
+    background-color: none;
+    border: none;
+    color: black;
+    image-position: left;
+}
+
+QPushButton:pressed {
+    background-color: none;
+    border: none;
+}
+
+QPushButton#btn_import {
+    image: url(":/Icon/Sample/icons/sample/import.png");
+}
+
+QPushButton#btn_import:pressed {
+    image: url(":/Icon/Sample/icons/sample/import_pressed.png");
+}
+
+QPushButton#btn_create_template {
+    image: url(":/Icon/Sample/icons/sample/create_template.png");
+}
+
+QPushButton#btn_create_template:pressed {
+    image: url(":/Icon/Sample/icons/sample/create_template_pressed.png");
+}

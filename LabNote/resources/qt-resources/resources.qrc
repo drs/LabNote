@@ -42,4 +42,10 @@
     <qresource prefix="/StyleSheet/Widget">
         <file>style-sheet/widget/search.qss</file>
     </qresource>
+    <qresource prefix="/Icon/Sample">
+        <file>icons/sample/import.png</file>
+        <file>icons/sample/import_pressed.png</file>
+        <file>icons/sample/create_template_pressed.png</file>
+        <file>icons/sample/create_template.png</file>
+    </qresource>
 </RCC>

@@ -6,7 +6,7 @@ import sys
 # PyQt import
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QIcon, QFont
+from PyQt5.QtGui import QIcon
 
 # Project import
 from labnote.interface.main_window import MainWindow

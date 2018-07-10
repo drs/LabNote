@@ -4,10 +4,13 @@ This module contains the class used in the sample number dialog
 
 # Python import
 import sqlite3
+import csv
+import subprocess
 
 # PyQt import
-from PyQt5.QtWidgets import QDialog, QAbstractItemView, QMessageBox, QTableWidgetItem
-from PyQt5.QtCore import Qt, QEvent
+from PyQt5.QtWidgets import QDialog, QAbstractItemView, QMessageBox, QTableWidgetItem, QFileDialog
+from PyQt5.QtCore import Qt, QEvent, QSize, QDir
+from PyQt5.QtGui import QIcon, QPixmap
 
 # Project import
 from labnote.ui.ui_sample import Ui_Sample
@@ -46,7 +49,8 @@ class Sample(QDialog, Ui_Sample):
 
         # Add search lineedit
         self.txt_search = SearchLineEdit()
-        self.layout_title.insertWidget(3, self.txt_search)
+        self.layout_search.insertWidget(4, self.txt_search)
+        self.layout_search.setAlignment(self.txt_search, Qt.AlignTop)  # Align with import button
 
         # Setup table
         self.table.setColumnCount(12)
@@ -57,6 +61,16 @@ class Sample(QDialog, Ui_Sample):
         self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.table.setSelectionMode(QAbstractItemView.ContiguousSelection)
 
+        # Setup import button
+        pixmap = QPixmap(16, 16)
+        pixmap.fill(Qt.transparent)
+        self.btn_import.setIcon(QIcon(pixmap))
+        self.btn_import.setIconSize(QSize(16, 16))
+
+        # Setup create template button
+        self.btn_create_template.setIcon(QIcon(pixmap))
+        self.btn_create_template.setIconSize(QSize(16, 16))
+
         self.table.setMouseTracking(True)
         self.table.installEventFilter(self)
         self.table.viewport().installEventFilter(self)
@@ -66,6 +80,85 @@ class Sample(QDialog, Ui_Sample):
         self.txt_search.textChanged.connect(self.show_sample_list)
         self.table.currentCellChanged.connect(self.cell_changed)
         self.table.cellEntered.connect(self.set_cursor_position)
+        self.btn_import.clicked.connect(self.import_sample)
+        self.btn_create_template.clicked.connect(self.create_template)
+
+    def create_template(self):
+        """ Create the csv file template """
+        dialog = QFileDialog()
+        default_filename = QDir().cleanPath(QDir().homePath() + QDir().separator() + "Sample Number")
+        filename = dialog.getSaveFileName(self, "Save CSV file template", default_filename, "CSV Files (*.csv)")
+
+        if filename[0]:
+            try:
+                with open(filename[0], 'w') as csvfile:
+                    fieldname = ['Custom Number', 'Project',  'Description', 'Origin', 'Treatment 1', 'Treatment 2',
+                                  'Treatment 3', 'Treatment 4', 'Treatment 5', 'Location', 'Date', 'Note']
+                    writer = csv.DictWriter(csvfile, fieldnames=fieldname)
+                    writer.writeheader()
+            except OSError as exception:
+                message = QMessageBox()
+                message.setWindowTitle("LabNote")
+                message.setText("Unable to create the template")
+                message.setInformativeText("An unhandeled error occured while creating the template.")
+                message.setDetailedText(str(exception))
+                message.setIcon(QMessageBox.Warning)
+                message.setStandardButtons(QMessageBox.Ok)
+                message.exec()
+                return
+            subprocess.check_call(['open', '-a', 'Microsoft Excel', filename[0]])
+
+    def import_sample(self):
+        """ Import sample from a csv file """
+
+        dialog = QFileDialog()
+        file_name = dialog.getOpenFileName(self, "Open CSV File", QDir().homePath(), "CSV Files (*.csv)")
+
+        if file_name[0]:
+            try:
+                with open(file_name[0], 'r') as csvfile:
+                    reader = csv.DictReader(csvfile)
+                    for row in reader:
+                        custom_id = data.prepare_string(row['Custom Number'])
+                        project = data.prepare_string(row['Project'])
+                        description = data.prepare_string(row['Description'])
+                        origin = data.prepare_string(row['Origin'])
+                        treatment_1 = data.prepare_string(row['Treatment 1'])
+                        treatment_2 = data.prepare_string(row['Treatment 2'])
+                        treatment_3 = data.prepare_string(row['Treatment 3'])
+                        treatment_4 = data.prepare_string(row['Treatment 4'])
+                        treatment_5 = data.prepare_string(row['Treatment 5'])
+                        location = data.prepare_string(row['Location'])
+                        date = data.prepare_string(row['Date'])
+                        note = data.prepare_string(row['Note'])
+
+                        try:
+                            database.insert_sample(custom_id=custom_id, project=project, description=description,
+                                                   origin=origin, treatment_1=treatment_1, treatment_2=treatment_2,
+                                                   treatment_3=treatment_3, treatment_4=treatment_4,
+                                                   treatment_5=treatment_5, location=location, date=date, note=note)
+                        except sqlite3.Error as exception:
+                            message = QMessageBox()
+                            message.setWindowTitle("LabNote")
+                            message.setText("Unable to insert sample")
+                            message.setInformativeText("An unhandeled error occured while inserting the template "
+                                                       "in the database.")
+                            message.setDetailedText(str(exception))
+                            message.setIcon(QMessageBox.Warning)
+                            message.setStandardButtons(QMessageBox.Ok)
+                            message.exec()
+                            return
+            except OSError as exception:
+                message = QMessageBox()
+                message.setWindowTitle("LabNote")
+                message.setText("Unable to read the CSV file")
+                message.setInformativeText("An unhandeled error occured while reading the CSV file.")
+                message.setDetailedText(str(exception))
+                message.setIcon(QMessageBox.Warning)
+                message.setStandardButtons(QMessageBox.Ok)
+                message.exec()
+                return
+            self.show_sample_list()
 
     def eventFilter(self, object, event):
         if object == self.table.viewport():
@@ -161,16 +254,17 @@ class Sample(QDialog, Ui_Sample):
         self.table.setRowCount(0)
         self.table.setHorizontalHeaderItem(0, QTableWidgetItem('Sample number'))
         self.table.setHorizontalHeaderItem(1, QTableWidgetItem('Custom number'))
-        self.table.setHorizontalHeaderItem(2, QTableWidgetItem('Description'))
-        self.table.setHorizontalHeaderItem(3, QTableWidgetItem('Origin'))
-        self.table.setHorizontalHeaderItem(4, QTableWidgetItem('Treatment 1'))
-        self.table.setHorizontalHeaderItem(5, QTableWidgetItem('Treatment 2'))
-        self.table.setHorizontalHeaderItem(6, QTableWidgetItem('Treatment 3'))
-        self.table.setHorizontalHeaderItem(7, QTableWidgetItem('Treatment 4'))
-        self.table.setHorizontalHeaderItem(8, QTableWidgetItem('Treatment 5'))
-        self.table.setHorizontalHeaderItem(9, QTableWidgetItem('Location'))
-        self.table.setHorizontalHeaderItem(10, QTableWidgetItem('Date'))
-        self.table.setHorizontalHeaderItem(11, QTableWidgetItem('Note'))
+        self.table.setHorizontalHeaderItem(2, QTableWidgetItem('Project number'))
+        self.table.setHorizontalHeaderItem(3, QTableWidgetItem('Description'))
+        self.table.setHorizontalHeaderItem(4, QTableWidgetItem('Origin'))
+        self.table.setHorizontalHeaderItem(5, QTableWidgetItem('Treatment 1'))
+        self.table.setHorizontalHeaderItem(6, QTableWidgetItem('Treatment 2'))
+        self.table.setHorizontalHeaderItem(7, QTableWidgetItem('Treatment 3'))
+        self.table.setHorizontalHeaderItem(8, QTableWidgetItem('Treatment 4'))
+        self.table.setHorizontalHeaderItem(9, QTableWidgetItem('Treatment 5'))
+        self.table.setHorizontalHeaderItem(10, QTableWidgetItem('Location'))
+        self.table.setHorizontalHeaderItem(11, QTableWidgetItem('Date'))
+        self.table.setHorizontalHeaderItem(12, QTableWidgetItem('Note'))
 
         # Add existing sample
         if sample_list:
@@ -182,6 +276,7 @@ class Sample(QDialog, Ui_Sample):
                 id = QTableWidgetItem(str(sample['id']))
                 id.setFlags(id.flags() ^ Qt.ItemIsEditable)
                 custom_id = QTableWidgetItem(sample['custom_id'])
+                project = QTableWidgetItem(sample['project'])
                 description = QTableWidgetItem(sample['description'])
                 treatment_1 = QTableWidgetItem(sample['treatment_1'])
                 treatment_2 = QTableWidgetItem(sample['treatment_2'])
@@ -195,16 +290,17 @@ class Sample(QDialog, Ui_Sample):
 
                 self.table.setItem(row, 0, id)
                 self.table.setItem(row, 1, custom_id)
-                self.table.setItem(row, 2, description)
-                self.table.setItem(row, 3, origin)
-                self.table.setItem(row, 4, treatment_1)
-                self.table.setItem(row, 5, treatment_2)
-                self.table.setItem(row, 6, treatment_3)
-                self.table.setItem(row, 7, treatment_4)
-                self.table.setItem(row, 8, treatment_5)
-                self.table.setItem(row, 9, location)
-                self.table.setItem(row, 10, date)
-                self.table.setItem(row, 11, note)
+                self.table.setItem(row, 2, project)
+                self.table.setItem(row, 3, description)
+                self.table.setItem(row, 4, origin)
+                self.table.setItem(row, 5, treatment_1)
+                self.table.setItem(row, 6, treatment_2)
+                self.table.setItem(row, 7, treatment_3)
+                self.table.setItem(row, 8, treatment_4)
+                self.table.setItem(row, 9, treatment_5)
+                self.table.setItem(row, 10, location)
+                self.table.setItem(row, 11, date)
+                self.table.setItem(row, 12, note)
 
                 row = row + 1
 
@@ -230,6 +326,7 @@ class Sample(QDialog, Ui_Sample):
         self.table.setItem(self.table.rowCount() - 1, 9, QTableWidgetItem(''))
         self.table.setItem(self.table.rowCount() - 1, 10, QTableWidgetItem(''))
         self.table.setItem(self.table.rowCount() - 1, 11, QTableWidgetItem(''))
+        self.table.setItem(self.table.rowCount() - 1, 12, QTableWidgetItem(''))
 
     def save_change(self, row, column):
         """ Save changes in the database
@@ -239,48 +336,51 @@ class Sample(QDialog, Ui_Sample):
         """
         id = self.table.item(row, 0).text()
         custom_id = data.prepare_string(self.table.item(row, 1).text())
-        description = data.prepare_string(self.table.item(row, 2).text())
-        origin = data.prepare_string(self.table.item(row, 3).text())
-        treatment_1 = data.prepare_string(self.table.item(row, 4).text())
-        treatment_2 = data.prepare_string(self.table.item(row, 5).text())
-        treatment_3 = data.prepare_string(self.table.item(row, 6).text())
-        treatment_4 = data.prepare_string(self.table.item(row, 7).text())
-        treatment_5 = data.prepare_string(self.table.item(row, 8).text())
-        location = data.prepare_string(self.table.item(row, 9).text())
-        date = data.prepare_string(self.table.item(row, 10).text())
-        note = data.prepare_string(self.table.item(row, 11).text())
+        project = data.prepare_string(self.table.item(row, 2).text())
+        description = data.prepare_string(self.table.item(row, 3).text())
+        origin = data.prepare_string(self.table.item(row, 4).text())
+        treatment_1 = data.prepare_string(self.table.item(row, 5).text())
+        treatment_2 = data.prepare_string(self.table.item(row, 6).text())
+        treatment_3 = data.prepare_string(self.table.item(row, 7).text())
+        treatment_4 = data.prepare_string(self.table.item(row, 8).text())
+        treatment_5 = data.prepare_string(self.table.item(row, 9).text())
+        location = data.prepare_string(self.table.item(row, 10).text())
+        date = data.prepare_string(self.table.item(row, 11).text())
+        note = data.prepare_string(self.table.item(row, 12).text())
 
         # Save changes in database
         try:
-            if row + 1 == self.table.rowCount() and (1 <= column <= 6) \
+            if row + 1 == self.table.rowCount() and (1 <= column <= 7) \
                     and not self.table.item(row, column).text() == "":
                 inserted_id = database.create_sample(custom_id=custom_id, description=description,
                                                      treatment_1=treatment_1, treatment_2=treatment_2,
-                                                     treatment_3=treatment_3, origin=origin)
+                                                     treatment_3=treatment_3, origin=origin, project=project)
                 self.table.item(row, 0).setText(str(inserted_id))
                 self.add_empty_row()
             elif not row + 1 == self.table.rowCount() and not self.table.item(row, column).text() == "":
                 if column == 1:
                     database.update_sample(spl_id=id, custom_id=custom_id)
-                elif column == 2:
-                    database.update_sample(spl_id=id, description=description)
                 elif column == 3:
-                    database.update_sample(spl_id=id, origin=origin)
+                    database.update_sample(spl_id=id, project=project)
+                elif column == 3:
+                    database.update_sample(spl_id=id, description=description)
                 elif column == 4:
-                    database.update_sample(spl_id=id, treatment_1=treatment_1)
+                    database.update_sample(spl_id=id, origin=origin)
                 elif column == 5:
-                    database.update_sample(spl_id=id, treatment_2=treatment_2)
+                    database.update_sample(spl_id=id, treatment_1=treatment_1)
                 elif column == 6:
-                    database.update_sample(spl_id=id, treatment_3=treatment_3)
+                    database.update_sample(spl_id=id, treatment_2=treatment_2)
                 elif column == 7:
-                    database.update_sample(spl_id=id, treatment_4=treatment_4)
+                    database.update_sample(spl_id=id, treatment_3=treatment_3)
                 elif column == 8:
-                    database.update_sample(spl_id=id, treatment_5=treatment_5)
+                    database.update_sample(spl_id=id, treatment_4=treatment_4)
                 elif column == 9:
-                    database.update_sample(spl_id=id, location=location)
+                    database.update_sample(spl_id=id, treatment_5=treatment_5)
                 elif column == 10:
-                    database.update_sample(spl_id=id, date=date)
+                    database.update_sample(spl_id=id, location=location)
                 elif column == 11:
+                    database.update_sample(spl_id=id, date=date)
+                elif column == 12:
                     database.update_sample(spl_id=id, note=note)
         except sqlite3.Error as exception:
             message = QMessageBox()
