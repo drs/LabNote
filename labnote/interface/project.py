@@ -6,9 +6,7 @@ This module contain the classes responsible for launching and managing the proje
 import sqlite3
 
 # PyQt import
-from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QDialog, QMessageBox, QTableWidgetItem, QLineEdit, QAbstractItemView
-from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QDialog, QMessageBox, QTableWidgetItem, QAbstractItemView
 
 # Project import
 from labnote.ui.ui_project import Ui_Project
@@ -30,8 +28,9 @@ class Project(QDialog, Ui_Project):
         # Initialize the GUI
         self.setupUi(self)
         self.init_ui()
+        self.init_connection()
 
-        # Add the project list
+        # Show the project list
         self.show_project_list()
 
         # Show the dialog
@@ -50,13 +49,14 @@ class Project(QDialog, Ui_Project):
         self.table.horizontalHeader().setStretchLastSection(True)
         self.table.horizontalHeader().setMinimumSectionSize(200)
         self.table.setShowGrid(False)
+        self.table.setAlternatingRowColors(True)
         self.table.setSelectionMode(QAbstractItemView.NoSelection)
 
         # Search text edit
         self.txt_search = SearchLineEdit()
         self.layout_title.insertWidget(3, self.txt_search)
 
-        # Connect slots
+    def init_connection(self):
         self.btn_close.clicked.connect(self.close)
         self.txt_search.textChanged.connect(self.show_project_list)
         self.table.currentCellChanged.connect(self.cell_changed)
@@ -70,7 +70,7 @@ class Project(QDialog, Ui_Project):
 
     def show_project_list(self):
         """ Show the list of all existing project """
-        project_list = None
+        project_list = []
         search = (self.txt_search.text() or None)
 
         try:
@@ -79,17 +79,19 @@ class Project(QDialog, Ui_Project):
             message = QMessageBox()
             message.setWindowTitle("LabNote")
             message.setText("Error getting the project list")
-            message.setInformativeText("An error occurred while getting the project list. ")
+            message.setInformativeText("An unhandled error occurred while getting the project list. ")
             message.setDetailedText(str(exception))
             message.setIcon(QMessageBox.Warning)
             message.setStandardButtons(QMessageBox.Ok)
             message.exec()
 
+        # Prepare the table
+        self.table.clear()
+        self.table.setHorizontalHeaderItem(1, QTableWidgetItem('Project name'))
+        self.table.setHorizontalHeaderItem(2, QTableWidgetItem('Description'))
+
+        # Add existing project
         if project_list:
-            # Prepare the table
-            self.table.clear()
-            self.table.setHorizontalHeaderItem(1, QTableWidgetItem('Project name'))
-            self.table.setHorizontalHeaderItem(2, QTableWidgetItem('Description'))
             self.table.setRowCount(len(project_list))
 
             # Add items to the list
@@ -104,12 +106,9 @@ class Project(QDialog, Ui_Project):
 
                 row = row + 1
 
-            # Order the list
-            self.table.sortItems(1, Qt.AscendingOrder)
-            self.table.setCurrentCell(0, 0)
-
-            if not search:
-                self.add_empty_row()
+        # Add empty row at the end
+        if not search:
+            self.add_empty_row()
 
     def add_empty_row(self):
         """ Create a last empty row """

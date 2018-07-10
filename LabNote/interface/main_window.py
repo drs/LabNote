@@ -213,7 +213,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def open_sample_number(self):
         """ Open the sample number dialog """
-        sample_number.SampleNumber(self)
+        sample.Sample(self)
 
     """
     Notebook list functions

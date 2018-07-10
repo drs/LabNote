@@ -133,8 +133,8 @@ CREATE TABLE refs (
 )
 """
 
-CREATE_SAMPLE_NUMBER_TABLE = """
-CREATE TABLE sample_number (
+CREATE_SAMPLE_TABLE = """
+CREATE TABLE sample (
     spl_id      INTEGER       PRIMARY KEY AUTOINCREMENT,
     custom_id   VARCHAR (255),
     description VARCHAR (255),
@@ -145,7 +145,7 @@ CREATE TABLE sample_number (
     treatment_5 VARCHAR (255),
     origin      VARCHAR (255),
     location    VARCHAR (255),
-    date        DATE,
+    spl_date    DATE,
     note        TEXT
 )
 """
@@ -409,6 +409,75 @@ SELECT_TAG = """
 SELECT name FROM tags
 """
 
+SELECT_SAMPLE = """
+SELECT spl_id, custom_id, description, treatment_1, treatment_2, treatment_3, treatment_4, treatment_5,
+origin, location, spl_date, note
+FROM sample ORDER BY spl_id ASC
+"""
+
+SELECT_SAMPLE_SEARCH = """
+SELECT spl_id, custom_id, description, treatment_1, treatment_2, treatment_3, treatment_4, treatment_5,
+origin, location, spl_date, note
+FROM sample 
+WHERE custom_id == :search OR description LIKE :search 
+OR treatment_1 LIKE :search OR treatment_2 LIKE :search OR treatment_3 LIKE :search 
+OR origin LIKE :search
+ORDER BY spl_id ASC
+"""
+
+INSERT_SAMPLE = """
+INSERT INTO sample (custom_id, description, treatment_1, treatment_2, treatment_3, origin) 
+VALUES (:custom_id, :description, :treatment_1, :treatment_2, :treatment_3, :origin)
+"""
+
+UPDATE_SAMPLE_CUSTOM_ID = """
+UPDATE sample SET custom_id = :custom_id WHERE spl_id = :spl_id
+"""
+
+UPDATE_SAMPLE_DESCRIPTION = """
+UPDATE sample SET description = :description WHERE spl_id = :spl_id
+"""
+
+UPDATE_SAMPLE_TREATMENT_1 = """
+UPDATE sample SET treatment_1 = :treatment_1 WHERE spl_id = :spl_id
+"""
+
+UPDATE_SAMPLE_TREATMENT_2 = """
+UPDATE sample SET treatment_2 = :treatment_2 WHERE spl_id = :spl_id
+"""
+
+UPDATE_SAMPLE_TREATMENT_3 = """
+UPDATE sample SET treatment_3 = :treatment_3 WHERE spl_id = :spl_id
+"""
+
+UPDATE_SAMPLE_TREATMENT_4 = """
+UPDATE sample SET treatment_4 = :treatment_4 WHERE spl_id = :spl_id
+"""
+
+UPDATE_SAMPLE_TREATMENT_5 = """
+UPDATE sample SET treatment_5 = :treatment_5 WHERE spl_id = :spl_id
+"""
+
+UPDATE_SAMPLE_ORIGIN = """
+UPDATE sample SET origin = :origin WHERE spl_id = :spl_id
+"""
+
+UPDATE_SAMPLE_LOCATION = """
+UPDATE sample SET location = :location WHERE spl_id = :spl_id
+"""
+
+UPDATE_SAMPLE_DATE = """
+UPDATE sample SET spl_date = :spl_date WHERE spl_id = :spl_id
+"""
+
+UPDATE_SAMPLE_NOTE = """
+UPDATE sample SET note = :note WHERE spl_id = :spl_id
+"""
+
+DELETE_SAMPLE = """
+DELETE FROM sample WHERE spl_id = :spl_id
+"""
+
 
 """
 Database creation
@@ -433,7 +502,7 @@ def create_main_database():
     cursor.execute(CREATE_REF_CATEGORY_TABLE)
     cursor.execute(CREATE_REF_SUBCATEGORY_TABLE)
     cursor.execute(CREATE_REFS_TABLE)
-    cursor.execute(CREATE_SAMPLE_NUMBER_TABLE)
+    cursor.execute(CREATE_SAMPLE_TABLE)
     cursor.execute(CREATE_TAGS_TABLE)
     cursor.execute(CREATE_DATASET_TAG_TABLE)
     cursor.execute(CREATE_EXPERIMENT_DATASET_TABLE)
@@ -928,6 +997,11 @@ def delete_tag_ref(name):
         cursor.execute("END")
 
 
+"""
+Tag query
+"""
+
+
 def select_tag_list():
     """ Get all the tag from the database """
 
@@ -941,3 +1015,88 @@ def select_tag_list():
         tag_list.append({'name': tag[0]})
 
     return tag_list
+
+
+"""
+Sample query
+"""
+
+
+def select_sample(search):
+    """ Select all the existing sample id
+
+    :param search: Search string
+    :type search: str
+    :return: [{}]
+    """
+
+    # Execute the query
+    if search:
+        buffer = execute_query(SELECT_SAMPLE_SEARCH, search='{}%'.format(search))
+    else:
+        buffer = execute_query(SELECT_SAMPLE)
+
+    # Return the notebook list
+    sample_list = []
+
+    for sample in buffer:
+        sample_list.append({
+            'id': sample[0],
+            'custom_id': sample[1],
+            'description': sample[2],
+            'treatment_1': sample[3],
+            'treatment_2': sample[4],
+            'treatment_3': sample[5],
+            'treatment_4': sample[6],
+            'treatment_5': sample[7],
+            'origin': sample[8],
+            'location': sample[9],
+            'date': sample[10],
+            'note': sample[11]
+        })
+
+    return sample_list
+
+
+def create_sample(custom_id=None, description=None, treatment_1=None, treatment_2=None,
+                  treatment_3=None, origin=None):
+    """ Create a new sample in the database """
+    return execute_query_last_insert_rowid(INSERT_SAMPLE, custom_id=custom_id, description=description,
+                                           treatment_1=treatment_1, treatment_2=treatment_2,
+                                           treatment_3=treatment_3, origin=origin)
+
+
+def update_sample(spl_id, custom_id=None, description=None, treatment_1=None, treatment_2=None, treatment_3=None,
+                  treatment_4=None, treatment_5=None, origin=None, location=None, date=None, note=None):
+    """ Update sample information for the specified ID """
+    if custom_id:
+        execute_query(UPDATE_SAMPLE_CUSTOM_ID, custom_id=custom_id, spl_id=spl_id)
+    elif description:
+        execute_query(UPDATE_SAMPLE_DESCRIPTION, description=description, spl_id=spl_id)
+    elif treatment_1:
+        execute_query(UPDATE_SAMPLE_TREATMENT_1, treatment_1=treatment_1, spl_id=spl_id)
+    elif treatment_2:
+        execute_query(UPDATE_SAMPLE_TREATMENT_2, treatment_2=treatment_2, spl_id=spl_id)
+    elif treatment_3:
+        execute_query(UPDATE_SAMPLE_TREATMENT_3, treatment_3=treatment_3, spl_id=spl_id)
+    elif treatment_4:
+        execute_query(UPDATE_SAMPLE_TREATMENT_4, treatment_4=treatment_4, spl_id=spl_id)
+    elif treatment_5:
+        execute_query(UPDATE_SAMPLE_TREATMENT_5, treatment_4=treatment_5, spl_id=spl_id)
+    elif origin:
+        execute_query(UPDATE_SAMPLE_ORIGIN, origin=origin, spl_id=spl_id)
+    elif location:
+        execute_query(UPDATE_SAMPLE_LOCATION, location=location, spl_id=spl_id)
+    elif date:
+        execute_query(UPDATE_SAMPLE_DATE, spl_date=date, spl_id=spl_id)
+    elif note:
+        execute_query(UPDATE_SAMPLE_NOTE, note=note, spl_id=spl_id)
+
+
+def delete_sample(spl_id):
+    """ Delete the project with the specified ID
+
+    :param spl_id: ID of the sample to delete
+    :type spl_id: int
+    """
+    execute_query(DELETE_SAMPLE, spl_id=spl_id)
