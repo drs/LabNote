@@ -6,6 +6,10 @@ QTableView {
     border-top: 0.5px solid rgb(196, 196, 196);
 }
 
+QTableView::item {
+    border-bottom: 0.5px solid rgb(245, 245, 245)
+}
+
 /*  view */
 
 QHeaderView {
