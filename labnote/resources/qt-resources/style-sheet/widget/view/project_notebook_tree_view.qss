@@ -1,23 +1,5 @@
 QTreeView {
     border: none;
     background-color: rgb(246, 246, 246);
-    min-width: 190px;
-    max-width: 190px;
-}
 
-QTreeView::item:selected {
-    background-color: rgb(232, 232, 232);
-    color: black;
-}
-
-QTreeView::branch:selected {
-    background-color: rgb(232, 232, 232);
-}
-
-QTreeView::branch::closed::has-children {
-    image: url(:/Icons/Library/icons/library/branch-close.png);
-}
-
-QTreeView::branch::open::has-children {
-    image: url(:/Icons/Library/icons/library/branch-open.png);
 }
