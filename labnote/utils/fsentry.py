@@ -86,6 +86,7 @@ def add_reference_pdf(ref_uuid, file):
 
         reference_file = files.reference_file_path(ref_uuid=ref_uuid)
         shutil.copy2(file, reference_file)
+        return reference_file
     except sqlite3.Error:
         exception = True
         raise

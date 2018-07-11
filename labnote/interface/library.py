@@ -214,7 +214,7 @@ class Library(QDialog, Ui_Library):
         ref_uuid = index.data(Qt.UserRole)
 
         try:
-            fsentry.add_reference_pdf(ref_uuid=ref_uuid, file=file)
+            reference_file = fsentry.add_reference_pdf(ref_uuid=ref_uuid, file=file)
         except (sqlite3.Error, OSError) as exception:
             message = QMessageBox(QMessageBox.Warning, "Unable to save reference",
                                   "An error occurred while saving the reference PDF.", QMessageBox.Ok)
@@ -223,7 +223,7 @@ class Library(QDialog, Ui_Library):
             message.exec()
             return
 
-        self.pdf_added.emit(file)
+        self.pdf_added.emit(reference_file)
 
     def remove_pdf(self):
         """ Remove the PDF from the database and file structure """

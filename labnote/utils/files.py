@@ -40,4 +40,4 @@ def reference_file_path(ref_uuid):
     :param ref_uuid: Reference UUID
     :type ref_uuid: str
     """
-    return os.path.join(directory.REFERENCES_DIRECTORY_PATH + "/{}".format(ref_uuid))
+    return os.path.join(directory.REFERENCES_DIRECTORY_PATH + "/{}.pdf".format(ref_uuid))
