@@ -22,7 +22,7 @@ QHeaderView::section {
     height: 22px;
 }
 
-QPushButton {
+QPushButton[Tool="true"] {
     text-align:left;
     background-color: none;
     border: none;
@@ -30,7 +30,7 @@ QPushButton {
     image-position: left;
 }
 
-QPushButton:pressed {
+QPushButton:pressed[Tool="true"] {
     background-color: none;
     border: none;
 }

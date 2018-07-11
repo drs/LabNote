@@ -44,6 +44,11 @@ class Sample(QDialog, Ui_Sample):
     def init_ui(self):
         self.setWindowTitle("LabNote - Sample")
 
+        # Set button group
+        self.btn_import.setProperty("Tool", True)
+        self.btn_create_template.setProperty("Tool", True)
+        self.btn_close.setProperty("Tool", False)
+
         # Set style sheet
         stylesheet.set_style_sheet(self, ":/StyleSheet/style-sheet/sample.qss")
 
@@ -53,7 +58,7 @@ class Sample(QDialog, Ui_Sample):
         self.layout_search.setAlignment(self.txt_search, Qt.AlignTop)  # Align with import button
 
         # Setup table
-        self.table.setColumnCount(12)
+        self.table.setColumnCount(13)
         self.table.verticalHeader().setVisible(False)
         self.table.horizontalHeader().setStretchLastSection(True)
         self.table.horizontalHeader().setMinimumSectionSize(150)
@@ -312,21 +317,19 @@ class Sample(QDialog, Ui_Sample):
         """ Create a last empty row """
         # Add the row
         self.table.setRowCount(self.table.rowCount() + 1)
-        id = QTableWidgetItem('')
-        id.setFlags(id.flags() ^ Qt.ItemIsEditable)
-        self.table.setItem(self.table.rowCount() - 1, 0, id)
+        self.table.setItem(self.table.rowCount() - 1, 0, NoEditTableWidgetItem())
         self.table.setItem(self.table.rowCount() - 1, 1, QTableWidgetItem(''))
         self.table.setItem(self.table.rowCount() - 1, 2, QTableWidgetItem(''))
         self.table.setItem(self.table.rowCount() - 1, 3, QTableWidgetItem(''))
-        self.table.setItem(self.table.rowCount() - 1, 4, QTableWidgetItem(''))
-        self.table.setItem(self.table.rowCount() - 1, 5, QTableWidgetItem(''))
-        self.table.setItem(self.table.rowCount() - 1, 6, QTableWidgetItem(''))
-        self.table.setItem(self.table.rowCount() - 1, 7, QTableWidgetItem(''))
-        self.table.setItem(self.table.rowCount() - 1, 8, QTableWidgetItem(''))
-        self.table.setItem(self.table.rowCount() - 1, 9, QTableWidgetItem(''))
-        self.table.setItem(self.table.rowCount() - 1, 10, QTableWidgetItem(''))
-        self.table.setItem(self.table.rowCount() - 1, 11, QTableWidgetItem(''))
-        self.table.setItem(self.table.rowCount() - 1, 12, QTableWidgetItem(''))
+        self.table.setItem(self.table.rowCount() - 1, 4, NoEditTableWidgetItem())
+        self.table.setItem(self.table.rowCount() - 1, 5, NoEditTableWidgetItem())
+        self.table.setItem(self.table.rowCount() - 1, 6, NoEditTableWidgetItem())
+        self.table.setItem(self.table.rowCount() - 1, 7, NoEditTableWidgetItem())
+        self.table.setItem(self.table.rowCount() - 1, 8, NoEditTableWidgetItem())
+        self.table.setItem(self.table.rowCount() - 1, 9, NoEditTableWidgetItem())
+        self.table.setItem(self.table.rowCount() - 1, 10, NoEditTableWidgetItem())
+        self.table.setItem(self.table.rowCount() - 1, 11, NoEditTableWidgetItem())
+        self.table.setItem(self.table.rowCount() - 1, 12, NoEditTableWidgetItem())
 
     def save_change(self, row, column):
         """ Save changes in the database
@@ -352,10 +355,9 @@ class Sample(QDialog, Ui_Sample):
         try:
             if row + 1 == self.table.rowCount() and (1 <= column <= 7) \
                     and not self.table.item(row, column).text() == "":
-                inserted_id = database.create_sample(custom_id=custom_id, description=description,
-                                                     treatment_1=treatment_1, treatment_2=treatment_2,
-                                                     treatment_3=treatment_3, origin=origin, project=project)
+                inserted_id = database.create_sample(custom_id=custom_id, description=description, project=project)
                 self.table.item(row, 0).setText(str(inserted_id))
+                self.make_item_editable(row)
                 self.add_empty_row()
             elif not row + 1 == self.table.rowCount() and not self.table.item(row, column).text() == "":
                 if column == 1:
@@ -393,3 +395,22 @@ class Sample(QDialog, Ui_Sample):
             message.exec()
             return False
         return True
+
+    def make_item_editable(self, row):
+        """ Make item editable for the designed row
+
+        This function does not make the id row editable.
+
+        :param row: Row to make editable
+        :type row: int
+        """
+        for position in range(4, 13):
+            item = self.table.item(row, position)
+            item.setFlags(item.flags() | Qt.ItemIsEditable)
+
+
+class NoEditTableWidgetItem(QTableWidgetItem):
+    def __init__(self):
+        super(NoEditTableWidgetItem, self).__init__()
+        self.setFlags(self.flags() ^ Qt.ItemIsEditable)
+        self.setText('')
