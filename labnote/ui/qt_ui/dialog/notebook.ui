@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>NewNotebook</class>
- <widget class="QDialog" name="NewNotebook">
+ <class>Notebook</class>
+ <widget class="QDialog" name="Notebook">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -63,7 +63,7 @@
    <item>
     <layout class="QVBoxLayout" name="verticalLayout">
      <item>
-      <widget class="QLabel" name="lbl_new_notebook">
+      <widget class="QLabel" name="lbl_title">
        <property name="font">
         <font>
          <weight>75</weight>
@@ -71,7 +71,7 @@
         </font>
        </property>
        <property name="text">
-        <string>New Notebook</string>
+        <string>Create a notebook</string>
        </property>
       </widget>
      </item>
