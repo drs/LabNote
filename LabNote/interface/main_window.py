@@ -6,8 +6,7 @@ This module contain the classes responsible for launching and managing the LabNo
 import sqlite3
 
 # PyQt import
-from PyQt5.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QMessageBox, QLabel, QListWidgetItem, QAction, \
-    QSizePolicy, QMenu
+from PyQt5.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QMessageBox, QLabel, QAction, QSizePolicy, QMenu
 from PyQt5.QtGui import QPixmap, QIcon, QFont
 from PyQt5.QtCore import Qt, QSettings, QByteArray
 
@@ -18,6 +17,7 @@ from labnote.utils import database, directory, fsentry
 from labnote.interface import project, library, sample
 from labnote.interface.dialog.notebook import Notebook
 from labnote.interface.widget.lineedit import SearchLineEdit
+from labnote.interface.widget.view import ProjectNotebookTreeView
 
 
 class MainWindow(QMainWindow, Ui_MainWindow):
@@ -47,9 +47,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         # Check files integrity
         self.check_main_directory()
-
-        # Show existing notebook list
-        self.show_notebook_list()
 
     def init_ui(self):
         """ Initialize all the GUI elements """
@@ -95,9 +92,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.notebook_setting_menu.setFont(QFont(self.font().family(), 13, QFont.Normal))
         self.act_delete_notebook = QAction("Delete notebook", self)
         self.act_delete_notebook.triggered.connect(self.delete_notebook)
+        self.act_delete_notebook.setEnabled(False)
         self.notebook_setting_menu.addAction(self.act_delete_notebook)
         self.act_rename_notebook = QAction("Update notebook", self)
-        self.act_rename_notebook.triggered.connect(self.start_rename_notebook)
+        self.act_rename_notebook.triggered.connect(self.update_notebook)
+        self.act_rename_notebook.setEnabled(False)
         self.notebook_setting_menu.addAction(self.act_rename_notebook)
         self.btn_settings.setMenu(self.notebook_setting_menu)
 
@@ -108,8 +107,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.act_duplicate.setEnabled(False)
 
         # Remove focus rectangle
-        self.lst_notebook.setAttribute(Qt.WA_MacShowFocusRect, 0)
         self.lst_entry.setAttribute(Qt.WA_MacShowFocusRect, 0)
+
+        # Create the notebook list widget
+        self.view_notebook = ProjectNotebookTreeView()
+        self.frame.layout().insertWidget(1, self.view_notebook)
 
         # Set no entry widget as default widget
         self.set_no_entry_widget()
@@ -119,7 +121,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def init_connection(self):
         self.btn_add_notebook.clicked.connect(self.create_notebook)
-        self.lst_notebook.itemSelectionChanged.connect(self.notebook_changed)
+        self.view_notebook.selection_changed.connect(self.notebook_changed)
         #self.act_new.triggered.connect(self.create_experiment)
         #self.act_new_experiment.triggered.connect(self.create_experiment)
         #self.lst_entry.itemSelectionChanged.connect(self.experiment_changed)
@@ -195,7 +197,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def open_project(self):
         """ Open the project dialog """
-        project.Project(self)
+        proj = project.Project(self)
+        proj.closed.connect(self.view_notebook.show_content)
 
     def open_library(self):
         """ Open the library dialog """
@@ -215,126 +218,29 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.notebook.setWindowModality(Qt.WindowModal)
         self.notebook.setParent(self, Qt.Sheet)
         self.notebook.show()
-        self.notebook.accepted.connect(self.show_notebook_list)
+        self.notebook.accepted.connect(self.view_notebook.show_content)
 
-    def notebook_changed(self):
-        """ Update the experiment list when the notebook change """
-        self.current_nb_uuid = self.lst_notebook.currentItem().data(Qt.UserRole)
+    def notebook_changed(self, hierarchy_level, item_id):
+        """ This function is called when the notebook or project change
 
-        #self.show_experiment_list()
-
-    def show_notebook_list(self, selected=None):
-        """ Show the existing notebooks in the notebook list
-
-        If the parameter selected is passed, this function can restore the last selected item.
-
-        :param selected: Text of the last selected item
-        :type selected: str
+        It activate the buttons depending on the active item or show the experiment.
         """
-
-        # Clear the existing list
-        self.lst_notebook.clear()
-
-        lst = None
-
-        # Get the notebook list from the database
-        try:
-            lst = database.get_notebook_list()
-        except sqlite3.Error as exception:
-            message = QMessageBox()
-            message.setWindowTitle("LabNote")
-            message.setText("Error getting the notebook list")
-            message.setInformativeText("An error occurred while getting the notebook list. ")
-            message.setDetailedText(str(exception))
-            message.setIcon(QMessageBox.Warning)
-            message.setStandardButtons(QMessageBox.Ok)
-            message.exec()
-
-        if lst:
-            # Add items to the list
-            for notebook in lst:
-                item = QListWidgetItem(notebook['name'])
-                item.setData(Qt.UserRole, notebook['uuid'])
-                self.lst_notebook.addItem(item)
-
-            # Order the list
-            self.lst_notebook.sortItems(Qt.AscendingOrder)
-            self.lst_notebook.setCurrentRow(0)
+        if hierarchy_level == 1:
+            self.act_delete_notebook.setEnabled(False)
+            self.act_rename_notebook.setEnabled(False)
+            self.act_new.setEnabled(False)
+        elif hierarchy_level == 2:
+            self.act_delete_notebook.setEnabled(True)
+            self.act_rename_notebook.setEnabled(True)
             self.act_new.setEnabled(True)
-            self.act_new_experiment.setEnabled(True)
-
-            # Update the current selected notebook uuid
-            self.current_nb_uuid = self.lst_notebook.currentItem().data(Qt.UserRole)
-
-            #self.show_experiment_list()
-
-            # Sort item in ascending order
-            self.lst_notebook.sortItems(Qt.AscendingOrder)
-
-            # Select the last selected element
-            if selected:
-                item = self.lst_notebook.findItems(selected, Qt.MatchExactly)
-                self.lst_notebook.setCurrentItem(item[0])
-
-    def start_rename_notebook(self):
-        """ Make a notebook item editable to allow renaming """
-        current_row = self.lst_notebook.currentRow()
-        # If an item is selected make it editable
-        if current_row != -1:
-            # Make the item editable
-            item = self.lst_notebook.item(current_row)
-            item.setFlags(item.flags() | Qt.ItemIsEditable)
-
-            index = self.lst_notebook.model().index(current_row, 0)
-            self.lst_notebook.edit(index)
-
-            self.call_finish_rename_notebook = lambda: self.finish_rename_notebook(current_row)
-
-            # When the editing is finished call the function that rename the item in the database
-            self.lst_notebook.itemDelegate().closeEditor.connect(self.call_finish_rename_notebook)
-
-    def finish_rename_notebook(self, current_row):
-        """ Change the notebook name in the database after editing is finished
-
-        :param current_row: Row of the item being edited
-        :type current_row: int
-        """
-        # Get the item at the row
-        item = self.lst_notebook.item(current_row)
-
-        # Set the item not editable
-        item.setFlags(item.flags() ^ Qt.ItemIsEditable)
-
-        # Update notebook name in the database
-        try:
-            database.update_notebook(item.text(), item.data(Qt.UserRole))
-        except sqlite3.Error as exception:
-            message = QMessageBox()
-            message.setWindowTitle("LabNote")
-            message.setText("Cannot rename notebook")
-            message.setInformativeText(
-                "An error occurred while renaming the notebook {}.".format(item.text()))
-            message.setDetailedText(str(exception))
-            message.setIcon(QMessageBox.Warning)
-            message.setStandardButtons(QMessageBox.Ok)
-            message.exec()
-
-            return
-
-        # Show the notebook list with the updated name
-        self.show_notebook_list(selected=item.text())
-
-        # Disconnect the slot
-        # This is necessary to allow renaming of other notebook later on
-        self.lst_notebook.itemDelegate().closeEditor.disconnect(self.call_finish_rename_notebook)
 
     def delete_notebook(self):
         """ Delete a notebook """
+
         # Get the notebook informations
-        current_row = self.lst_notebook.currentRow()
-        item = self.lst_notebook.item(current_row)
-        nb_uuid = item.data(Qt.UserRole)
-        nb_name = item.text()
+        current_data = self.view_notebook.current_selection()
+        nb_uuid = current_data[0]
+        nb_name = current_data[1]
 
         # Confirm if the user really want to delete the notebook
         confirmation_messagebox = QMessageBox()
@@ -349,30 +255,36 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # Delete the notebook from the database
         if confirmation_message == QMessageBox.Ok:
             try:
-                database.delete_notebook(nb_uuid)
-                directory.delete_nb_directory(nb_uuid)
-            except sqlite3.Error as exception:
+                fsentry.delete_notebook(nb_uuid=nb_uuid)
+            except (sqlite3.Error, OSError) as exception:
                 message = QMessageBox()
                 message.setWindowTitle("LabNote")
                 message.setText("Cannot delete notebook")
-                message.setInformativeText("An error occurred while deleting the notebook in the database. The notebook"
-                                           "was not deleted.")
-                message.setDetailedText(str(exception))
-                message.setIcon(QMessageBox.Warning)
-                message.setStandardButtons(QMessageBox.Ok)
-                message.exec()
-            except OSError as exception:
-                message = QMessageBox()
-                message.setWindowTitle("LabNote")
-                message.setText("Cannot delete notebook")
-                message.setInformativeText("An error occurred while deleting the notebook {} directory."
-                                           .format(nb_uuid))
+                message.setInformativeText("An error occurred while deleting the notebook")
                 message.setDetailedText(str(exception))
                 message.setIcon(QMessageBox.Warning)
                 message.setStandardButtons(QMessageBox.Ok)
                 message.exec()
 
-        self.show_notebook_list()
+        self.view_notebook.show_content()
+
+    def update_notebook(self):
+        """ Show a dialog to update a category """
+
+        # Get the category informations
+        index = self.view_notebook.selectionModel().currentIndex()
+
+        name = index.data(Qt.DisplayRole)
+        notebook_id = index.data(Qt.UserRole)
+        project_id = self.view_notebook.get_project(index)
+
+        # Show the dialog
+        notebook = Notebook(name=name, notebook_id=notebook_id, project_id=project_id)
+        notebook.lbl_title.setText("Update a notebook")
+        notebook.setWindowModality(Qt.WindowModal)
+        notebook.setParent(self, Qt.Sheet)
+        notebook.show()
+        notebook.accepted.connect(self.view_notebook.show_content)
 
     # """
     # Experiment list functions

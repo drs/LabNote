@@ -31,6 +31,9 @@ class TreeView(QTreeView):
         self.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.setSelectionMode(QAbstractItemView.SingleSelection)
 
+        # Set edit trigged
+        self.setEditTriggers(QAbstractItemView.NoEditTriggers)
+
         # No tab focus
         self.setFocusPolicy(self.focusPolicy() ^ Qt.TabFocus)
 
@@ -66,6 +69,9 @@ class ProjectNotebookTreeView(TreeView):
 
     LEVEL_PROJECT = 101
     LEVEL_NOTEBOOK = 102
+
+    # Signal definition
+    selection_changed = pyqtSignal(int, str)
 
     def __init__(self):
         super(ProjectNotebookTreeView, self).__init__()
@@ -107,3 +113,46 @@ class ProjectNotebookTreeView(TreeView):
                         project_item.appendRow(notebook_item)
 
         self.setModel(model)
+        self.selectionModel().currentChanged.connect(self.selection_change)
+
+    def get_hierarchy_level(self, index):
+        """ Get the hierarchy level for the index
+
+        :param index: Item index
+        :type index: QModelIndex
+        :return int: Hierarchy level
+        """
+        if index.data(self.QT_LevelRole) == self.LEVEL_PROJECT:
+            return 1
+        elif index.data(self.QT_LevelRole) == self.LEVEL_NOTEBOOK:
+            return 2
+
+    def selection_change(self):
+        """ Emit the selection changed signal """
+
+        index = self.selectionModel().currentIndex()
+        hierarchy_level = self.get_hierarchy_level(index)
+
+        self.selection_changed.emit(hierarchy_level, str(index.data(Qt.UserRole)))
+
+    def current_selection(self):
+        """ Return the current selected item data in display and user role """
+        index = self.selectionModel().currentIndex()
+        return [index.data(Qt.UserRole), index.data(Qt.DisplayRole)]
+
+    def get_project(self, index):
+        """ Return a category id
+
+        :param index: Item index
+        :type index: QModelIndex
+        :return int: Category id
+        """
+        hierarchy_level = self.get_hierarchy_level(index)
+
+        if hierarchy_level == 1:
+            return index.data(Qt.UserRole)
+        elif hierarchy_level == 2:
+            return index.parent().data(Qt.UserRole)
+        else:
+            return None
+

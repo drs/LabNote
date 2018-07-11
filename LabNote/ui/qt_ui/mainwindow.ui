@@ -90,25 +90,6 @@
         </widget>
        </item>
        <item>
-        <widget class="QListWidget" name="lst_notebook">
-         <property name="minimumSize">
-          <size>
-           <width>190</width>
-           <height>0</height>
-          </size>
-         </property>
-         <property name="maximumSize">
-          <size>
-           <width>190</width>
-           <height>16777215</height>
-          </size>
-         </property>
-         <property name="spacing">
-          <number>0</number>
-         </property>
-        </widget>
-       </item>
-       <item>
         <layout class="QHBoxLayout" name="frame_layout">
          <property name="spacing">
           <number>0</number>
