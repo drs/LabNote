@@ -48,7 +48,8 @@ def create_notebook(nb_name, proj_id):
         conn = sqlite3.connect(database.MAIN_DATABASE_FILE_PATH)
         conn.execute("PRAGMA foreign_keys = ON")
         cursor = conn.cursor()
-        cursor.execute(database.INSERT_NOTEBOOK, {'nb_uuid': data.uuid_bytes(nb_uuid), 'name': nb_name, 'proj_id': proj_id})
+        cursor.execute(database.INSERT_NOTEBOOK, {'nb_uuid': data.uuid_bytes(nb_uuid), 'name': nb_name,
+                                                  'proj_id': proj_id})
 
         notebook_path = os.path.join(directory.NOTEBOOK_DIRECTORY_PATH + "/{}".format(nb_uuid))
         os.mkdir(notebook_path)
@@ -64,6 +65,38 @@ def create_notebook(nb_name, proj_id):
         if not exception:
             if conn:
                 conn.commit()
+        if conn:
+            conn.close()
+
+
+def delete_notebook(nb_uuid):
+    """ Delete a notebook from the database and the file structure
+
+    :param nb_uuid: Notebook UUID
+    :type str:
+    """
+    conn = None
+    exception = False
+
+    try:
+        conn = sqlite3.connect(database.MAIN_DATABASE_FILE_PATH)
+        conn.execute("PRAGMA foreign_keys = ON")
+        cursor = conn.cursor()
+        cursor.execute(database.DELETE_NOTEBOOK, {'nb_uuid': data.uuid_bytes(nb_uuid)})
+
+        notebook_path = os.path.join(directory.NOTEBOOK_DIRECTORY_PATH + "/{}".format(nb_uuid))
+        shutil.rmtree(notebook_path, ignore_errors=True)
+    except sqlite3.Error:
+        exception = True
+        raise
+    except OSError:
+        if conn:
+            conn.rollback()
+        exception = True
+        raise
+    finally:
+        if not exception:
+            conn.commit()
         if conn:
             conn.close()
 
