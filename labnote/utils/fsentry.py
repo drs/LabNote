@@ -38,10 +38,34 @@ def create_notebook(nb_name, proj_id):
     :type proj_id: int
     """
 
+    conn = None
+    exception = False
+
     # Create UUID
     nb_uuid = str(uuid.uuid4())
-    directory.create_nb_directory(nb_uuid)
-    database.create_notebook(nb_name, nb_uuid, proj_id)
+
+    try:
+        conn = sqlite3.connect(database.MAIN_DATABASE_FILE_PATH)
+        conn.execute("PRAGMA foreign_keys = ON")
+        cursor = conn.cursor()
+        cursor.execute(database.INSERT_NOTEBOOK, {'nb_uuid': nb_uuid, 'name': nb_name, 'proj_id': proj_id})
+
+        notebook_path = os.path.join(directory.NOTEBOOK_DIRECTORY_PATH + "/{}".format(nb_uuid))
+        os.mkdir(notebook_path)
+    except sqlite3.Error:
+        exception = True
+        raise
+    except OSError:
+        if conn:
+            conn.rollback()
+        exception = True
+        raise
+    finally:
+        if not exception:
+            if conn:
+                conn.commit()
+        if conn:
+            conn.close()
 
 
 def add_reference_pdf(ref_uuid, file):
@@ -53,7 +77,7 @@ def add_reference_pdf(ref_uuid, file):
     :type file: str
     """
     conn = None
-    exception = None
+    exception = False
 
     try:
         conn = sqlite3.connect(database.MAIN_DATABASE_FILE_PATH)
@@ -85,7 +109,7 @@ def delete_reference_pdf(ref_uuid):
     :type ref_uuid: str
     """
     conn = None
-    exception = None
+    exception = False
 
     try:
         conn = sqlite3.connect(database.MAIN_DATABASE_FILE_PATH)
