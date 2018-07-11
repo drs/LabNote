@@ -7,7 +7,7 @@ import sqlite3
 
 # PyQt import
 from PyQt5.QtWidgets import QDialog, QMessageBox, QTableWidgetItem, QAbstractItemView
-from PyQt5.QtCore import QEvent, Qt
+from PyQt5.QtCore import QEvent, Qt, QSettings
 
 # Project import
 from labnote.ui.ui_project import Ui_Project
@@ -68,6 +68,9 @@ class Project(QDialog, Ui_Project):
         self.table.setMouseTracking(True)
         self.table.installEventFilter(self)
         self.table.viewport().installEventFilter(self)
+
+        # Restore geometry from settings
+        self.read_settings()
 
     def init_connection(self):
         self.btn_close.clicked.connect(self.close)
@@ -255,3 +258,24 @@ class Project(QDialog, Ui_Project):
             message.setStandardButtons(QMessageBox.Ok)
             message.exec()
             return
+
+    def closeEvent(self, event):
+        self.save_settings()
+        event.accept()
+
+    def save_settings(self):
+        """ Save the dialog geometry """
+        settings = QSettings("Samuel Drouin", "LabNote")
+        settings.beginGroup("Project")
+        settings.setValue("Geometry", self.saveGeometry())
+        settings.setValue("Maximized", self.isMaximized())
+        settings.endGroup()
+
+    def read_settings(self):
+        """ Restore the dialog geometry """
+        settings = QSettings("Samuel Drouin", "LabNote")
+        settings.beginGroup("Project")
+        self.restoreGeometry(settings.value("Geometry", self.saveGeometry()))
+        if settings.value("Maximized", self.isMaximized()):
+            self.showMaximized()
+        settings.endGroup()
