@@ -55,7 +55,6 @@ class Sample(QDialog, Ui_Sample):
         # Add search lineedit
         self.txt_search = SearchLineEdit()
         self.layout_search.insertWidget(4, self.txt_search)
-        self.layout_search.setAlignment(self.txt_search, Qt.AlignTop)  # Align with import button
 
         # Setup table
         self.table.setColumnCount(13)
