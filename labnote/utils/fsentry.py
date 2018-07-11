@@ -48,7 +48,7 @@ def create_notebook(nb_name, proj_id):
         conn = sqlite3.connect(database.MAIN_DATABASE_FILE_PATH)
         conn.execute("PRAGMA foreign_keys = ON")
         cursor = conn.cursor()
-        cursor.execute(database.INSERT_NOTEBOOK, {'nb_uuid': nb_uuid, 'name': nb_name, 'proj_id': proj_id})
+        cursor.execute(database.INSERT_NOTEBOOK, {'nb_uuid': data.uuid_bytes(nb_uuid), 'name': nb_name, 'proj_id': proj_id})
 
         notebook_path = os.path.join(directory.NOTEBOOK_DIRECTORY_PATH + "/{}".format(nb_uuid))
         os.mkdir(notebook_path)
