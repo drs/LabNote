@@ -28,6 +28,7 @@ class Project(QDialog, Ui_Project):
     column = -1
     old_row = -1
     old_column = -1
+    old_text = None
 
     def __init__(self, parent=None):
         super(Project, self).__init__(parent)
@@ -92,18 +93,22 @@ class Project(QDialog, Ui_Project):
                 if not self.save_change(self.row, self.column):
                     self.table.editItem(self.table.item(self.row, self.column))
             self.current_text = None
+            self.old_column = -1
+            self.old_row = -1
+            self.old_text = None
+            self.row = -1
+            self.column = -1
 
-    def cell_changed(self, row, column, old_row, old_column):
+    def cell_changed(self):
         # Stop the execution if no cell was selected before since there is nothing to save
         # in this case
-        if not self.table.item(old_row, old_column):
+        if not self.table.item(self.old_row, self.old_column):
             return
 
-        """ Save the current cell text """
-        if self.current_text is not None and not self.table.item(old_row, old_column).text() == self.current_text:
-            if not self.save_change(old_row, old_column):
-                self.table.editItem(self.table.item(old_row, old_column))
-        self.current_text = self.table.item(row, column).text()
+        # Save the current cell text
+        if self.old_text is not None and not self.table.item(self.old_row, self.old_column).text() == self.old_text:
+            if not self.save_change(self.old_row, self.old_column):
+                self.table.editItem(self.table.item(self.old_row, self.old_column))
 
     def set_cursor_position(self, row, column):
         """ Set the current and past cursor position as global variable
@@ -115,8 +120,10 @@ class Project(QDialog, Ui_Project):
         """
         self.old_column = self.column
         self.old_row = self.row
+        self.old_text = self.current_text
         self.column = column
         self.row = row
+        self.current_text = self.table.item(row, column).text()
 
     def show_project_list(self):
         """ Show the list of all existing project """
