@@ -173,16 +173,16 @@ class Sample(QDialog, Ui_Sample):
                 return
             self.show_sample_list()
 
-    def eventFilter(self, object, event):
-        if object == self.table.viewport():
+    def eventFilter(self, widget, event):
+        if widget == self.table.viewport():
             if event.type() == QEvent.MouseButtonPress:
                 if not self.table.itemAt(event.pos()):
                     self.no_cell_selected()
-        if object == self.table:
+        if widget == self.table:
             if event.type() == QEvent.KeyPress:
                 if event.key() == Qt.Key_Backspace:
                     self.delete_sample()
-        return QDialog().eventFilter(object, event)
+        return QDialog().eventFilter(widget, event)
 
     def no_cell_selected(self):
         """ Check if the sample must be saved """
