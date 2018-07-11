@@ -8,15 +8,15 @@ import sqlite3
 # PyQt import
 from PyQt5.QtWidgets import QDialog, QMessageBox
 from PyQt5.QtGui import QPixmap, QRegExpValidator
-from PyQt5.QtCore import QRegExp
+from PyQt5.QtCore import QRegExp, Qt
 
 # Project import
-from labnote.ui.ui_new_notebook import Ui_NewNotebook
+from labnote.ui.dialog.ui_notebook import Ui_Notebook
 from labnote.utils import database, fsentry
 from labnote.core import sqlite_error
 
 
-class Notebook(QDialog, Ui_NewNotebook):
+class Notebook(QDialog, Ui_Notebook):
     """
     Class that show New Notebook dialog
     """
@@ -43,29 +43,35 @@ class Notebook(QDialog, Ui_NewNotebook):
 
         self.lbl_picture.setPixmap(notebook_image)
 
+        # Show the project list
+        self.show_project_list()
+
         # Set notebook name validator
         validator = QRegExpValidator(QRegExp("^[0-9a-zA-ZÀ-ÿ -._]+$"))
         self.txt_name.setValidator(validator)
 
-        # Instance variable that contain the notebook informations
-        self.notebook_name = None
-        self.project_id = None
+        # Set the current value
+        if self.name:
+            self.txt_name.setText(self.name)
+        if self.project_id:
+            index = self.cbx_project.findData(self.project_id, Qt.UserRole)
+            if index != -1:
+                self.cbx_project.setCurrentIndex(index)
 
-        # Show the project list
-        self.show_project_list()
+        self.check_notebook()
 
     def init_connection(self):
         self.btn_cancel.clicked.connect(self.reject)
         self.btn_create.clicked.connect(self.process)
-        self.txt_name.textChanged.connect(self.check_notebook_name)
+        self.txt_name.textChanged.connect(self.check_notebook)
+        self.cbx_project.currentIndexChanged.connect(self.check_notebook)
 
-    def check_notebook_name(self, text):
+    def check_notebook(self):
+        text = self.txt_name.text()
         if text != "" and self.cbx_project.currentData() is not None:
             self.btn_create.setEnabled(True)
         else:
             self.btn_create.setEnabled(False)
-        self.notebook_name = text
-        self.project_id = self.cbx_project.currentData()
 
     def show_project_list(self):
         """ Get a list of all the projects
@@ -116,6 +122,30 @@ class Notebook(QDialog, Ui_NewNotebook):
                 else:
                     message = QMessageBox(QMessageBox.Warning, "Cannot create notebook",
                                           "An error occurred during the notebook creation.", QMessageBox.Ok)
+                    message.setWindowTitle("LabNote")
+                    message.setDetailedText(str(exception))
+                    message.exec()
+                    return
+        else:
+            try:
+                database.update_notebook(self.txt_name.text(), self.notebook_id,
+                                         self.cbx_project.currentData(Qt.UserRole))
+            except (sqlite3.Error, OSError) as exception:
+                error_code = sqlite_error.sqlite_err_handler(str(exception))
+
+                if error_code == sqlite_error.UNIQUE_CODE:
+                    message = QMessageBox()
+                    message.setWindowTitle("LabNote")
+                    message.setText("Notebook already exist")
+                    message.setInformativeText("Notebook name must be unique within a project. "
+                                               "Please choose a different name")
+                    message.setIcon(QMessageBox.Information)
+                    message.setStandardButtons(QMessageBox.Ok)
+                    message.exec()
+                    return
+                else:
+                    message = QMessageBox(QMessageBox.Warning, "Cannot update notebook",
+                                          "An error occurred while updating the notebook.", QMessageBox.Ok)
                     message.setWindowTitle("LabNote")
                     message.setDetailedText(str(exception))
                     message.exec()
