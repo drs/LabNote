@@ -10,7 +10,7 @@ import os
 
 # PyQt import
 from PyQt5.QtWidgets import QDialog, QGridLayout, QLabel, QMenu, QAction, QMessageBox,\
-    QAbstractItemView, QTreeView, QWidget, QVBoxLayout, QLineEdit
+    QAbstractItemView, QTreeView, QWidget, QVBoxLayout, QPlainTextEdit
 from PyQt5.QtCore import Qt, QRegExp, QModelIndex, QSettings, pyqtSignal, QFileInfo
 from PyQt5.QtGui import QFont, QRegExpValidator, QStandardItemModel, QStandardItem, QColor, QPixmap, QPainter, QPen, \
     QBrush, QIcon
@@ -313,7 +313,7 @@ class Library(QDialog, Ui_Library):
             self.txt_issue.setText(data.receive_string(reference['issue']))
             self.txt_pages.setText(data.receive_string(reference['pages']))
             self.txt_description.setHtml(data.receive_string(reference['description']))
-            self.txt_abstract.setHtml(data.receive_string(reference['abstract']))
+            self.txt_abstract.setPlainText(data.receive_string(reference['abstract']))
         elif reference['type'] == TYPE_BOOK:
             self.txt_key.setText(data.receive_string(reference['key']))
             self.txt_author.setText(data.receive_string(reference['author']))
@@ -325,7 +325,7 @@ class Library(QDialog, Ui_Library):
             self.txt_pages.setText(data.receive_string(reference['pages']))
             self.txt_edition.settext(data.receive_string(reference['edition']))
             self.txt_description.setHtml(data.receive_string(reference['description']))
-            self.txt_abstract.setHtml(data.receive_string(reference['abstract']))
+            self.txt_abstract.setPlainText(data.receive_string(reference['abstract']))
         elif reference['type'] == TYPE_CHAPTER:
             self.txt_key.setText(data.receive_string(reference['key']))
             self.txt_chapter.setText(data.receive_string(reference['chapter']))
@@ -339,7 +339,7 @@ class Library(QDialog, Ui_Library):
             self.txt_pages.setText(data.receive_string(reference['pages']))
             self.txt_edition.settext(data.receive_string(reference['edition']))
             self.txt_description.setHtml(data.receive_string(reference['description']))
-            self.txt_abstract.setHtml(data.receive_string(reference['abstract']))
+            self.txt_abstract.setPlainText(data.receive_string(reference['abstract']))
 
         # Show the PDF file
         if reference['file']:
@@ -702,7 +702,7 @@ class Library(QDialog, Ui_Library):
                     issue = data.prepare_string_number(self.txt_issue.text())
                     pages = data.prepare_string(self.txt_pages.text())
                     description = data.prepare_textedit(self.txt_description)
-                    abstract = data.prepare_textedit(self.txt_abstract)
+                    abstract = data.prepare_string(self.txt_abstract.toPlainText())
                 elif ref_type == "Book":
                     author = data.prepare_string(self.txt_author.text())
                     title = data.prepare_string(self.txt_title.text())
@@ -713,7 +713,7 @@ class Library(QDialog, Ui_Library):
                     pages = data.prepare_string(self.txt_pages.text())
                     edition = data.prepare_string_number(self.txt_edition.text())
                     description = data.prepare_textedit(self.txt_description)
-                    abstract = data.prepare_textedit(self.txt_abstract)
+                    abstract = data.prepare_string(self.txt_abstract.toPlainText())
                 elif ref_type == "Chapter":
                     author = data.prepare_string(self.txt_author.text())
                     chapter = data.prepare_string(self.txt_chapter.text())
@@ -726,7 +726,7 @@ class Library(QDialog, Ui_Library):
                     pages = data.prepare_string(self.txt_pages.text())
                     edition = data.prepare_string_number(self.txt_edition.text())
                     description = data.prepare_textedit(self.txt_description)
-                    abstract = data.prepare_textedit(self.txt_abstract)
+                    abstract = data.prepare_string(self.txt_abstract.toPlainText())
 
                 if self.creating_reference:
                     ref_uuid = data.uuid_bytes(uuid.uuid4())
@@ -911,9 +911,7 @@ class Library(QDialog, Ui_Library):
         self.lbl_abstract = QLabel("Abstract")
         self.lbl_abstract.setAlignment(Qt.AlignTop | Qt.AlignLeft)
         self.grid_layout.addWidget(self.lbl_abstract, 8, 0)
-        self.txt_abstract = TextEdit(self.tag_list)
-        self.txt_abstract.create_tag.connect(self.add_tag)
-        self.txt_abstract.delete_tag.connect(self.remove_tag)
+        self.txt_abstract = QPlainTextEdit()
         self.grid_layout.addWidget(self.txt_abstract, 8, 1)
 
         if fields:
@@ -1087,9 +1085,7 @@ class Library(QDialog, Ui_Library):
 
         self.lbl_abstract = QLabel("Abstract")
         self.grid_layout.addWidget(self.lbl_abstract, 9, 0)
-        self.txt_abstract = TextEdit(self.tag_list)
-        self.txt_abstract.create_tag.connect(self.add_tag)
-        self.txt_abstract.delete_tag.connect(self.remove_tag)
+        self.txt_abstract = QPlainTextEdit()
         self.grid_layout.addWidget(self.txt_abstract, 9, 1)
 
         if fields:
@@ -1178,9 +1174,7 @@ class Library(QDialog, Ui_Library):
 
         self.lbl_abstract = QLabel("Abstract")
         self.grid_layout.addWidget(self.lbl_abstract, 11, 0)
-        self.txt_abstract = TextEdit(self.tag_list)
-        self.txt_abstract.create_tag.connect(self.add_tag)
-        self.txt_abstract.delete_tag.connect(self.remove_tag)
+        self.txt_abstract = QPlainTextEdit()
         self.grid_layout.addWidget(self.txt_abstract, 11, 1)
 
         if fields:
@@ -1345,7 +1339,7 @@ class PDFWidget(QWidget):
         if not self.contains_file:
             if event.mimeData().hasUrls():
                 url = event.mimeData().urls()[0]
-                suffix = QFileInfo(url.fileName()).completeSuffix()
+                suffix = QFileInfo(url.fileName()).suffix()
                 if suffix == "pdf":
                     event.acceptProposedAction()
 
