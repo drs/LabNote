@@ -86,9 +86,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         empty_widget_3.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.search_toolbar.addWidget(empty_widget_3)
 
-        # Set search widget in toolbar
-        search_icon = QIcon(":/Icons/MainWindow/icons/main-window/search.png")
-
         self.txt_search = SearchLineEdit()
         self.search_toolbar.addWidget(self.txt_search)
 
