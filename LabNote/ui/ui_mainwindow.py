@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file '/Users/samueldrouin/Development/LabNote/labnote/ui/qt_ui/mainwindow.ui'
 #
-# Created by: PyQt5 UI code generator 5.10.1
+# Created by: PyQt5 UI code generator 5.11.2
 #
 # WARNING! All changes made in this file will be lost!
 
@@ -125,6 +125,8 @@ class Ui_MainWindow(object):
         self.search_toolbar = QtWidgets.QToolBar(MainWindow)
         self.search_toolbar.setMovable(False)
         self.search_toolbar.setAllowedAreas(QtCore.Qt.NoToolBarArea)
+        self.search_toolbar.setIconSize(QtCore.QSize(16, 16))
+        self.search_toolbar.setToolButtonStyle(QtCore.Qt.ToolButtonTextUnderIcon)
         self.search_toolbar.setFloatable(False)
         self.search_toolbar.setObjectName("search_toolbar")
         MainWindow.addToolBar(QtCore.Qt.TopToolBarArea, self.search_toolbar)
