@@ -12,8 +12,7 @@ import os
 from PyQt5.QtWidgets import QDialog, QGridLayout, QLabel, QMenu, QAction, QMessageBox,\
     QAbstractItemView, QTreeView, QWidget, QVBoxLayout, QPlainTextEdit
 from PyQt5.QtCore import Qt, QRegExp, QModelIndex, QSettings, pyqtSignal, QFileInfo
-from PyQt5.QtGui import QFont, QRegExpValidator, QStandardItemModel, QStandardItem, QColor, QPixmap, QPainter, QPen, \
-    QBrush, QIcon
+from PyQt5.QtGui import QFont, QRegExpValidator, QStandardItem, QColor, QPixmap, QPainter, QPen, QBrush
 
 # Project import
 from labnote.ui.ui_library import Ui_Library
@@ -22,6 +21,7 @@ from labnote.interface.widget.textedit import TextEdit
 from labnote.interface.dialog.category import Category, Subcategory
 from labnote.utils import database, fsentry, directory
 from labnote.interface.widget.lineedit import LineEdit, NumberLineEdit, YearLineEdit, PagesLineEdit, SearchLineEdit
+from labnote.interface.widget.model import StandardItemModel
 
 # Constant definition
 
@@ -1479,9 +1479,3 @@ class PDFLabel(QLabel):
         self.setText("")
         self.setFixedSize(64, 64)
         self.setPixmap(image)
-
-
-class StandardItemModel(QStandardItemModel):
-    """ Custom standard item model class """
-    def get_persistant_index_list(self):
-        return self.persistentIndexList()
