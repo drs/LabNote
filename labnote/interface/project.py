@@ -191,7 +191,7 @@ class Project(QDialog, Ui_Project):
         # Save changes in database
         try:
             if row + 1 == self.table.rowCount() and not self.table.item(row, column).text() == "":
-                inserted_id = database.create_project(name, description)
+                inserted_id = database.insert_project(name, description)
                 self.table.item(row, 0).setText(str(inserted_id))
                 self.table.item(row, 2).setFlags(self.table.item(row, 2).flags() | Qt.ItemIsEditable)
                 self.add_empty_row()

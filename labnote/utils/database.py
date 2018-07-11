@@ -645,7 +645,7 @@ def select_notebook_project():
         cursor.execute("END")
 
     # Return the references list
-    Project = namedtuple('Project', ['id', 'name', 'description', 'notebook'])
+    Project = namedtuple('Project', ['id', 'name', 'notebook'])
     Notebook = namedtuple('Notebook', ['uuid', 'name'])
 
     project_list = []
@@ -654,17 +654,16 @@ def select_notebook_project():
         for project in project_buffer:
             project_id = project[0]
             project_name = project[1]
-            project_description = project[2]
 
             notebook_list = []
             if notebook_buffer:
                 for notebook in notebook_buffer:
                     if notebook[2] == project_id:
-                        notebook_uuid = notebook[0]
+                        notebook_uuid = data.uuid_string(notebook[0])
                         notebook_name = notebook[1]
                         notebook_list.append(Notebook(notebook_uuid, notebook_name))
 
-            project_list.append(Project(project_id, project_name, project_description, notebook_list))
+            project_list.append(Project(project_id, project_name, notebook_list))
     return project_list
 
 
@@ -773,7 +772,7 @@ def select_project_list(search=None):
     return project_list
 
 
-def create_project(name, description):
+def insert_project(name, description=None):
     """ Create a new project
 
     :param name: Project name
