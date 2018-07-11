@@ -23,6 +23,10 @@ class Project(QDialog, Ui_Project):
 
     # Class variable initialization
     current_text = None
+    row = -1
+    column = -1
+    old_row = -1
+    old_column = -1
 
     def __init__(self, parent=None):
         super(Project, self).__init__(parent)
@@ -67,13 +71,26 @@ class Project(QDialog, Ui_Project):
         self.btn_close.clicked.connect(self.close)
         self.txt_search.textChanged.connect(self.show_project_list)
         self.table.currentCellChanged.connect(self.cell_changed)
+        self.table.cellEntered.connect(self.set_cursor_position)
 
     def eventFilter(self, widget, event):
+        if widget == self.table.viewport():
+            if event.type() == QEvent.MouseButtonPress:
+                if not self.table.itemAt(event.pos()):
+                    self.no_cell_selected()
         if widget == self.table:
             if event.type() == QEvent.KeyPress:
                 if event.key() == Qt.Key_Backspace:
                     self.delete_project()
         return QDialog().eventFilter(widget, event)
+
+    def no_cell_selected(self):
+        """ Check if the sample must be saved """
+        if not (self.column == -1 or self.row == -1):
+            if self.current_text is not None and not self.table.item(self.row, self.column).text() == self.current_text:
+                if not self.save_change(self.row, self.column):
+                    self.table.editItem(self.table.item(self.row, self.column))
+            self.current_text = None
 
     def cell_changed(self, row, column, old_row, old_column):
         """ Save the current cell text """
@@ -81,6 +98,19 @@ class Project(QDialog, Ui_Project):
             if not self.save_change(old_row, old_column):
                 self.table.editItem(self.table.item(old_row, old_column))
         self.current_text = self.table.item(row, column).text()
+
+    def set_cursor_position(self, row, column):
+        """ Set the current and past cursor position as global variable
+
+        :param row: Row of the cell entered by the cursor
+        :type row: int
+        :param column: Column of the cell entered by the cursor
+        :type column: int
+        """
+        self.old_column = self.column
+        self.old_row = self.row
+        self.column = column
+        self.row = row
 
     def show_project_list(self):
         """ Show the list of all existing project """
