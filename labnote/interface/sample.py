@@ -16,6 +16,7 @@ from PyQt5.QtGui import QIcon, QPixmap
 from labnote.ui.ui_sample import Ui_Sample
 from labnote.core import stylesheet, data
 from labnote.interface.widget.lineedit import SearchLineEdit
+from labnote.interface.widget.tablewidgetitem import NoEditTableWidgetItem
 from labnote.utils import database
 
 
@@ -415,10 +416,3 @@ class Sample(QDialog, Ui_Sample):
         for position in range(4, 13):
             item = self.table.item(row, position)
             item.setFlags(item.flags() | Qt.ItemIsEditable)
-
-
-class NoEditTableWidgetItem(QTableWidgetItem):
-    def __init__(self):
-        super(NoEditTableWidgetItem, self).__init__()
-        self.setFlags(self.flags() ^ Qt.ItemIsEditable)
-        self.setText('')

@@ -14,6 +14,7 @@ from labnote.ui.ui_project import Ui_Project
 from labnote.utils import database
 from labnote.core import sqlite_error, stylesheet
 from labnote.interface.widget.lineedit import SearchLineEdit
+from labnote.interface.widget.tablewidgetitem import NoEditTableWidgetItem
 
 
 class Project(QDialog, Ui_Project):
@@ -165,7 +166,7 @@ class Project(QDialog, Ui_Project):
         self.table.setRowCount(self.table.rowCount()+1)
         self.table.setItem(self.table.rowCount()-1, 0, QTableWidgetItem(''))
         self.table.setItem(self.table.rowCount()-1, 1, QTableWidgetItem(''))
-        self.table.setItem(self.table.rowCount()-1, 2, QTableWidgetItem(''))
+        self.table.setItem(self.table.rowCount()-1, 2, NoEditTableWidgetItem())
 
     def save_change(self, row, column):
         """ Save changes in the database
@@ -182,6 +183,7 @@ class Project(QDialog, Ui_Project):
             if row + 1 == self.table.rowCount() and not self.table.item(row, column).text() == "":
                 inserted_id = database.create_project(name, description)
                 self.table.item(row, 0).setText(str(inserted_id))
+                self.table.item(row, 2).setFlags(self.table.item(row, 2).flags() | Qt.ItemIsEditable)
                 self.add_empty_row()
             elif not row + 1 == self.table.rowCount() and not self.table.item(row, column).text() == "":
                 database.update_project(id, name, description)
