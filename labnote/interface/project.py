@@ -7,7 +7,7 @@ import sqlite3
 
 # PyQt import
 from PyQt5.QtWidgets import QDialog, QMessageBox, QTableWidgetItem, QAbstractItemView
-from PyQt5.QtCore import QEvent, Qt, QSettings
+from PyQt5.QtCore import QEvent, Qt, QSettings, pyqtSignal
 
 # Project import
 from labnote.ui.ui_project import Ui_Project
@@ -29,6 +29,9 @@ class Project(QDialog, Ui_Project):
     old_row = -1
     old_column = -1
     old_text = None
+
+    # Signal definition
+    closed = pyqtSignal()
 
     def __init__(self, parent=None):
         super(Project, self).__init__(parent)
@@ -261,6 +264,7 @@ class Project(QDialog, Ui_Project):
 
     def closeEvent(self, event):
         self.save_settings()
+        self.closed.emit()
         event.accept()
 
     def save_settings(self):
