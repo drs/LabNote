@@ -22,7 +22,7 @@ QHeaderView::section {
     height: 22px;
 }
 
-QPushButton[Tool="true"] {
+QToolButton {
     text-align:left;
     background-color: none;
     border: none;
@@ -30,23 +30,19 @@ QPushButton[Tool="true"] {
     image-position: left;
 }
 
-QPushButton:pressed[Tool="true"] {
+QToolButton:pressed {
     background-color: none;
     border: none;
 }
 
-QPushButton#btn_import {
-    image: url(":/Icon/Sample/icons/sample/import.png");
+QToolButton::menu-indicator {
+    image: none;
 }
 
-QPushButton#btn_import:pressed {
-    image: url(":/Icon/Sample/icons/sample/import_pressed.png");
+QToolButton:pressed#btn_import {
+    qproperty-icon: url(":/Icon/Sample/icons/sample/import_pressed.png");
 }
 
-QPushButton#btn_create_template {
-    image: url(":/Icon/Sample/icons/sample/create_template.png");
-}
-
-QPushButton#btn_create_template:pressed {
-    image: url(":/Icon/Sample/icons/sample/create_template_pressed.png");
+QToolButton:pressed#btn_import {
+    qproperty-icon: url(":/Icon/Sample/icons/sample/import_pressed.png");
 }

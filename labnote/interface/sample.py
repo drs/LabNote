@@ -8,7 +8,7 @@ import csv
 import subprocess
 
 # PyQt import
-from PyQt5.QtWidgets import QDialog, QAbstractItemView, QMessageBox, QTableWidgetItem, QFileDialog
+from PyQt5.QtWidgets import QDialog, QAbstractItemView, QMessageBox, QTableWidgetItem, QFileDialog, QAction
 from PyQt5.QtCore import Qt, QEvent, QSize, QDir
 from PyQt5.QtGui import QIcon, QPixmap
 
@@ -67,14 +67,20 @@ class Sample(QDialog, Ui_Sample):
         self.table.setSelectionMode(QAbstractItemView.ContiguousSelection)
 
         # Setup import button
-        pixmap = QPixmap(16, 16)
-        pixmap.fill(Qt.transparent)
-        self.btn_import.setIcon(QIcon(pixmap))
-        self.btn_import.setIconSize(QSize(16, 16))
+        self.btn_import.setText("Import")
+        icon = QIcon(":/Icon/Sample/icons/sample/import.png")
+        icon.addFile(":/Icon/Sample/icons/sample/import_pressed.png", QSize(), QIcon.Normal, QIcon.On)
+        self.btn_import.setIcon(icon)
+        self.btn_import.setCheckable(True)
+        self.btn_import.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
 
         # Setup create template button
-        self.btn_create_template.setIcon(QIcon(pixmap))
-        self.btn_create_template.setIconSize(QSize(16, 16))
+        self.btn_create_template.setText("Create template")
+        icon = QIcon(":/Icon/Sample/icons/sample/create_template.png")
+        icon.addFile(":/Icon/Sample/icons/sample/create_template_pressed.png", QSize(), QIcon.Normal, QIcon.On)
+        self.btn_create_template.setIcon(icon)
+        self.btn_create_template.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
+        self.btn_create_template.setCheckable(True)
 
         self.table.setMouseTracking(True)
         self.table.installEventFilter(self)
@@ -90,9 +96,11 @@ class Sample(QDialog, Ui_Sample):
 
     def create_template(self):
         """ Create the csv file template """
+        self.btn_create_template.setChecked(True)
         dialog = QFileDialog()
         default_filename = QDir().cleanPath(QDir().homePath() + QDir().separator() + "Sample Number")
         filename = dialog.getSaveFileName(self, "Save CSV file template", default_filename, "CSV Files (*.csv)")
+        self.btn_create_template.setChecked(False)
 
         if filename[0]:
             try:
@@ -115,9 +123,10 @@ class Sample(QDialog, Ui_Sample):
 
     def import_sample(self):
         """ Import sample from a csv file """
-
+        self.btn_import.setChecked(True)
         dialog = QFileDialog()
         file_name = dialog.getOpenFileName(self, "Open CSV File", QDir().homePath(), "CSV Files (*.csv)")
+        self.btn_import.setChecked(False)
 
         if file_name[0]:
             try:

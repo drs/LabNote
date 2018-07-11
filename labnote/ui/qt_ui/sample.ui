@@ -71,7 +71,19 @@
           <number>0</number>
          </property>
          <item>
-          <widget class="QPushButton" name="btn_import">
+          <widget class="QToolButton" name="btn_import">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="minimumSize">
+            <size>
+             <width>0</width>
+             <height>0</height>
+            </size>
+           </property>
            <property name="palette">
             <palette>
              <active>
@@ -164,13 +176,7 @@
             </palette>
            </property>
            <property name="text">
-            <string>Import</string>
-           </property>
-           <property name="autoDefault">
-            <bool>false</bool>
-           </property>
-           <property name="flat">
-            <bool>true</bool>
+            <string/>
            </property>
           </widget>
          </item>
@@ -191,15 +197,9 @@
           </spacer>
          </item>
          <item>
-          <widget class="QPushButton" name="btn_create_template">
+          <widget class="QToolButton" name="btn_create_template">
            <property name="text">
-            <string>Create template</string>
-           </property>
-           <property name="autoDefault">
-            <bool>false</bool>
-           </property>
-           <property name="flat">
-            <bool>true</bool>
+            <string/>
            </property>
           </widget>
          </item>
