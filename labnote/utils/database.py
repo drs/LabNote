@@ -242,7 +242,7 @@ CREATE TABLE refs_tag (
 """
 
 SELECT_NOTEBOOK = """
-SELECT nb_uuid, name FROM notebook ORDER BY name ASC
+SELECT nb_uuid, name, proj_id FROM notebook ORDER BY name ASC
 """
 
 INSERT_NOTEBOOK = """
@@ -573,6 +573,7 @@ def execute_query_last_insert_rowid(query, **kwargs):
 
     return buffer
 
+
 """
 Notebook table query
 """
@@ -626,6 +627,45 @@ def get_notebook_list():
         notebook_list.append({'uuid': uuid_string(notebook[0]), 'name': notebook[1]})
 
     return notebook_list
+
+
+def select_notebook_project():
+    """ Select all the notebook """
+
+    # Execute the query
+    with sqlite3.connect(MAIN_DATABASE_FILE_PATH) as conn:
+        conn.isolation_level = None
+        cursor = conn.cursor()
+
+        cursor.execute("BEGIN")
+        cursor.execute(SELECT_PROJECT)
+        project_buffer = cursor.fetchall()
+        cursor.execute(SELECT_NOTEBOOK)
+        notebook_buffer = cursor.fetchall()
+        cursor.execute("END")
+
+    # Return the references list
+    Project = namedtuple('Project', ['id', 'name', 'description', 'notebook'])
+    Notebook = namedtuple('Notebook', ['uuid', 'name'])
+
+    project_list = []
+
+    if project_buffer:
+        for project in project_buffer:
+            project_id = project[0]
+            project_name = project[1]
+            project_description = project[2]
+
+            notebook_list = []
+            if notebook_buffer:
+                for notebook in notebook_buffer:
+                    if notebook[2] == project_id:
+                        notebook_uuid = notebook[0]
+                        notebook_name = notebook[1]
+                        notebook_list.append(Notebook(notebook_uuid, notebook_name))
+
+            project_list.append(Project(project_id, project_name, project_description, notebook_list))
+    return project_list
 
 
 """
