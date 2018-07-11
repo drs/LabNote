@@ -7,6 +7,7 @@ import sqlite3
 
 # PyQt import
 from PyQt5.QtWidgets import QDialog, QMessageBox, QTableWidgetItem, QAbstractItemView
+from PyQt5.QtCore import QEvent, Qt
 
 # Project import
 from labnote.ui.ui_project import Ui_Project
@@ -50,16 +51,29 @@ class Project(QDialog, Ui_Project):
         self.table.horizontalHeader().setMinimumSectionSize(200)
         self.table.setShowGrid(False)
         self.table.setAlternatingRowColors(True)
-        self.table.setSelectionMode(QAbstractItemView.NoSelection)
+        self.table.setSelectionMode(QAbstractItemView.ContiguousSelection)
+        self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
 
         # Search text edit
         self.txt_search = SearchLineEdit()
         self.layout_title.insertWidget(3, self.txt_search)
 
+        # Install event filter
+        self.table.setMouseTracking(True)
+        self.table.installEventFilter(self)
+        self.table.viewport().installEventFilter(self)
+
     def init_connection(self):
         self.btn_close.clicked.connect(self.close)
         self.txt_search.textChanged.connect(self.show_project_list)
         self.table.currentCellChanged.connect(self.cell_changed)
+
+    def eventFilter(self, widget, event):
+        if widget == self.table:
+            if event.type() == QEvent.KeyPress:
+                if event.key() == Qt.Key_Backspace:
+                    self.delete_project()
+        return QDialog().eventFilter(widget, event)
 
     def cell_changed(self, row, column, old_row, old_column):
         """ Save the current cell text """
@@ -136,9 +150,6 @@ class Project(QDialog, Ui_Project):
                 self.add_empty_row()
             elif not row + 1 == self.table.rowCount() and not self.table.item(row, column).text() == "":
                 database.update_project(id, name, description)
-            elif not row + 1 == self.table.rowCount() and self.table.item(row, column).text() == "":
-                database.delete_project(id)
-                self.table.removeRow(row)
         except sqlite3.Error as exception:
             error_code = sqlite_error.sqlite_err_handler(str(exception))
 
@@ -174,3 +185,29 @@ class Project(QDialog, Ui_Project):
                 message.setStandardButtons(QMessageBox.Ok)
                 message.exec()
         return True
+
+    def delete_project(self):
+        """ Delete project """
+        try:
+            selection = self.table.selectedRanges()
+            if len(selection) == 1:
+                delete_row = selection[0].topRow()
+                for row in range(selection[0].topRow(), selection[0].bottomRow()+1):
+                    proj_id = self.table.item(delete_row, 0).text()
+                    database.delete_project(proj_id=proj_id)
+                    self.table.removeRow(delete_row)
+            else:
+                row = self.table.currentRow()
+                proj_id = self.table.item(row, 0).text()
+                database.delete_project(proj_id=proj_id)
+                self.table.removeRow(row)
+        except sqlite3.Error as exception:
+            message = QMessageBox()
+            message.setWindowTitle("LabNote")
+            message.setText("Unable to delete project")
+            message.setInformativeText("An unhandeled error occured while deleting project.")
+            message.setDetailedText(str(exception))
+            message.setIcon(QMessageBox.Warning)
+            message.setStandardButtons(QMessageBox.Ok)
+            message.exec()
+            return
