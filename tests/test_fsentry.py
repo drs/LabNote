@@ -19,6 +19,7 @@ class TestFSEntry(unittest.TestCase):
         cls.nb_name = 'Notebook'
         cls.exp_name = 'Experiment'
         cls.exp_obj = 'Experiment objective'
+        cls.exp_uuid = str(uuid.uuid4())
         cls.reference_key = 'reference'
         cls.reference_uuid = str(uuid.uuid4())
         cls.category = 'Category'
@@ -171,6 +172,11 @@ class TestFSEntry(unittest.TestCase):
 
             with self.assertRaises(OSError):
                 fsentry.create_notebook(self.nb_name, 1)
+
+    def test_create_notebook_duplicate_error(self):
+        fsentry.create_notebook(self.nb_name, 1)
+        with self.assertRaises(sqlite3.Error):
+            fsentry.create_notebook(self.nb_name, 1)
 
     def test_create_notebook_directory_error_cleanup(self):
         with unittest.mock.patch('os.mkdir') as mock_mkdir:
