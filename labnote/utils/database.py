@@ -258,8 +258,11 @@ SELECT_NOTEBOOK_EXPERIMENT = """
 SELECT exp_uuid, name, objective FROM experiment WHERE nb_uuid = :nb_uuid
 """
 
-UPDATE_NOTEBOOK_NAME = """
-UPDATE notebook SET name = :name WHERE nb_uuid = :nb_uuid
+UPDATE_NOTEBOOK = """
+UPDATE notebook SET 
+name = :name, 
+proj_id = :proj_id
+ WHERE nb_uuid = :nb_uuid
 """
 
 DELETE_NOTEBOOK = """
@@ -592,7 +595,7 @@ def create_notebook(name, nb_uuid, proj_id):
     execute_query(INSERT_NOTEBOOK, nb_uuid=uuid_bytes(nb_uuid), name=name, proj_id=proj_id)
 
 
-def update_notebook(name, nb_uuid):
+def update_notebook(name, nb_uuid, proj_id):
     """ Update a notebook
 
     :param name: New name for the notebook
@@ -600,7 +603,7 @@ def update_notebook(name, nb_uuid):
     :param nb_uuid: UUID of the notebook to rename
     :type nb_uuid: str
     """
-    execute_query(UPDATE_NOTEBOOK_NAME, name=name, nb_uuid=uuid_bytes(nb_uuid))
+    execute_query(UPDATE_NOTEBOOK, name=name, nb_uuid=uuid_bytes(nb_uuid), proj_id=proj_id)
 
 
 def delete_notebook(nb_uuid):
