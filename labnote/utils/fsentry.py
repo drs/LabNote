@@ -12,7 +12,7 @@ from labnote.utils import database, directory, files
 from labnote.core import data
 
 
-def check_integrity():
+def check_main_directory():
     """ Create the main directory if it does not exist """
     if not os.path.isdir(directory.DEFAULT_MAIN_DIRECTORY_PATH):
         create_main_directory()

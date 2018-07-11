@@ -49,7 +49,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.read_settings()
 
         # Check files integrity
-        self.check_integrity()
+        self.check_main_directory()
 
         # Show existing notebook list
         self.show_notebook_list()
@@ -99,7 +99,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.act_delete_notebook = QAction("Delete notebook", self)
         self.act_delete_notebook.triggered.connect(self.delete_notebook)
         self.notebook_setting_menu.addAction(self.act_delete_notebook)
-        self.act_rename_notebook = QAction("Rename notebook", self)
+        self.act_rename_notebook = QAction("Update notebook", self)
         self.act_rename_notebook.triggered.connect(self.start_rename_notebook)
         self.notebook_setting_menu.addAction(self.act_rename_notebook)
         self.btn_settings.setMenu(self.notebook_setting_menu)
@@ -123,9 +123,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def init_connection(self):
         self.btn_add_notebook.clicked.connect(self.open_new_notebook_dialog)
         self.lst_notebook.itemSelectionChanged.connect(self.notebook_changed)
-        self.act_new.triggered.connect(self.create_experiment)
-        self.act_new_experiment.triggered.connect(self.create_experiment)
-        self.lst_entry.itemSelectionChanged.connect(self.experiment_changed)
+        #self.act_new.triggered.connect(self.create_experiment)
+        #self.act_new_experiment.triggered.connect(self.create_experiment)
+        #self.lst_entry.itemSelectionChanged.connect(self.experiment_changed)
         self.act_project.triggered.connect(self.open_project)
         self.act_library.triggered.connect(self.open_library)
         self.act_samples.triggered.connect(self.open_sample_number)
@@ -177,24 +177,20 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         # Add widget to mainwindow
         self.centralWidget().layout().addWidget(self.no_entry_widget, Qt.AlignHCenter, Qt.AlignCenter)
 
-    def check_integrity(self):
+    def check_main_directory(self):
         """ Check if the main directory and database exist """
         try:
-            fsentry.check_integrity()
+            fsentry.check_main_directory()
         except (sqlite3.Error, OSError) as exception:
             message = QMessageBox()
             message.setWindowTitle("LabNote")
             message.setText("Unexpected error occured")
             message.setInformativeText("An unexpected error occurred while checking the main directory integrity "
-                                       "The program will now close.")
+                                       "The program operation might be affected.")
             message.setDetailedText(str(exception))
             message.setIcon(QMessageBox.Critical)
             message.setStandardButtons(QMessageBox.Ok)
             message.exec()
-
-            fsentry.cleanup_main_directory()
-
-            sys.exit("Unexpected error while checking the main directory integrity")
 
     """
     Toolbar functions
@@ -215,6 +211,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     """
     Notebook list functions
     """
+
     def open_new_notebook_dialog(self):
         """ Show a sheet dialog that create a new notebook. """
         self.new_notebook = NewNotebook()
@@ -251,7 +248,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         """ Update the experiment list when the notebook change """
         self.current_nb_uuid = self.lst_notebook.currentItem().data(Qt.UserRole)
 
-        self.show_experiment_list()
+        #self.show_experiment_list()
 
     def show_notebook_list(self, selected=None):
         """ Show the existing notebooks in the notebook list
@@ -296,7 +293,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             # Update the current selected notebook uuid
             self.current_nb_uuid = self.lst_notebook.currentItem().data(Qt.UserRole)
 
-            self.show_experiment_list()
+            #self.show_experiment_list()
 
             # Sort item in ascending order
             self.lst_notebook.sortItems(Qt.AscendingOrder)
@@ -404,163 +401,163 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         self.show_notebook_list()
 
-    """
-    Experiment list functions
-    """
-    def create_experiment(self):
-        """ Create a new experiment """
-        self.create_textbox_widget()
-
-        # Create a UUID for the experiment
-        exp_uuid = uuid.uuid4()
-
-        # Create a directory for the new experiment
-        create_experiment_directory_exception = directory.create_exp_directory(exp_uuid, self.current_nb_uuid)
-
-        if not create_experiment_directory_exception:
-            # Add the new experiment in the database
-            create_experiment_database_exception = database.create_experiment(self.current_exp_name,
-                                                                              exp_uuid,
-                                                                              self.current_exp_objective,
-                                                                              self.current_nb_uuid)
-
-            if not create_experiment_database_exception:
-                write_experiment_exception = experiment.write_experiment(exp_uuid,
-                                                                         self.current_nb_uuid,
-                                                                         self.current_exp_body)
-                if not write_experiment_exception:
-                    # Add the experiment to the experiment list
-                    self.show_experiment_list()
-        # Show a messagebox if an error happen during the experiment directory creation
-        else:
-            message = QMessageBox()
-            message.setWindowTitle("LabNote")
-            message.setText("Cannot create notebook")
-            message.setInformativeText("An error occurred during the experiment directory creation.")
-            message.setDetailedText(str(create_experiment_directory_exception))
-            message.setIcon(QMessageBox.Warning)
-            message.setStandardButtons(QMessageBox.Ok)
-            message.exec()
-
-    def experiment_changed(self):
-        """ Load the experiment informations when an experiment is selected from the list """
-
-        # Update the current selected notebook uuid
-        self.current_exp_uuid = self.lst_entry.currentItem().data(Qt.UserRole)
-
-        self.create_textbox_widget()
-        ret = experiment.open_experiment(self.current_nb_uuid, self.current_exp_uuid)
-
-        if ret.dct:
-            self.textbox_widget.title_text_edit.setPlainText(ret.dct['name'])
-            self.textbox_widget.objectives_text_edit.setPlainText(ret.dct['objective'])
-            self.textbox_widget.textedit.setHtml(ret.dct['body'])
-        elif ret.error:
-            message = QMessageBox()
-            message.setWindowTitle("LabNote")
-            message.setText("Error getting the experiment informations")
-            message.setInformativeText("An error occurred while getting the experiment informations.")
-            message.setDetailedText(str(ret.error))
-            message.setIcon(QMessageBox.Warning)
-            message.setStandardButtons(QMessageBox.Ok)
-            message.exec()
-
-    def show_experiment_list(self):
-        """ Show the list of experiment for the open notebook. """
-        # Clear the existing list
-        self.lst_entry.clear()
-
-        # Get experiment list
-        ret = database.get_experiment_list_notebook(self.current_nb_uuid)
-
-        if ret.lst:
-            # Add all experiments to the list widget
-            for item in ret.lst:
-                # Create experiment widget
-                list_widget_item = QListWidgetItem()
-                widget = list_widget.ListWidget()
-                widget.set_title(item['name'])
-                widget.set_subtitle(item['objective'])
-
-                list_widget_item.setData(Qt.UserRole, item['uuid'])
-
-                # Add widget to list
-                list_widget_item.setSizeHint(widget.sizeHint())
-                self.lst_entry.addItem(list_widget_item)
-                self.lst_entry.setItemWidget(list_widget_item, widget)
-
-                self.lst_entry.setCurrentRow(0)
-
-                # Update the current selected notebook uuid
-                self.current_exp_uuid = self.lst_entry.currentItem().data(Qt.UserRole)
-        elif ret.error:
-            message = QMessageBox()
-            message.setWindowTitle("LabNote")
-            message.setText("Error getting the experiment list")
-            message.setInformativeText("An error occurred while getting the experiment list. ")
-            message.setDetailedText(str(ret.error))
-            message.setIcon(QMessageBox.Warning)
-            message.setStandardButtons(QMessageBox.Ok)
-            message.exec()
-
-    def create_textbox_widget(self):
-        """ Create the textbox widget when an experiment is selected for the first time """
-        if self.centralWidget().layout().indexOf(self.no_entry_widget) != -1:
-            self.textbox_widget = textbox.Textbox()
-            self.centralWidget().layout().removeWidget(self.no_entry_widget)
-            self.no_entry_widget.deleteLater()
-            self.no_entry_widget = None
-
-            self.centralWidget().layout().addWidget(self.textbox_widget)
-            self.centralWidget().layout().setStretch(2, 10)
-
-            # Connect slots
-            self.textbox_widget.title_text_edit.textChanged.connect(self.title_changed)
-            self.textbox_widget.objectives_text_edit.textChanged.connect(self.objective_changed)
-            self.textbox_widget.textedit.textChanged.connect(self.body_changed)
-
-    def save_experiment(self):
-        """ Save the current experiment """
-        update_exception = experiment.save_experiment(self.current_nb_uuid, self.current_exp_uuid, self.current_exp_name,
-                                                      self.current_exp_objective, self.current_exp_body)
-
-        self.name_updated = False
-        self.objective_updated = False
-        self.body_updated = False
-
-        if update_exception:
-            message = QMessageBox()
-            message.setWindowTitle("LabNote")
-            message.setText("Error saving the experiment")
-            message.setInformativeText("An error occurred while saving the experiment to the database.")
-            message.setDetailedText(str(update_exception))
-            message.setIcon(QMessageBox.Warning)
-            message.setStandardButtons(QMessageBox.Ok)
-            message.exec()
-
-    def title_changed(self):
-        """ Update the current title """
-
-        # Set the current experiment name
-        self.current_exp_name = self.textbox_widget.title_text_edit.toPlainText()
-        self.name_updated = True
-
-        # Update the current item title in the experiment list
-        widget = self.lst_entry.itemWidget(self.lst_entry.currentItem())
-        widget.set_title(self.current_exp_name)
-
-    def objective_changed(self):
-        """ Update the current objective """
-
-        # Set the current experiment objective
-        self.current_exp_objective = self.textbox_widget.objectives_text_edit.toPlainText()
-        self.objective_updated = True
-
-        # Update the current item objective in the experiment list
-        widget = self.lst_entry.itemWidget(self.lst_entry.currentItem())
-        widget.set_subtitle(self.current_exp_objective)
-
-    def body_changed(self):
-        """ Update the current body """
-        self.current_exp_body = self.textbox_widget.textedit.toHtml()
-        self.body_updated = True
+    # """
+    # Experiment list functions
+    # """
+    # def create_experiment(self):
+    #     """ Create a new experiment """
+    #     self.create_textbox_widget()
+    # 
+    #     # Create a UUID for the experiment
+    #     exp_uuid = uuid.uuid4()
+    # 
+    #     # Create a directory for the new experiment
+    #     create_experiment_directory_exception = directory.create_exp_directory(exp_uuid, self.current_nb_uuid)
+    # 
+    #     if not create_experiment_directory_exception:
+    #         # Add the new experiment in the database
+    #         create_experiment_database_exception = database.create_experiment(self.current_exp_name,
+    #                                                                           exp_uuid,
+    #                                                                           self.current_exp_objective,
+    #                                                                           self.current_nb_uuid)
+    # 
+    #         if not create_experiment_database_exception:
+    #             write_experiment_exception = experiment.write_experiment(exp_uuid,
+    #                                                                      self.current_nb_uuid,
+    #                                                                      self.current_exp_body)
+    #             if not write_experiment_exception:
+    #                 # Add the experiment to the experiment list
+    #                 self.show_experiment_list()
+    #     # Show a messagebox if an error happen during the experiment directory creation
+    #     else:
+    #         message = QMessageBox()
+    #         message.setWindowTitle("LabNote")
+    #         message.setText("Cannot create notebook")
+    #         message.setInformativeText("An error occurred during the experiment directory creation.")
+    #         message.setDetailedText(str(create_experiment_directory_exception))
+    #         message.setIcon(QMessageBox.Warning)
+    #         message.setStandardButtons(QMessageBox.Ok)
+    #         message.exec()
+    # 
+    # def experiment_changed(self):
+    #     """ Load the experiment informations when an experiment is selected from the list """
+    # 
+    #     # Update the current selected notebook uuid
+    #     self.current_exp_uuid = self.lst_entry.currentItem().data(Qt.UserRole)
+    # 
+    #     self.create_textbox_widget()
+    #     ret = experiment.open_experiment(self.current_nb_uuid, self.current_exp_uuid)
+    # 
+    #     if ret.dct:
+    #         self.textbox_widget.title_text_edit.setPlainText(ret.dct['name'])
+    #         self.textbox_widget.objectives_text_edit.setPlainText(ret.dct['objective'])
+    #         self.textbox_widget.textedit.setHtml(ret.dct['body'])
+    #     elif ret.error:
+    #         message = QMessageBox()
+    #         message.setWindowTitle("LabNote")
+    #         message.setText("Error getting the experiment informations")
+    #         message.setInformativeText("An error occurred while getting the experiment informations.")
+    #         message.setDetailedText(str(ret.error))
+    #         message.setIcon(QMessageBox.Warning)
+    #         message.setStandardButtons(QMessageBox.Ok)
+    #         message.exec()
+    # 
+    # def show_experiment_list(self):
+    #     """ Show the list of experiment for the open notebook. """
+    #     # Clear the existing list
+    #     self.lst_entry.clear()
+    # 
+    #     # Get experiment list
+    #     ret = database.get_experiment_list_notebook(self.current_nb_uuid)
+    # 
+    #     if ret.lst:
+    #         # Add all experiments to the list widget
+    #         for item in ret.lst:
+    #             # Create experiment widget
+    #             list_widget_item = QListWidgetItem()
+    #             widget = list_widget.ListWidget()
+    #             widget.set_title(item['name'])
+    #             widget.set_subtitle(item['objective'])
+    # 
+    #             list_widget_item.setData(Qt.UserRole, item['uuid'])
+    # 
+    #             # Add widget to list
+    #             list_widget_item.setSizeHint(widget.sizeHint())
+    #             self.lst_entry.addItem(list_widget_item)
+    #             self.lst_entry.setItemWidget(list_widget_item, widget)
+    # 
+    #             self.lst_entry.setCurrentRow(0)
+    # 
+    #             # Update the current selected notebook uuid
+    #             self.current_exp_uuid = self.lst_entry.currentItem().data(Qt.UserRole)
+    #     elif ret.error:
+    #         message = QMessageBox()
+    #         message.setWindowTitle("LabNote")
+    #         message.setText("Error getting the experiment list")
+    #         message.setInformativeText("An error occurred while getting the experiment list. ")
+    #         message.setDetailedText(str(ret.error))
+    #         message.setIcon(QMessageBox.Warning)
+    #         message.setStandardButtons(QMessageBox.Ok)
+    #         message.exec()
+    # 
+    # def create_textbox_widget(self):
+    #     """ Create the textbox widget when an experiment is selected for the first time """
+    #     if self.centralWidget().layout().indexOf(self.no_entry_widget) != -1:
+    #         self.textbox_widget = textbox.Textbox()
+    #         self.centralWidget().layout().removeWidget(self.no_entry_widget)
+    #         self.no_entry_widget.deleteLater()
+    #         self.no_entry_widget = None
+    # 
+    #         self.centralWidget().layout().addWidget(self.textbox_widget)
+    #         self.centralWidget().layout().setStretch(2, 10)
+    # 
+    #         # Connect slots
+    #         self.textbox_widget.title_text_edit.textChanged.connect(self.title_changed)
+    #         self.textbox_widget.objectives_text_edit.textChanged.connect(self.objective_changed)
+    #         self.textbox_widget.textedit.textChanged.connect(self.body_changed)
+    # 
+    # def save_experiment(self):
+    #     """ Save the current experiment """
+    #     update_exception = experiment.save_experiment(self.current_nb_uuid, self.current_exp_uuid, self.current_exp_name,
+    #                                                   self.current_exp_objective, self.current_exp_body)
+    # 
+    #     self.name_updated = False
+    #     self.objective_updated = False
+    #     self.body_updated = False
+    # 
+    #     if update_exception:
+    #         message = QMessageBox()
+    #         message.setWindowTitle("LabNote")
+    #         message.setText("Error saving the experiment")
+    #         message.setInformativeText("An error occurred while saving the experiment to the database.")
+    #         message.setDetailedText(str(update_exception))
+    #         message.setIcon(QMessageBox.Warning)
+    #         message.setStandardButtons(QMessageBox.Ok)
+    #         message.exec()
+    # 
+    # def title_changed(self):
+    #     """ Update the current title """
+    # 
+    #     # Set the current experiment name
+    #     self.current_exp_name = self.textbox_widget.title_text_edit.toPlainText()
+    #     self.name_updated = True
+    # 
+    #     # Update the current item title in the experiment list
+    #     widget = self.lst_entry.itemWidget(self.lst_entry.currentItem())
+    #     widget.set_title(self.current_exp_name)
+    # 
+    # def objective_changed(self):
+    #     """ Update the current objective """
+    # 
+    #     # Set the current experiment objective
+    #     self.current_exp_objective = self.textbox_widget.objectives_text_edit.toPlainText()
+    #     self.objective_updated = True
+    # 
+    #     # Update the current item objective in the experiment list
+    #     widget = self.lst_entry.itemWidget(self.lst_entry.currentItem())
+    #     widget.set_subtitle(self.current_exp_objective)
+    # 
+    # def body_changed(self):
+    #     """ Update the current body """
+    #     self.current_exp_body = self.textbox_widget.textedit.toHtml()
+    #     self.body_updated = True
