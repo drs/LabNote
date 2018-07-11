@@ -1274,23 +1274,6 @@ class Library(QDialog, Ui_Library):
                     self.treeview.setExpanded(match[0], True)
 
 
-class TreeView(QTreeView):
-    """ Custom tree view class """
-
-    last_index_data = None
-
-    drop_finished = pyqtSignal(QModelIndex)
-
-    def dropEvent(self, event):
-        index = self.indexAt(event.pos())
-        if not index.isValid():
-            event.setDropAction(Qt.IgnoreAction)
-            return
-
-        event.acceptProposedAction()
-        self.drop_finished.emit(index)
-
-
 class PDFWidget(QWidget):
     """ Widget that accept PDF drop """
 
