@@ -3,24 +3,21 @@ This module contain the classes responsible for launching and managing the LabNo
 """
 
 # Python import
-import uuid
-import sys
 import sqlite3
 
 # PyQt import
-from PyQt5.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QMessageBox, QLabel, QListWidgetItem, QLineEdit, QAction, \
+from PyQt5.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QMessageBox, QLabel, QListWidgetItem, QAction, \
     QSizePolicy, QMenu
 from PyQt5.QtGui import QPixmap, QIcon, QFont
 from PyQt5.QtCore import Qt, QSettings, QByteArray
 
 # Project import
 from labnote.ui.ui_mainwindow import Ui_MainWindow
-from labnote.core import stylesheet, list_widget
-from labnote.utils import database, directory, experiment, fsentry
-from labnote.interface import textbox, project, library, sample
-from labnote.interface.new_notebook import NewNotebook
+from labnote.core import stylesheet
+from labnote.utils import database, directory, fsentry
+from labnote.interface import project, library, sample
+from labnote.interface.dialog.notebook import Notebook
 from labnote.interface.widget.lineedit import SearchLineEdit
-from labnote.resources import resources
 
 
 class MainWindow(QMainWindow, Ui_MainWindow):
@@ -121,7 +118,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         stylesheet.set_style_sheet(self, ":/StyleSheet/style-sheet/main_window.qss")
 
     def init_connection(self):
-        self.btn_add_notebook.clicked.connect(self.open_new_notebook_dialog)
+        self.btn_add_notebook.clicked.connect(self.create_notebook)
         self.lst_notebook.itemSelectionChanged.connect(self.notebook_changed)
         #self.act_new.triggered.connect(self.create_experiment)
         #self.act_new_experiment.triggered.connect(self.create_experiment)
@@ -212,37 +209,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     Notebook list functions
     """
 
-    def open_new_notebook_dialog(self):
-        """ Show a sheet dialog that create a new notebook. """
-        self.new_notebook = NewNotebook()
-        self.new_notebook.setWindowModality(Qt.WindowModal)
-        self.new_notebook.setParent(self, Qt.Sheet)
-        self.new_notebook.show()
-        self.new_notebook.accepted.connect(self.create_notebook)
-
     def create_notebook(self):
-        """ Add a newly created notebook name to the notebook list. """
-        # Get the notebook name
-        nb_name = self.new_notebook.notebook_name
-        proj_id = self.new_notebook.project_id
-
-        try:
-            fsentry.create_notebook(nb_name, proj_id)
-        except (sqlite3.Error, OSError) as exception:
-            message = QMessageBox(QMessageBox.Warning, "Cannot create notebook",
-                                  "An error occurred during the notebook creation.", QMessageBox.Ok)
-            message.setWindowTitle("LabNote")
-            message.setDetailedText(str(exception))
-            message.exec()
-
-            return
-
-        # Add the notebook to the notebook list
-        self.show_notebook_list()
-
-        # Select the newly inserted item
-        items = self.lst_notebook.findItems(nb_name, Qt.MatchExactly)
-        self.lst_notebook.setCurrentItem(items[0])
+        """ Show a sheet dialog that create a new notebook. """
+        self.notebook = Notebook()
+        self.notebook.setWindowModality(Qt.WindowModal)
+        self.notebook.setParent(self, Qt.Sheet)
+        self.notebook.show()
+        self.notebook.accepted.connect(self.show_notebook_list)
 
     def notebook_changed(self):
         """ Update the experiment list when the notebook change """

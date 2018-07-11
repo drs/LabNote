@@ -578,7 +578,7 @@ Notebook table query
 """
 
 
-def create_notebook(name, nb_uuid, proj_id=None):
+def create_notebook(name, nb_uuid, proj_id):
     """ Create a new notebook
 
     :param name: Name of the notebook to create
