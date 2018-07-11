@@ -93,6 +93,11 @@ class Project(QDialog, Ui_Project):
             self.current_text = None
 
     def cell_changed(self, row, column, old_row, old_column):
+        # Stop the execution if no cell was selected before since there is nothing to save
+        # in this case
+        if not self.table.item(old_row, old_column):
+            return
+
         """ Save the current cell text """
         if self.current_text is not None and not self.table.item(old_row, old_column).text() == self.current_text:
             if not self.save_change(old_row, old_column):
