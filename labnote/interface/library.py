@@ -22,6 +22,7 @@ from labnote.interface.dialog.category import Category, Subcategory
 from labnote.utils import database, fsentry, directory
 from labnote.interface.widget.lineedit import LineEdit, NumberLineEdit, YearLineEdit, PagesLineEdit, SearchLineEdit
 from labnote.interface.widget.model import StandardItemModel
+from labnote.interface.widget.view import DragDropTreeView
 
 # Constant definition
 
@@ -74,8 +75,7 @@ class Library(QDialog, Ui_Library):
         self.layout_title.insertWidget(3, self.txt_search)
 
         # Create the treeview
-        self.treeview = TreeView()
-        self.treeview.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.treeview = DragDropTreeView()
         stylesheet.set_style_sheet(self.treeview, ":/StyleSheet/style-sheet/library/treeview.qss")
         self.frame.layout().insertWidget(1, self.treeview)
 
@@ -93,7 +93,6 @@ class Library(QDialog, Ui_Library):
         stylesheet.set_style_sheet(self, ":/StyleSheet/style-sheet/library.qss")
 
         # Remove focus rectangle
-        self.treeview.setAttribute(Qt.WA_MacShowFocusRect, 0)
         self.txt_key.setAttribute(Qt.WA_MacShowFocusRect, 0)
 
         # Key size
@@ -140,7 +139,6 @@ class Library(QDialog, Ui_Library):
         self.btn_manage.setMenu(self.manage_menu)
 
         # Focus policy
-        self.treeview.setFocusPolicy(self.treeview.focusPolicy() ^ Qt.TabFocus)
         self.txt_search.setFocusPolicy(self.txt_search.focusPolicy() ^ Qt.TabFocus)
 
         # Manage list
