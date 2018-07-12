@@ -50,6 +50,10 @@ class Notebook(QDialog, Ui_Notebook):
         validator = QRegExpValidator(QRegExp("^[0-9a-zA-ZÀ-ÿ -._]+$"))
         self.txt_name.setValidator(validator)
 
+        # Make the combobox read only for update
+        if self.notebook_id:
+            self.cbx_project.setEnabled(False)
+
         # Set the current value
         if self.name:
             self.txt_name.setText(self.name)

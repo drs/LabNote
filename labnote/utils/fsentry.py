@@ -20,7 +20,9 @@ def check_main_directory():
 
 def create_main_directory():
     """ Create the main directory """
-    directory.create_default_main_directory()
+    os.mkdir(directory.DEFAULT_MAIN_DIRECTORY_PATH)
+    os.mkdir(directory.NOTEBOOK_DIRECTORY_PATH)
+    os.mkdir(directory.REFERENCES_DIRECTORY_PATH)
     database.create_main_database()
 
 
@@ -51,8 +53,10 @@ def create_notebook(nb_name, proj_id):
         cursor.execute(database.INSERT_NOTEBOOK, {'nb_uuid': data.uuid_bytes(nb_uuid), 'name': nb_name,
                                                   'proj_id': proj_id})
 
-        notebook_path = os.path.join(directory.NOTEBOOK_DIRECTORY_PATH + "/{}".format(nb_uuid))
+        notebook_path = directory.notebook_path(nb_uuid=nb_uuid)
         os.mkdir(notebook_path)
+        dataset_path = directory.dataset_path(nb_uuid=nb_uuid)
+        os.mkdir(dataset_path)
     except sqlite3.Error:
         exception = True
         raise

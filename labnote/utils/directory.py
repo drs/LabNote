@@ -1,16 +1,26 @@
 # Python import
 import os
-import shutil
 
 DEFAULT_MAIN_DIRECTORY_PATH = os.path.expanduser("~/Documents/LabNote")
 NOTEBOOK_DIRECTORY_PATH = os.path.join(DEFAULT_MAIN_DIRECTORY_PATH + "/Notebook")
 REFERENCES_DIRECTORY_PATH = os.path.join(DEFAULT_MAIN_DIRECTORY_PATH + "/References")
 
 
-def create_default_main_directory():
-    """ Create the main directory at it's default location """
+def notebook_path(nb_uuid):
+    """ Return the notebook path for the given UUID
 
-    # Create the defaults directories
-    os.mkdir(DEFAULT_MAIN_DIRECTORY_PATH)
-    os.mkdir(NOTEBOOK_DIRECTORY_PATH)
-    os.mkdir(REFERENCES_DIRECTORY_PATH)
+    :param nb_uuid: Notebook UUID
+    :type nb_uuid: str
+    :return str: Notebook path
+    """
+    return os.path.join(NOTEBOOK_DIRECTORY_PATH + "/{}".format(nb_uuid))
+
+
+def dataset_path(nb_uuid):
+    """ Return the notebook dataset folder path
+
+    :param nb_uuid: Notebook UUID
+    :type nb_uuid: str
+    :return str: Notebook dataset path
+    """
+    return os.path.join(NOTEBOOK_DIRECTORY_PATH + "/{}".format(nb_uuid) + "/dataset")
