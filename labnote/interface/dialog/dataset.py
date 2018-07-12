@@ -61,6 +61,7 @@ class DatasetDialog(QDialog, Ui_Dataset):
             self.check_fields()
         if self.dt_uuid:
             self.cbx_notebook.setEnabled(False)
+            self.btn_create.setText("Update")
         self.show_notebook_list()
 
     def init_connection(self):
