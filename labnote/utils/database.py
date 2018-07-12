@@ -20,9 +20,12 @@ Database query
 
 CREATE_DATASET_TABLE = """
 CREATE TABLE dataset (
-    dt_uuid     BLOB (16)     PRIMARY KEY,
-    name        VARCHAR (255),
-    key         VARCHAR (255)
+    dt_uuid BLOB (16)     PRIMARY KEY,
+    name    VARCHAR (255) NOT NULL,
+    dt_key  VARCHAR (255) UNIQUE
+                          NOT NULL,
+    nb_uuid BLOB (16)     REFERENCES notebook (nb_uuid) ON DELETE CASCADE,
+    UNIQUE (dt_key, nb_uuid)
 )
 """
 
@@ -480,6 +483,22 @@ UPDATE sample SET note = :note WHERE spl_id = :spl_id
 
 DELETE_SAMPLE = """
 DELETE FROM sample WHERE spl_id = :spl_id
+"""
+
+SELECT_DATASET = """
+SELECT dt_uuid, name, dt_key, nb_uuid FROM dataset
+"""
+
+INSERT_DATASET = """
+INSERT INTO dataset (dt_uuid, name, dt_key, nb_uuid) VALUES (:dt_uuid, :name, :dt_key, :nb_uuid)
+"""
+
+UPDATE_DATASET = """
+UPDATE dataset SET name = :name, dt_key=:dt_key WHERE dt_uuid = :dt_uuid
+"""
+
+DELETE_DATASET = """
+DELETE FROM dataset WHERE dt_uuid = :dt_uuid
 """
 
 
@@ -1157,3 +1176,69 @@ def insert_sample(custom_id=None, project=None, description=None, treatment_1=No
     execute_query(INSERT_SAMPLE, custom_id=custom_id, project=project, description=description, treatment_1=treatment_1,
                   treatment_2=treatment_2, treatment_3=treatment_3, treatment_4=treatment_4, treatment_5=treatment_5,
                   origin=origin, location=location, spl_date=date, note=note)
+
+
+"""
+Dataset query
+"""
+
+
+def insert_dataset(dt_uuid, name, dt_key, nb_uuid):
+    """ Insert a dataset in the database """
+    execute_query(INSERT_DATASET, dt_uuid=dt_uuid, name=name, dt_key=dt_key, nb_uuid=nb_uuid)
+
+
+def update_dataset(dt_uuid, name, dt_key):
+    """ Update a dataset in the database """
+    execute_query(UPDATE_DATASET, dt_uuid=dt_uuid, name=name, dt_key=dt_key)
+
+
+def select_dataset():
+    """ Select all the notebook """
+
+    # Execute the query
+    with sqlite3.connect(MAIN_DATABASE_FILE_PATH) as conn:
+        conn.isolation_level = None
+        cursor = conn.cursor()
+
+        cursor.execute("BEGIN")
+        cursor.execute(SELECT_PROJECT)
+        project_buffer = cursor.fetchall()
+        cursor.execute(SELECT_NOTEBOOK)
+        notebook_buffer = cursor.fetchall()
+        cursor.execute(SELECT_DATASET)
+        dataset_buffer = cursor.fetchall()
+        cursor.execute("END")
+
+    # Return the references list
+    Project = namedtuple('Project', ['id', 'name', 'notebook'])
+    Notebook = namedtuple('Notebook', ['uuid', 'name', 'dataset'])
+    Dataset = namedtuple('Dataset', ['uuid', 'name', 'key'])
+
+    project_list = []
+
+    if project_buffer:
+        for project in project_buffer:
+            project_id = project[0]
+            project_name = project[1]
+
+            notebook_list = []
+            if notebook_buffer:
+                for notebook in notebook_buffer:
+                    if notebook[2] == project_id:
+                        notebook_uuid = data.uuid_string(notebook[0])
+                        notebook_name = notebook[1]
+
+                        dataset_list = []
+                        if dataset_buffer:
+                            for dataset in dataset_buffer:
+                                if data.uuid_string(dataset[3]) == notebook_uuid:
+                                    dataset_uuid = data.uuid_string(dataset[0])
+                                    dataset_name = dataset[1]
+                                    dataset_key = dataset[2]
+
+                                    dataset_list.append(Dataset(dataset_uuid, dataset_name,
+                                                                dataset_key))
+                        notebook_list.append(Notebook(notebook_uuid, notebook_name, dataset_list))
+            project_list.append(Project(project_id, project_name, notebook_list))
+    return project_list
