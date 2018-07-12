@@ -17,7 +17,6 @@ from labnote.utils import database, directory, fsentry
 from labnote.interface import project, library, sample, dataset
 from labnote.interface.dialog.notebook import Notebook
 from labnote.interface.widget.lineedit import SearchLineEdit
-from labnote.interface.widget.view import ProjectNotebookTreeView
 
 
 class MainWindow(QMainWindow, Ui_MainWindow):
@@ -451,3 +450,137 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     #     """ Update the current body """
     #     self.current_exp_body = self.textbox_widget.textedit.toHtml()
     #     self.body_updated = True
+
+
+class ProjectNotebookTreeView(TreeView):
+    """ This class manage the data in the project and notebook tree widget """
+
+    # Define global constant
+    QT_LevelRole = Qt.UserRole + 1
+
+    LEVEL_PROJECT = 101
+    LEVEL_NOTEBOOK = 102
+
+    # Signal definition
+    selection_changed = pyqtSignal(int, str)
+
+    def __init__(self):
+        super(ProjectNotebookTreeView, self).__init__()
+        # Set style sheet
+        stylesheet.set_style_sheet(self, ":/StyleSheet/Widget/style-sheet/widget/view/project_notebook_tree_view.qss")
+
+        self.show_content()
+
+        self.collapsed.connect(self.save_state)
+        self.expanded.connect(self.save_state)
+
+    def show_content(self):
+        """ Show the notebook and project in the tree widget """
+        reference_list = None
+
+        try:
+            notebook_list = database.select_notebook_project()
+        except sqlite3.Error as exception:
+            message = QMessageBox(QMessageBox.Warning, "Error while loading data",
+                                  "An error occurred while loading the notebook data.", QMessageBox.Ok)
+            message.setWindowTitle("LabNote")
+            message.setDetailedText(str(exception))
+            message.exec()
+            return
+
+        model = StandardItemModel()
+        root = model.invisibleRootItem()
+
+        if notebook_list:
+            for project in notebook_list:
+                project_item = QStandardItem(project.name)
+                project_item.setData(project.id, Qt.UserRole)
+                project_item.setData(self.LEVEL_PROJECT, self.QT_LevelRole)
+                project_item.setFont(QFont(self.font().family(), 12, QFont.Bold))
+                root.appendRow(project_item)
+
+                if project.notebook:
+                    for notebook in project.notebook:
+                        notebook_item = QStandardItem(notebook.name)
+                        notebook_item.setData(notebook.uuid, Qt.UserRole)
+                        notebook_item.setData(self.LEVEL_NOTEBOOK, self.QT_LevelRole)
+                        project_item.appendRow(notebook_item)
+
+        self.setModel(model)
+        self.selectionModel().currentChanged.connect(self.selection_change)
+        self.restore_state()
+
+    def get_hierarchy_level(self, index):
+        """ Get the hierarchy level for the index
+
+        :param index: Item index
+        :type index: QModelIndex
+        :return int: Hierarchy level
+        """
+        if index.data(self.QT_LevelRole) == self.LEVEL_PROJECT:
+            return 1
+        elif index.data(self.QT_LevelRole) == self.LEVEL_NOTEBOOK:
+            return 2
+
+    def selection_change(self):
+        """ Emit the selection changed signal """
+
+        index = self.selectionModel().currentIndex()
+        hierarchy_level = self.get_hierarchy_level(index)
+
+        self.selection_changed.emit(hierarchy_level, str(index.data(Qt.UserRole)))
+
+    def current_selection(self):
+        """ Return the current selected item data in display and user role """
+        index = self.selectionModel().currentIndex()
+        return [index.data(Qt.UserRole), index.data(Qt.DisplayRole)]
+
+    def get_project(self, index):
+        """ Return a category id
+
+        :param index: Item index
+        :type index: QModelIndex
+        :return int: Category id
+        """
+        hierarchy_level = self.get_hierarchy_level(index)
+
+        if hierarchy_level == 1:
+            return index.data(Qt.UserRole)
+        elif hierarchy_level == 2:
+            return index.parent().data(Qt.UserRole)
+        else:
+            return None
+
+    def save_state(self):
+        """ Save the treeview expanded state """
+
+        # Generate list
+        expanded_item = []
+        for index in self.model().get_persistant_index_list():
+            if self.isExpanded(index) and index.data(Qt.UserRole):
+                expanded_item.append(index.data(Qt.UserRole))
+
+        # Save list
+        settings = QSettings("Samuel Drouin", "LabNote")
+        settings.beginGroup("NotebookProjectTreeView")
+        settings.setValue("ExpandedItem", expanded_item)
+        settings.endGroup()
+
+    def restore_state(self):
+        """ Restore the treeview expended state """
+
+        # Get list
+        settings = QSettings("Samuel Drouin", "LabNote")
+        settings.beginGroup("NotebookProjectTreeView")
+        expanded_item = settings.value("ExpandedItem")
+        selected_item = settings.value("SelectedItem")
+        settings.endGroup()
+
+        model = self.model()
+
+        if expanded_item:
+            for item in expanded_item:
+                match = model.match(model.index(0, 0), Qt.UserRole, item, 1, Qt.MatchRecursive)
+
+                if match:
+                    self.setExpanded(match[0], True)
