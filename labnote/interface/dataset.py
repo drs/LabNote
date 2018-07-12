@@ -2,20 +2,24 @@
 
 # Python import
 import sqlite3
+import xlrd
+import os
 
 # PyQt import
-from PyQt5.QtWidgets import QDialog, QMessageBox, QMenu, QAction
-from PyQt5.QtCore import QSize, Qt, QSettings
+from PyQt5.QtWidgets import QDialog, QMessageBox, QMenu, QAction, QFileDialog, QTabWidget, QTableWidget, \
+    QTableWidgetItem, QAbstractItemView
+from PyQt5.QtCore import QSize, Qt, QSettings, QDir
 from PyQt5.QtGui import QIcon, QStandardItem, QFont
 
 # Project import
 from labnote.ui.ui_dataset import Ui_Dataset
 from labnote.core import stylesheet
-from labnote.utils import database, fsentry
+from labnote.utils import database, fsentry, files
 from labnote.interface.widget.lineedit import SearchLineEdit
 from labnote.interface.dialog import dataset
 from labnote.interface.widget.model import StandardItemModel
 from labnote.interface.widget.view import TreeView
+from labnote.interface.widget.widget import NoEntryWidget
 
 
 # Constant definition
@@ -34,6 +38,9 @@ class Dataset(QDialog, Ui_Dataset):
     """ Class responsible of diplaying the dataset window interface """
     def __init__(self, parent=None):
         super(Dataset, self).__init__(parent)
+
+        # Class variable
+        self.contains_file = False
 
         # Initialize the GUI
         self.setupUi(self)
@@ -103,7 +110,11 @@ class Dataset(QDialog, Ui_Dataset):
 
         # Setup treeview
         self.view_dataset = TreeView()
-        self.layout_tree.insertWidget(0, self.view_dataset)
+        self.frame_tree.layout().insertWidget(0, self.view_dataset)
+        self.view_dataset.setFixedWidth(240)
+
+        # Show the entry widget
+        self.layout_entry.addWidget(NoEntryWidget(), Qt.AlignHCenter, Qt.AlignCenter)
 
         # Show content
         self.show_dataset_list()
@@ -113,6 +124,7 @@ class Dataset(QDialog, Ui_Dataset):
         self.btn_add.clicked.connect(self.create_dataset)
         self.view_dataset.collapsed.connect(self.save_treeview_state)
         self.view_dataset.expanded.connect(self.save_treeview_state)
+        self.btn_import.clicked.connect(self.import_dataset)
 
     def create_dataset(self):
         """ Create a new dataset """
@@ -150,6 +162,31 @@ class Dataset(QDialog, Ui_Dataset):
             message.setDetailedText(str(exception))
             message.exec()
             return
+        self.show_dataset_list()
+
+    def import_dataset(self):
+        """ Import the dataset """
+        self.btn_import.setChecked(True)
+        dialog = QFileDialog()
+        file_name = dialog.getOpenFileName(self, "Import Excel Spreadsheet", QDir().homePath(), "Excel Files (*.xlsx)")
+        self.btn_import.setChecked(False)
+
+        if file_name[0]:
+            index = self.view_dataset.selectionModel().currentIndex()
+            dt_uuid = index.data(Qt.UserRole)
+            nb_uuid = self.get_notebook(index)
+
+            try:
+                files.copy_dataset(dt_uuid=dt_uuid, nb_uuid=nb_uuid, path=file_name[0])
+            except OSError as exception:
+                message = QMessageBox(QMessageBox.Warning, "Error while copying dataset",
+                                      "An error occurred while copying the dataset Excel sheet.", QMessageBox.Ok)
+                message.setWindowTitle("LabNote")
+                message.setDetailedText(str(exception))
+                message.exec()
+                return
+
+            self.show_dataset(index)
 
     def show_dataset_list(self):
         """ Show the dataset list in the tree view """
@@ -198,6 +235,8 @@ class Dataset(QDialog, Ui_Dataset):
     def selection_changed(self):
         """ Update the interface according to the selected item in the tree """
 
+        self.empty_layout(self.layout_entry)
+
         index = self.view_dataset.selectionModel().currentIndex()
         hierarchy_level = self.get_hierarchy_level(index)
 
@@ -209,14 +248,65 @@ class Dataset(QDialog, Ui_Dataset):
             self.btn_r_run.setEnabled(False)
             self.btn_python.setEnabled(False)
             self.btn_python_run.setEnabled(False)
+            self.layout_entry.addWidget(NoEntryWidget(), Qt.AlignHCenter, Qt.AlignCenter)
+            self.contains_file = False
         elif hierarchy_level == 3:
             self.act_delete_dataset.setEnabled(True)
             self.act_update_dataset.setEnabled(True)
-            self.btn_import.setEnabled(True)
-            self.btn_r.setEnabled(True)
-            self.btn_r_run.setEnabled(True)
-            self.btn_python.setEnabled(True)
-            self.btn_python_run.setEnabled(True)
+            self.show_dataset(index)
+            if not self.contains_file:
+                self.btn_import.setEnabled(True)
+                self.btn_r.setEnabled(False)
+                self.btn_r_run.setEnabled(False)
+                self.btn_python.setEnabled(False)
+                self.btn_python_run.setEnabled(False)
+            else:
+                self.btn_import.setEnabled(False)
+                self.btn_r.setEnabled(True)
+                self.btn_r_run.setEnabled(True)
+                self.btn_python.setEnabled(True)
+                self.btn_python_run.setEnabled(True)
+
+    def show_dataset(self, index):
+        """ Show the dataset content """
+
+        dt_uuid = index.data(Qt.UserRole)
+        nb_uuid = self.get_notebook(index)
+
+        excel_file_path = files.dataset_excel_file(dt_uuid=dt_uuid, nb_uuid=nb_uuid)
+
+        if os.path.isfile(excel_file_path):
+            book = xlrd.open_workbook(excel_file_path)
+
+            sheets = book.sheet_names()
+
+            tab_widget = QTabWidget()
+
+            for sheet_name in sheets:
+                sheet = book.sheet_by_name(sheet_name)
+                table_widget = QTableWidget()
+                table_widget.setEditTriggers(QAbstractItemView.NoEditTriggers)
+                table_widget.setSelectionMode(QAbstractItemView.NoSelection)
+                table_widget.setRowCount(sheet.nrows-1)
+                table_widget.setColumnCount(sheet.ncols)
+                tab_widget.addTab(table_widget, sheet.name)
+
+                for row in range(0, sheet.nrows):
+                    for column in range(0, sheet.ncols):
+                        cell = sheet.cell(row, column)
+                        if row == 0:
+                            table_widget.setHorizontalHeaderItem(column, QTableWidgetItem(cell.value))
+                        else:
+                            table_widget.setItem(row-1, column, QTableWidgetItem(cell.value))
+
+                table_widget.resizeColumnsToContents()
+                table_widget.horizontalHeader().setStretchLastSection(True)
+
+            self.contains_file = True
+            self.layout_entry.addWidget(tab_widget)
+        else:
+            self.contains_file = False
+            self.layout_entry.addWidget(NoEntryWidget(), Qt.AlignHCenter, Qt.AlignCenter)
 
     def get_hierarchy_level(self, index):
         """ Get the hierarchy level for the index
@@ -303,3 +393,14 @@ class Dataset(QDialog, Ui_Dataset):
 
                 if match:
                     self.view_dataset.setExpanded(match[0], True)
+
+    def empty_layout(self, layout):
+        """ Empty any layout """
+        if layout is not None:
+            while layout.count():
+                item = layout.takeAt(0)
+                widget = item.widget()
+                if widget is not None:
+                    widget.deleteLater()
+                else:
+                    self.delete_layout(item.layout())

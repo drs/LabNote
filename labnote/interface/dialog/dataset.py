@@ -42,7 +42,7 @@ class DatasetDialog(QDialog, Ui_Dataset):
         name_validator = QRegExpValidator(QRegExp("^[0-9a-zA-ZÀ-ÿ-_. ]+$"))
         self.txt_name.setValidator(name_validator)
 
-        key_validator = QRegExpValidator(QRegExp("^[a-z]{1}[0-9a-z_]+$"))
+        key_validator = QRegExpValidator(QRegExp("^[a-z]{1}[0-9a-z_-]+$"))
         self.txt_key.setValidator(key_validator)
 
         # Set lineedit properties

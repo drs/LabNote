@@ -19,6 +19,7 @@ from labnote.interface.dialog.notebook import Notebook
 from labnote.interface.widget.lineedit import SearchLineEdit
 from labnote.interface.widget.view import TreeView
 from labnote.interface.widget.model import StandardItemModel
+from labnote.interface.widget.widget import NoEntryWidget
 
 
 class MainWindow(QMainWindow, Ui_MainWindow):
@@ -51,6 +52,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def init_ui(self):
         """ Initialize all the GUI elements """
+
+        # Set stylesheet
+        stylesheet.set_style_sheet(self, ":/StyleSheet/style-sheet/main_window.qss")
 
         # Set window title
         self.setWindowTitle("LabNote")
@@ -114,11 +118,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.view_notebook = ProjectNotebookTreeView()
         self.frame.layout().insertWidget(1, self.view_notebook)
 
-        # Set no entry widget as default widget
-        self.set_no_entry_widget()
-
-        # Set style sheet
-        stylesheet.set_style_sheet(self, ":/StyleSheet/style-sheet/main_window.qss")
+        # Add no entry widget widget to mainwindow
+        self.centralWidget().layout().addWidget(NoEntryWidget(), Qt.AlignHCenter, Qt.AlignCenter)
 
     def init_connection(self):
         self.btn_add_notebook.clicked.connect(self.create_notebook)
@@ -153,30 +154,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         settings = QSettings("Samuel Drouin", "LabNote")
         self.restoreGeometry(settings.value("MainWindow/Geometry", QByteArray()))
-
-    def set_no_entry_widget(self):
-        """ Show a no entry selected label when no entry or notebook are open. """
-
-        # Setting up widget elements
-        no_entry_pixmap = QPixmap(":/Icons/MainWindow/icons/main-window/no_entry_selected.png")
-        lbl_no_entry_image = QLabel()
-        lbl_no_entry_image.setAlignment(Qt.AlignCenter)
-
-        lbl_no_entry_image.setPixmap(no_entry_pixmap.scaled(16, 16, Qt.KeepAspectRatio))
-        lbl_no_entry_image.show()
-
-        lbl_no_entry = QLabel("No entry selected")
-        lbl_no_entry.setAlignment(Qt.AlignCenter)
-        stylesheet.set_style_sheet(lbl_no_entry, ":/StyleSheet/style-sheet/main-window/no_entry_label.qss")
-
-        # Setting up the layout
-        self.no_entry_widget = QWidget()
-        main_layout = QVBoxLayout(self.no_entry_widget)
-        main_layout.addWidget(lbl_no_entry_image)
-        main_layout.addWidget(lbl_no_entry)
-
-        # Add widget to mainwindow
-        self.centralWidget().layout().addWidget(self.no_entry_widget, Qt.AlignHCenter, Qt.AlignCenter)
 
     def check_main_directory(self):
         """ Check if the main directory and database exist """

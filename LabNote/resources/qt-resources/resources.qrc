@@ -15,7 +15,6 @@
     </qresource>
     <qresource prefix="/StyleSheet">
         <file>style-sheet/main_window.qss</file>
-        <file>style-sheet/main-window/no_entry_label.qss</file>
         <file>style-sheet/textbox.qss</file>
         <file>style-sheet/project.qss</file>
         <file>style-sheet/library.qss</file>
@@ -43,6 +42,7 @@
     <qresource prefix="/StyleSheet/Widget">
         <file>style-sheet/widget/search.qss</file>
         <file>style-sheet/widget/view/project_notebook_tree_view.qss</file>
+        <file>style-sheet/widget/widget/no_entry_widget.qss</file>
     </qresource>
     <qresource prefix="/Icon/Sample">
         <file>icons/sample/import.png</file>

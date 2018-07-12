@@ -1,27 +1,35 @@
-/* Central frame */
+/*
+Central frame
+*/
 QFrame#frame {
     border-left: none;
     border-top: 0.5px solid rgb(196, 196, 196);
     border-bottom: 0.5px solid rgb(196, 196, 196);
     border-right: none;
+    background-color: rgb(236, 236, 236);
 }
 
-/* Table view */
-
-QTableWidget {
-    border: none;
-    border-left: 0.5px solid rgb(196, 196, 196);
-}
+/*
+Table view
+*/
 
 QTableView::item {
     border-bottom: 0.5px solid rgb(245, 245, 245);
 }
 
-/* Tree widget */
+/*
+Tree widget
+*/
 
 QTreeView {
     border: none;
     background-color: rgb(246, 246, 246);
+}
+
+QFrame#frame_tree {
+    background-color: rgb(246, 246, 246);
+    border: none;
+    border-right: 0.5px solid rgb(196, 196, 196);
 }
 
 QTreeView::item:selected {
@@ -41,7 +49,9 @@ QTreeView::branch::open::has-children {
     image: url(:/Icons/Library/icons/library/branch-open.png);
 }
 
-/* Tool button */
+/*
+Tool button
+*/
 
 QToolButton {
     text-align:left;

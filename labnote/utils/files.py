@@ -34,6 +34,12 @@ def copy_file_to_data(nb_uuid, exp_uuid, path):
         return exception
 
 
+def copy_dataset(dt_uuid, nb_uuid, path):
+    """ Copy a dataset """
+    file_name = dataset_excel_file(dt_uuid=dt_uuid, nb_uuid=nb_uuid)
+    shutil.copy2(path, file_name)
+
+
 def reference_file_path(ref_uuid):
     """ Return the path to a reference file
 
@@ -41,3 +47,14 @@ def reference_file_path(ref_uuid):
     :type ref_uuid: str
     """
     return os.path.join(directory.REFERENCES_DIRECTORY_PATH + "/{}.pdf".format(ref_uuid))
+
+
+def dataset_excel_file(dt_uuid, nb_uuid):
+    """ Return a dataset file path
+
+    :param dt_uuid: Dataset UUID
+    :type dt_uuid: str
+    :param nb_uuid: Notebook UUID
+    :type nb_uuid: str
+    """
+    return os.path.join(directory.dataset_path(nb_uuid=nb_uuid, dt_uuid=dt_uuid) + "/{}.xlsx".format(dt_uuid))
