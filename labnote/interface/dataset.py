@@ -4,6 +4,7 @@
 import sqlite3
 import xlrd
 import os
+import subprocess
 
 # PyQt import
 from PyQt5.QtWidgets import QDialog, QMessageBox, QMenu, QAction, QFileDialog, QTabWidget, QTableWidget, \
@@ -80,6 +81,12 @@ class Dataset(QDialog, Ui_Dataset):
         self.btn_import.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
         self.btn_import.setEnabled(False)
 
+        # Setup open in excel button
+        self.btn_open.setText("Open in Excel")
+        self.btn_open.setIcon(QIcon(":/Icon/Dataset/icons/dataset/excel.png"))
+        self.btn_open.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
+        self.btn_open.setEnabled(False)
+
         # Setup R button
         self.btn_r.setText("R Script")
         self.btn_r.setIcon(QIcon(":/Icon/Dataset/icons/dataset/r.png"))
@@ -106,7 +113,7 @@ class Dataset(QDialog, Ui_Dataset):
 
         # Search lineedit
         self.txt_search = SearchLineEdit()
-        self.layout_search.insertWidget(15, self.txt_search)
+        self.layout_search.insertWidget(17, self.txt_search)
 
         # Setup treeview
         self.view_dataset = TreeView()
@@ -125,6 +132,7 @@ class Dataset(QDialog, Ui_Dataset):
         self.view_dataset.collapsed.connect(self.save_treeview_state)
         self.view_dataset.expanded.connect(self.save_treeview_state)
         self.btn_import.clicked.connect(self.import_dataset)
+        self.btn_open.clicked.connect(self.open_dataset)
 
     def create_dataset(self):
         """ Create a new dataset """
@@ -189,6 +197,15 @@ class Dataset(QDialog, Ui_Dataset):
             self.empty_layout(self.layout_entry)
             self.show_dataset(index)
 
+    def open_dataset(self):
+        """ Open the dataset in excel """
+        index = self.view_dataset.selectionModel().currentIndex()
+        dt_uuid = index.data(Qt.UserRole)
+        nb_uuid = self.get_notebook(index)
+
+        subprocess.check_call(['open', '-a', 'Microsoft Excel', files.dataset_excel_file(dt_uuid=dt_uuid,
+                                                                                         nb_uuid=nb_uuid)])
+
     def show_dataset_list(self):
         """ Show the dataset list in the tree view """
         dataset_list = None
@@ -245,6 +262,7 @@ class Dataset(QDialog, Ui_Dataset):
             self.act_delete_dataset.setEnabled(False)
             self.act_update_dataset.setEnabled(False)
             self.btn_import.setEnabled(False)
+            self.btn_open.setEnabled(False)
             self.btn_r.setEnabled(False)
             self.btn_r_run.setEnabled(False)
             self.btn_python.setEnabled(False)
@@ -257,12 +275,14 @@ class Dataset(QDialog, Ui_Dataset):
             self.show_dataset(index)
             if not self.contains_file:
                 self.btn_import.setEnabled(True)
+                self.btn_open.setEnabled(False)
                 self.btn_r.setEnabled(False)
                 self.btn_r_run.setEnabled(False)
                 self.btn_python.setEnabled(False)
                 self.btn_python_run.setEnabled(False)
             else:
                 self.btn_import.setEnabled(False)
+                self.btn_open.setEnabled(True)
                 self.btn_r.setEnabled(True)
                 self.btn_r_run.setEnabled(True)
                 self.btn_python.setEnabled(True)
