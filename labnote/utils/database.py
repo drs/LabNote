@@ -13,7 +13,6 @@ Database path
 """
 
 MAIN_DATABASE_FILE_PATH = os.path.join(directory.DEFAULT_MAIN_DIRECTORY_PATH + "/main.labn")
-DATASET_DATABASE_FILE_PATH = os.path.join(directory.DEFAULT_MAIN_DIRECTORY_PATH + "/dataset.labn")
 
 """
 Database query
@@ -23,7 +22,7 @@ CREATE_DATASET_TABLE = """
 CREATE TABLE dataset (
     dt_uuid     BLOB (16)     PRIMARY KEY,
     name        VARCHAR (255),
-    description TEXT
+    key         VARCHAR (255)
 )
 """
 
@@ -157,16 +156,6 @@ CREATE TABLE tags (
     tag_id INTEGER       PRIMARY KEY AUTOINCREMENT,
     name   VARCHAR (255) NOT NULL
                          UNIQUE
-)
-"""
-
-CREATE_DATASET_TAG_TABLE = """
-CREATE TABLE dataset_tag (
-    dt_uuid BLOB (16) REFERENCES dataset (dt_uuid) ON DELETE CASCADE
-                      NOT NULL,
-    tag_id  INTEGER   REFERENCES tags (tag_id) ON DELETE RESTRICT
-                      NOT NULL, 
-    PRIMARY KEY (dt_uuid, tag_id)
 )
 """
 
