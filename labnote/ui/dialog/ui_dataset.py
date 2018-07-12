@@ -1,0 +1,91 @@
+# -*- coding: utf-8 -*-
+
+# Form implementation generated from reading ui file '/Users/samueldrouin/Development/LabNote/labnote/ui/qt_ui/dialog/dataset.ui'
+#
+# Created by: PyQt5 UI code generator 5.11.2
+#
+# WARNING! All changes made in this file will be lost!
+
+from PyQt5 import QtCore, QtGui, QtWidgets
+
+class Ui_Dataset(object):
+    def setupUi(self, Dataset):
+        Dataset.setObjectName("Dataset")
+        Dataset.resize(400, 202)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(Dataset.sizePolicy().hasHeightForWidth())
+        Dataset.setSizePolicy(sizePolicy)
+        Dataset.setMinimumSize(QtCore.QSize(0, 0))
+        self.verticalLayout = QtWidgets.QVBoxLayout(Dataset)
+        self.verticalLayout.setContentsMargins(12, 12, 8, 8)
+        self.verticalLayout.setObjectName("verticalLayout")
+        self.verticalLayout_2 = QtWidgets.QVBoxLayout()
+        self.verticalLayout_2.setContentsMargins(0, -1, 4, -1)
+        self.verticalLayout_2.setObjectName("verticalLayout_2")
+        self.lbl_title = QtWidgets.QLabel(Dataset)
+        font = QtGui.QFont()
+        font.setBold(True)
+        font.setWeight(75)
+        self.lbl_title.setFont(font)
+        self.lbl_title.setObjectName("lbl_title")
+        self.verticalLayout_2.addWidget(self.lbl_title)
+        self.lbl_name = QtWidgets.QLabel(Dataset)
+        self.lbl_name.setObjectName("lbl_name")
+        self.verticalLayout_2.addWidget(self.lbl_name)
+        self.txt_name = QtWidgets.QLineEdit(Dataset)
+        self.txt_name.setPlaceholderText("")
+        self.txt_name.setObjectName("txt_name")
+        self.verticalLayout_2.addWidget(self.txt_name)
+        self.horizontalLayout_2 = QtWidgets.QHBoxLayout()
+        self.horizontalLayout_2.setSizeConstraint(QtWidgets.QLayout.SetMaximumSize)
+        self.horizontalLayout_2.setObjectName("horizontalLayout_2")
+        self.label = QtWidgets.QLabel(Dataset)
+        self.label.setMinimumSize(QtCore.QSize(70, 0))
+        self.label.setMaximumSize(QtCore.QSize(70, 16777215))
+        self.label.setObjectName("label")
+        self.horizontalLayout_2.addWidget(self.label)
+        self.txt_key = QtWidgets.QLineEdit(Dataset)
+        self.txt_key.setObjectName("txt_key")
+        self.horizontalLayout_2.addWidget(self.txt_key)
+        self.verticalLayout_2.addLayout(self.horizontalLayout_2)
+        self.horizontalLayout_3 = QtWidgets.QHBoxLayout()
+        self.horizontalLayout_3.setObjectName("horizontalLayout_3")
+        self.label_2 = QtWidgets.QLabel(Dataset)
+        self.label_2.setMinimumSize(QtCore.QSize(70, 0))
+        self.label_2.setMaximumSize(QtCore.QSize(70, 16777215))
+        self.label_2.setObjectName("label_2")
+        self.horizontalLayout_3.addWidget(self.label_2)
+        self.cbx_notebook = QtWidgets.QComboBox(Dataset)
+        self.cbx_notebook.setObjectName("cbx_notebook")
+        self.horizontalLayout_3.addWidget(self.cbx_notebook)
+        self.verticalLayout_2.addLayout(self.horizontalLayout_3)
+        self.verticalLayout.addLayout(self.verticalLayout_2)
+        self.horizontalLayout = QtWidgets.QHBoxLayout()
+        self.horizontalLayout.setObjectName("horizontalLayout")
+        spacerItem = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
+        self.horizontalLayout.addItem(spacerItem)
+        self.btn_cancel = QtWidgets.QPushButton(Dataset)
+        self.btn_cancel.setAutoDefault(False)
+        self.btn_cancel.setObjectName("btn_cancel")
+        self.horizontalLayout.addWidget(self.btn_cancel)
+        self.btn_create = QtWidgets.QPushButton(Dataset)
+        self.btn_create.setEnabled(False)
+        self.btn_create.setObjectName("btn_create")
+        self.horizontalLayout.addWidget(self.btn_create)
+        self.verticalLayout.addLayout(self.horizontalLayout)
+
+        self.retranslateUi(Dataset)
+        QtCore.QMetaObject.connectSlotsByName(Dataset)
+
+    def retranslateUi(self, Dataset):
+        _translate = QtCore.QCoreApplication.translate
+        Dataset.setWindowTitle(_translate("Dataset", "Dialog"))
+        self.lbl_title.setText(_translate("Dataset", "Dataset"))
+        self.lbl_name.setText(_translate("Dataset", "Dataset name : "))
+        self.label.setText(_translate("Dataset", "Key : "))
+        self.label_2.setText(_translate("Dataset", "Notebook : "))
+        self.btn_cancel.setText(_translate("Dataset", "Cancel"))
+        self.btn_create.setText(_translate("Dataset", "Create"))
+

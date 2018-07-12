@@ -16,7 +16,7 @@ def notebook_path(nb_uuid):
     return os.path.join(NOTEBOOK_DIRECTORY_PATH + "/{}".format(nb_uuid))
 
 
-def dataset_path(nb_uuid):
+def dataset_notebook_path(nb_uuid):
     """ Return the notebook dataset folder path
 
     :param nb_uuid: Notebook UUID
@@ -24,3 +24,15 @@ def dataset_path(nb_uuid):
     :return str: Notebook dataset path
     """
     return os.path.join(NOTEBOOK_DIRECTORY_PATH + "/{}".format(nb_uuid) + "/Dataset")
+
+
+def dataset_path(nb_uuid, dt_uuid):
+    """ Return the dataset folder path
+
+    :param nb_uuid: Notebook UUID
+    :type nb_uuid: str
+    :param dt_uuid: Dataset UUID
+    :type dt_uuid: str
+    :return str: Dataset path
+    """
+    return os.path.join(dataset_notebook_path(nb_uuid=nb_uuid) + "/{}".format(dt_uuid))

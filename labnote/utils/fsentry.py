@@ -55,7 +55,7 @@ def create_notebook(nb_name, proj_id):
 
         notebook_path = directory.notebook_path(nb_uuid=nb_uuid)
         os.mkdir(notebook_path)
-        dataset_path = directory.dataset_path(nb_uuid=nb_uuid)
+        dataset_path = directory.dataset_notebook_path(nb_uuid=nb_uuid)
         os.mkdir(dataset_path)
     except sqlite3.Error:
         exception = True
@@ -156,6 +156,81 @@ def delete_reference_pdf(ref_uuid):
 
         reference_file = files.reference_file_path(ref_uuid=ref_uuid)
         os.remove(reference_file)
+    except sqlite3.Error:
+        exception = True
+        raise
+    except OSError:
+        if conn:
+            conn.rollback()
+        exception = True
+        raise
+    finally:
+        if not exception:
+            conn.commit()
+        if conn:
+            conn.close()
+
+
+def create_dataset(dt_uuid, name, key, nb_uuid):
+    """ Create a dataset in the database and in the file structure
+
+    :param dt_uuid: Dataset uuid
+    :type dt_uuid: str
+    :param name: Dataset name
+    :type name: str
+    :param key: Dataset key
+    :type key: str
+    :param nb_uuid: Notebook uuid
+    :type nb_uuid: str
+    """
+
+    conn = None
+    exception = False
+
+    try:
+        conn = sqlite3.connect(database.MAIN_DATABASE_FILE_PATH)
+        conn.execute("PRAGMA foreign_keys = ON")
+        cursor = conn.cursor()
+        cursor.execute(database.INSERT_DATASET, {'dt_uuid': data.uuid_bytes(dt_uuid), 'name': name, 'dt_key': key,
+                                                 'nb_uuid': data.uuid_bytes(nb_uuid)})
+
+        dataset_folder = directory.dataset_path(nb_uuid=nb_uuid, dt_uuid=dt_uuid)
+        os.mkdir(dataset_folder)
+    except sqlite3.Error:
+        exception = True
+        raise
+    except OSError:
+        if conn:
+            conn.rollback()
+        exception = True
+        raise
+    finally:
+        if not exception:
+            conn.commit()
+        if conn:
+            conn.close()
+
+
+def delete_dataset(dt_uuid, nb_uuid):
+    """ Delete a dataset from the database and the file structure
+
+    :param dt_uuid: Dataset uuid
+    :type dt_uuid: str
+    :param nb_uuid: Notebook uuid
+    :type nb_uuid: str
+    """
+
+    conn = None
+    exception = False
+
+    try:
+        conn = sqlite3.connect(database.MAIN_DATABASE_FILE_PATH)
+        conn.execute("PRAGMA foreign_keys = ON")
+        cursor = conn.cursor()
+        cursor.execute(database.DELETE_DATASET, {'dt_uuid': data.uuid_bytes(dt_uuid)})
+
+        dataset_folder = directory.dataset_path(nb_uuid=nb_uuid, dt_uuid=dt_uuid)
+        shutil.rmtree(dataset_folder, ignore_errors=True)
     except sqlite3.Error:
         exception = True
         raise
