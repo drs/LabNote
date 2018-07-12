@@ -1,0 +1,94 @@
+/* Central frame */
+QFrame#frame {
+    border-left: none;
+    border-top: 0.5px solid rgb(196, 196, 196);
+    border-bottom: 0.5px solid rgb(196, 196, 196);
+    border-right: none;
+}
+
+/* Table view */
+
+QTableWidget {
+    border: none;
+    border-left: 0.5px solid rgb(196, 196, 196);
+}
+
+QTableView::item {
+    border-bottom: 0.5px solid rgb(245, 245, 245);
+}
+
+/* Tree widget */
+
+QTreeWidget {
+    border: none;
+}
+
+/* Tool button */
+
+QToolButton {
+    text-align:left;
+    background-color: none;
+    border: none;
+    color: black;
+    image-position: left;
+}
+
+QToolButton:pressed {
+    background-color: none;
+    border: none;
+}
+
+/*
+TreeView button
+*/
+
+QPushButton#btn_add {
+    /* Border and background color */
+    background-color: none;
+    border: none;
+
+    /* Text color and font */
+    font-family: Al Bayan;
+    font: 24pt;
+    color: rgb(129, 129, 129);
+
+    /* Button height and width */
+    width: 25px;
+    min-width: 25px;
+    max-height: 25px;
+
+    height: 25px;
+    min-height: 25px;
+    max-height: 25px;
+}
+
+QPushButton#btn_add:pressed {
+    /* Border and background color */
+    background-color: none;
+    border: none;
+    color: rgb(72, 72, 72);
+}
+
+QPushButton#btn_manage {
+    border-image: url(:/Icons/MainWindow/icons/main-window/settings.png);
+    max-width: 24px;
+    min-width: 24px;
+    max-height: 16px;
+    min-height: 16px;
+}
+
+QPushButton#btn_manage:pressed {
+    border-image: url(:/Icons/MainWindow/icons/main-window/settings_pressed.png);
+}
+
+
+QPushButton#btn_manage:pressed {
+    /* Border and background color */
+    background-color: none;
+    border: none;
+}
+
+QPushButton::menu-indicator {
+    height: 0px;
+	width: 0px;
+}
