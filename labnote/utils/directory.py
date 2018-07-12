@@ -23,4 +23,4 @@ def dataset_path(nb_uuid):
     :type nb_uuid: str
     :return str: Notebook dataset path
     """
-    return os.path.join(NOTEBOOK_DIRECTORY_PATH + "/{}".format(nb_uuid) + "/dataset")
+    return os.path.join(NOTEBOOK_DIRECTORY_PATH + "/{}".format(nb_uuid) + "/Dataset")
