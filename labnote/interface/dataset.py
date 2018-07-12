@@ -186,6 +186,7 @@ class Dataset(QDialog, Ui_Dataset):
                 message.exec()
                 return
 
+            self.empty_layout(self.layout_entry)
             self.show_dataset(index)
 
     def show_dataset_list(self):
