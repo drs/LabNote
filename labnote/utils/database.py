@@ -508,7 +508,6 @@ def create_main_database():
     cursor.execute(CREATE_REFS_TABLE)
     cursor.execute(CREATE_SAMPLE_TABLE)
     cursor.execute(CREATE_TAGS_TABLE)
-    cursor.execute(CREATE_DATASET_TAG_TABLE)
     cursor.execute(CREATE_EXPERIMENT_DATASET_TABLE)
     cursor.execute(CREATE_EXPERIMENT_PROTOCOL_TABLE)
     cursor.execute(CREATE_EXPERIMENT_REFS_TABLE)
