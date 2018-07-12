@@ -282,10 +282,12 @@ class Dataset(QDialog, Ui_Dataset):
             sheets = book.sheet_names()
 
             tab_widget = QTabWidget()
+            tab_widget.setTabPosition(QTabWidget.South)
 
             for sheet_name in sheets:
                 sheet = book.sheet_by_name(sheet_name)
                 table_widget = QTableWidget()
+
                 table_widget.setEditTriggers(QAbstractItemView.NoEditTriggers)
                 table_widget.setSelectionMode(QAbstractItemView.NoSelection)
                 table_widget.setRowCount(sheet.nrows-1)
