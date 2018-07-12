@@ -7,8 +7,8 @@ import sqlite3
 
 # PyQt import
 from PyQt5.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QMessageBox, QLabel, QAction, QSizePolicy, QMenu
-from PyQt5.QtGui import QPixmap, QIcon, QFont
-from PyQt5.QtCore import Qt, QSettings, QByteArray
+from PyQt5.QtGui import QPixmap, QIcon, QFont, QStandardItem
+from PyQt5.QtCore import Qt, QSettings, QByteArray, pyqtSignal
 
 # Project import
 from labnote.ui.ui_mainwindow import Ui_MainWindow
@@ -17,6 +17,8 @@ from labnote.utils import database, directory, fsentry
 from labnote.interface import project, library, sample, dataset
 from labnote.interface.dialog.notebook import Notebook
 from labnote.interface.widget.lineedit import SearchLineEdit
+from labnote.interface.widget.view import TreeView
+from labnote.interface.widget.model import StandardItemModel
 
 
 class MainWindow(QMainWindow, Ui_MainWindow):
