@@ -278,7 +278,7 @@ class CategoryFrame(QWidget):
             selected_id = index.data(Qt.UserRole)
 
             try:
-                database.delete_ref_category(selected_id)
+                database.delete_category(selected_id)
             except sqlite3.Error as exception:
                 error_code = sqlite_error.sqlite_err_handler(str(exception))
 
@@ -336,7 +336,7 @@ class CategoryFrame(QWidget):
             selected_id = index.data(Qt.UserRole)
 
             try:
-                database.delete_ref_subcategory(selected_id)
+                database.delete_subcategory(selected_id)
             except sqlite3.Error as exception:
                 error_code = sqlite_error.sqlite_err_handler(str(exception))
 
@@ -374,6 +374,8 @@ class CategoryFrame(QWidget):
         try:
             if self.frame_type == TYPE_LIBRARY:
                 reference_list = database.select_reference_category()
+            elif self.frame_type == TYPE_PROTOCOL:
+
         except sqlite3.Error as exception:
             message = QMessageBox(QMessageBox.Warning, "Error while loading data",
                                   "An error occurred while loading the references data.", QMessageBox.Ok)

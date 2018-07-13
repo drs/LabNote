@@ -86,49 +86,49 @@ class TestDatabaseInsert(unittest.TestCase):
                 database.create_experiment(self.exp_name, self.exp_uuid,
                                            self.exp_obj, str(self.nb_uuid))
 
-    def test_ref_category_creation(self):
+    def test_category_creation(self):
         name = 'Category'
-        database.insert_ref_category(name)
+        database.insert_category(name)
 
         conn = sqlite3.connect(database.MAIN_DATABASE_FILE_PATH)
         cursor = conn.cursor()
-        cursor.execute("SELECT name FROM ref_category")
+        cursor.execute("SELECT name FROM category")
 
         self.assertEqual(cursor.fetchall(), [(name,)])
 
-    def test_ref_category_creation_error(self):
+    def test_category_creation_error(self):
         name = 'Category'
 
         with unittest.mock.patch("labnote.utils.database.sqlite3.connect",
                                  unittest.mock.MagicMock(side_effect=sqlite3.Error)):
 
             with self.assertRaises(sqlite3.Error):
-                database.insert_ref_category(name)
+                database.insert_category(name)
 
-    def test_ref_subcategory_creation(self):
+    def test_subcategory_creation(self):
         category_name = 'Category'
         name = 'Subcategory'
 
-        database.insert_ref_category(category_name)
-        database.insert_ref_subcategory(name, 1)
+        database.insert_category(category_name)
+        database.insert_subcategory(name, 1)
 
         conn = sqlite3.connect(database.MAIN_DATABASE_FILE_PATH)
         cursor = conn.cursor()
-        cursor.execute("SELECT name, category_id FROM ref_subcategory")
+        cursor.execute("SELECT name, category_id FROM subcategory")
 
         self.assertEqual(cursor.fetchall(), [(name, 1)])
 
-    def test_ref_subcategory_creation_error(self):
+    def test_subcategory_creation_error(self):
         category_name = 'Category'
         name = 'Subcategory'
 
-        database.insert_ref_category(category_name)
+        database.insert_category(category_name)
 
         with unittest.mock.patch("labnote.utils.database.sqlite3.connect",
                                  unittest.mock.MagicMock(side_effect=sqlite3.Error)):
 
             with self.assertRaises(sqlite3.Error):
-                database.insert_ref_subcategory(name, 1)
+                database.insert_subcategory(name, 1)
 
 
 class TestDatabaseSelectUpdateDelete(unittest.TestCase):
@@ -147,8 +147,8 @@ class TestDatabaseSelectUpdateDelete(unittest.TestCase):
         database.create_main_database()
         database.create_notebook(self.nb_name, self.nb_uuid)
         database.create_experiment(self.exp_name, self.exp_uuid, self.exp_obj, str(self.nb_uuid))
-        database.insert_ref_category(self.category)
-        database.insert_ref_subcategory(self.subcategory, 1)
+        database.insert_category(self.category)
+        database.insert_subcategory(self.subcategory, 1)
 
     def tearDown(self):
         fsentry.cleanup_main_directory()
@@ -256,11 +256,11 @@ class TestDatabaseSelectUpdateDelete(unittest.TestCase):
 
     def test_update_category(self):
         name = 'Category 1'
-        database.update_ref_category(name, 1)
+        database.update_category(name, 1)
 
         conn = sqlite3.connect(database.MAIN_DATABASE_FILE_PATH)
         cursor = conn.cursor()
-        cursor.execute("SELECT name FROM ref_category")
+        cursor.execute("SELECT name FROM category")
 
         self.assertEqual(cursor.fetchall(), [(name,)])
 
@@ -270,40 +270,40 @@ class TestDatabaseSelectUpdateDelete(unittest.TestCase):
         with unittest.mock.patch("labnote.utils.database.sqlite3.connect",
                                  unittest.mock.MagicMock(side_effect=sqlite3.Error)):
             with self.assertRaises(sqlite3.Error):
-                database.update_ref_category(name, 1)
+                database.update_category(name, 1)
 
     def test_insert_duplicate_category_error(self):
         with self.assertRaises(sqlite3.IntegrityError):
-            database.insert_ref_category(self.category)
+            database.insert_category(self.category)
 
     def test_delete_category(self):
-        database.delete_ref_subcategory(1)
-        database.delete_ref_category(1)
+        database.delete_subcategory(1)
+        database.delete_category(1)
 
         conn = sqlite3.connect(database.MAIN_DATABASE_FILE_PATH)
         cursor = conn.cursor()
-        cursor.execute("SELECT name FROM ref_category")
+        cursor.execute("SELECT name FROM category")
 
         self.assertEqual(cursor.fetchall(), [])
 
     def delete_category_foreign_key_error(self):
         with self.assertRaises(sqlite3.Error):
-            database.delete_ref_category(1)
+            database.delete_category(1)
 
     def test_delete_category_error(self):
         with unittest.mock.patch("labnote.utils.database.sqlite3.connect",
                                  unittest.mock.MagicMock(side_effect=sqlite3.Error)):
             with self.assertRaises(sqlite3.Error):
-                database.delete_ref_category(1)
+                database.delete_category(1)
 
     def test_update_subcategory(self):
         name = 'Subcategory 1'
 
-        database.update_ref_subcategory(name, 1, 1)
+        database.update_subcategory(name, 1, 1)
 
         conn = sqlite3.connect(database.MAIN_DATABASE_FILE_PATH)
         cursor = conn.cursor()
-        cursor.execute("SELECT name, category_id FROM ref_subcategory")
+        cursor.execute("SELECT name, category_id FROM subcategory")
 
         self.assertEqual(cursor.fetchall(), [(name, 1)])
 
@@ -313,18 +313,18 @@ class TestDatabaseSelectUpdateDelete(unittest.TestCase):
         with unittest.mock.patch("labnote.utils.database.sqlite3.connect",
                                  unittest.mock.MagicMock(side_effect=sqlite3.Error)):
             with self.assertRaises(sqlite3.Error):
-                database.update_ref_subcategory(name, 1, 1)
+                database.update_subcategory(name, 1, 1)
 
     def test_insert_duplicate_subcategory_error(self):
         with self.assertRaises(sqlite3.IntegrityError):
-            database.insert_ref_subcategory(self.subcategory, 1)
+            database.insert_subcategory(self.subcategory, 1)
 
     def test_delete_subcategory(self):
-        database.delete_ref_subcategory(1)
+        database.delete_subcategory(1)
 
         conn = sqlite3.connect(database.MAIN_DATABASE_FILE_PATH)
         cursor = conn.cursor()
-        cursor.execute("SELECT name FROM ref_subcategory")
+        cursor.execute("SELECT name FROM subcategory")
 
         self.assertEqual(cursor.fetchall(), [])
 
@@ -332,7 +332,7 @@ class TestDatabaseSelectUpdateDelete(unittest.TestCase):
         with unittest.mock.patch("labnote.utils.database.sqlite3.connect",
                                  unittest.mock.MagicMock(side_effect=sqlite3.Error)):
             with self.assertRaises(sqlite3.Error):
-                database.delete_ref_subcategory(1)
+                database.delete_subcategory(1)
 
 
 if __name__ == '__main__':

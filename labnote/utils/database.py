@@ -40,8 +40,7 @@ CREATE TABLE experiment (
     name         VARCHAR (255) NOT NULL,
     nb_uuid      BLOB (16)     REFERENCES notebook (nb_uuid) ON DELETE CASCADE
                                NOT NULL,
-    objective    TEXT,
-    body         TEXT,
+    description  TEXT,
     date_created DATETIME      DEFAULT (CURRENT_TIMESTAMP),
     date_updated DATETIME
 )
@@ -49,7 +48,7 @@ CREATE TABLE experiment (
 
 CREATE_EXPERIMENT_TABLE_TRIGGER = """
 CREATE TRIGGER exp_date_updated
-         AFTER UPDATE OF body
+         AFTER UPDATE
             ON experiment
 BEGIN
     UPDATE experiment
@@ -82,28 +81,42 @@ CREATE TABLE notebook (
 
 CREATE_PROTOCOL_TABLE = """
 CREATE TABLE protocol (
-    prt_uuid    BLOB (16)     PRIMARY KEY
-                              UNIQUE,
-    prt_key     VARCHAR (255) UNIQUE
-                              NOT NULL,
-    name        VARCHAR (255),
-    description TEXT
+    prt_uuid     BLOB (16)     PRIMARY KEY
+                               UNIQUE,
+    prt_key      VARCHAR (255) UNIQUE
+                               NOT NULL,
+    name         VARCHAR (255),
+    description  TEXT,
+    date_created DATETIME      DEFAULT (CURRENT_TIMESTAMP),
+    date_updated DATETIME
 )
 """
 
-CREATE_REF_CATEGORY_TABLE = """
-CREATE TABLE ref_category (
+CREATE_PROTOCOL_TABLE_TRIGGER = """
+CREATE TRIGGER prt_date_updated
+         AFTER UPDATE
+            ON protocol
+BEGIN
+    UPDATE protocol
+       SET date_updated = CURRENT_TIMESTAMP
+     WHERE NEW.prt_uuid = OLD.prt_uuid;
+END;
+
+"""
+
+CREATE_CATEGORY_TABLE = """
+CREATE TABLE category (
     category_id INTEGER       PRIMARY KEY AUTOINCREMENT,
     name        VARCHAR (255) UNIQUE
                               NOT NULL
 )
 """
 
-CREATE_REF_SUBCATEGORY_TABLE = """
-CREATE TABLE ref_subcategory (
+CREATE_SUBCATEGORY_TABLE = """
+CREATE TABLE subcategory (
     subcategory_id INTEGER       PRIMARY KEY AUTOINCREMENT,
     name           VARCHAR (255) NOT NULL,
-    category_id    INTEGER       REFERENCES ref_category (category_id) ON DELETE RESTRICT
+    category_id    INTEGER       REFERENCES category (category_id) ON DELETE RESTRICT
                                  NOT NULL,
     UNIQUE (name, category_id)
 )
@@ -132,8 +145,8 @@ CREATE TABLE refs (
     issue          INTEGER,
     description    TEXT,
     abstract       TEXT,
-    subcategory_id INTEGER       REFERENCES ref_subcategory (subcategory_id) ON DELETE RESTRICT,
-    category_id    INTEGER       REFERENCES ref_subcategory (subcategory_id) ON DELETE RESTRICT
+    subcategory_id INTEGER       REFERENCES subcategory (subcategory_id) ON DELETE RESTRICT,
+    category_id    INTEGER       REFERENCES subcategory (subcategory_id) ON DELETE RESTRICT
                                  NOT NULL
 )
 """
@@ -299,36 +312,36 @@ LAST_INSERT_ROWID = """
 SELECT last_insert_rowid()
 """
 
-INSERT_REF_CATEGORY = """
-INSERT INTO ref_category (name) VALUES (:name)
+INSERT_CATEGORY = """
+INSERT INTO category (name) VALUES (:name)
 """
 
-UPDATE_REF_CATEGORY = """
-UPDATE ref_category SET name = :name WHERE category_id = :category_id
+UPDATE_CATEGORY = """
+UPDATE category SET name = :name WHERE category_id = :category_id
 """
 
-DELETE_REF_CATEGORY = """
-DELETE FROM ref_category WHERE category_id = :category_id
+DELETE_CATEGORY = """
+DELETE FROM category WHERE category_id = :category_id
 """
 
-INSERT_REF_SUBCATEGORY = """
-INSERT INTO ref_subcategory (name, category_id) VALUES (:name, :category_id)
+INSERT_SUBCATEGORY = """
+INSERT INTO subcategory (name, category_id) VALUES (:name, :category_id)
 """
 
-UPDATE_REF_SUBCATEGORY = """
-UPDATE ref_subcategory SET name = :name, category_id = :category_id WHERE subcategory_id = :subcategory_id
+UPDATE_SUBCATEGORY = """
+UPDATE subcategory SET name = :name, category_id = :category_id WHERE subcategory_id = :subcategory_id
 """
 
-DELETE_REF_SUBCATEGORY = """
-DELETE FROM ref_subcategory WHERE subcategory_id = :subcategory_id
+DELETE_SUBCATEGORY = """
+DELETE FROM subcategory WHERE subcategory_id = :subcategory_id
 """
 
-SELECT_REF_CATEGORY = """
-SELECT category_id, name FROM ref_category ORDER BY name ASC
+SELECT_CATEGORY = """
+SELECT category_id, name FROM category ORDER BY name ASC
 """
 
-SELECT_REF_SUBCATEGORY = """
-SELECT subcategory_id, name, category_id FROM ref_subcategory ORDER BY category_id ASC, name ASC
+SELECT_SUBCATEGORY = """
+SELECT subcategory_id, name, category_id FROM subcategory ORDER BY category_id ASC, name ASC
 """
 
 SELECT_REFS = """
@@ -503,6 +516,10 @@ DELETE_DATASET = """
 DELETE FROM dataset WHERE dt_uuid = :dt_uuid
 """
 
+SELECT_PROTOCOL = """
+SELECT prt_uuid, prt_key, name, description, date_created, date_updated FROM protocol
+"""
+
 
 """
 Database creation
@@ -524,8 +541,8 @@ def create_main_database():
     cursor.execute(CREATE_NOTEBOOK_TABLE)
     cursor.execute(CREATE_PROTOCOL_TABLE)
     cursor.execute(CREATE_PROTOCOL_TABLE_TRIGGER)
-    cursor.execute(CREATE_REF_CATEGORY_TABLE)
-    cursor.execute(CREATE_REF_SUBCATEGORY_TABLE)
+    cursor.execute(CREATE_CATEGORY_TABLE)
+    cursor.execute(CREATE_SUBCATEGORY_TABLE)
     cursor.execute(CREATE_REFS_TABLE)
     cursor.execute(CREATE_SAMPLE_TABLE)
     cursor.execute(CREATE_TAGS_TABLE)
@@ -824,36 +841,36 @@ References and related table query
 """
 
 
-def insert_ref_category(name):
-    """ Create a reference new category
+def insert_category(name):
+    """ Create a new category
 
     :param name: Category name
     :type name: str
     """
-    execute_query(INSERT_REF_CATEGORY, name=name)
+    execute_query(INSERT_CATEGORY, name=name)
 
 
-def update_ref_category(name, category_id):
-    """ Update a reference category name
+def update_category(name, category_id):
+    """ Update a category
 
     :param name: Updated category name
     :type name: str
     :param category_id: ID of the category to update
     :type category_id: int
     """
-    execute_query(UPDATE_REF_CATEGORY, name=name, category_id=category_id)
+    execute_query(UPDATE_CATEGORY, name=name, category_id=category_id)
 
 
-def delete_ref_category(category_id):
-    """ Delete a reference category
+def delete_category(category_id):
+    """ Delete a category
 
     :param category_id: ID of the category to delete
     :type category_id: int
     """
-    execute_query(DELETE_REF_CATEGORY, category_id=category_id)
+    execute_query(DELETE_CATEGORY, category_id=category_id)
 
 
-def insert_ref_subcategory(name, category_id):
+def insert_subcategory(name, category_id):
     """ Create a new reference subcategory
 
     :param name: Subcategory name
@@ -861,10 +878,10 @@ def insert_ref_subcategory(name, category_id):
     :param category_id: Parent category
     :type category_id: int
     """
-    execute_query(INSERT_REF_SUBCATEGORY, name=name, category_id=category_id)
+    execute_query(INSERT_SUBCATEGORY, name=name, category_id=category_id)
 
 
-def update_ref_subcategory(name, category_id, subcategory_id):
+def update_subcategory(name, category_id, subcategory_id):
     """ Update a reference subcategory name or category
 
     :param name: Updated subcategory name
@@ -874,22 +891,22 @@ def update_ref_subcategory(name, category_id, subcategory_id):
     :param subcategory_id: ID of the subcategory to update
     :type subcategory_id: int
     """
-    execute_query(UPDATE_REF_SUBCATEGORY, name=name, category_id=category_id, subcategory_id=subcategory_id)
+    execute_query(UPDATE_SUBCATEGORY, name=name, category_id=category_id, subcategory_id=subcategory_id)
 
 
-def delete_ref_subcategory(subcategory_id):
+def delete_subcategory(subcategory_id):
     """ Delete a reference subcategory
 
     :param subcategory_id: ID of the subcategory to delete
     :type subcategory_id: int
     """
-    execute_query(DELETE_REF_SUBCATEGORY, subcategory_id=subcategory_id)
+    execute_query(DELETE_SUBCATEGORY, subcategory_id=subcategory_id)
 
 
-def select_ref_category():
+def select_category():
     """ Select add the reference categorie """
 
-    buffer = execute_query(SELECT_REF_CATEGORY)
+    buffer = execute_query(SELECT_CATEGORY)
 
     # Return the category list
     category_list = []
@@ -909,9 +926,9 @@ def select_reference_category():
     cursor = conn.cursor()
 
     cursor.execute("BEGIN")
-    cursor.execute(SELECT_REF_CATEGORY)
+    cursor.execute(SELECT_CATEGORY)
     category_buffer = cursor.fetchall()
-    cursor.execute(SELECT_REF_SUBCATEGORY)
+    cursor.execute(SELECT_SUBCATEGORY)
     subcategory_buffer = cursor.fetchall()
     cursor.execute(SELECT_REFS)
     reference_buffer = cursor.fetchall()
@@ -1244,3 +1261,71 @@ def select_dataset():
                         notebook_list.append(Notebook(notebook_uuid, notebook_name, dataset_list))
             project_list.append(Project(project_id, project_name, notebook_list))
     return project_list
+
+
+"""
+Protocol query
+"""
+def select_protocol_category():
+    """ Select all the protocols """
+
+    # Execute the query
+    conn = sqlite3.connect(MAIN_DATABASE_FILE_PATH)
+    conn.isolation_level = None
+    cursor = conn.cursor()
+
+    cursor.execute("BEGIN")
+    cursor.execute(SELECT_CATEGORY)
+    category_buffer = cursor.fetchall()
+    cursor.execute(SELECT_SUBCATEGORY)
+    subcategory_buffer = cursor.fetchall()
+    cursor.execute(SELECT_REFS)
+    reference_buffer = cursor.fetchall()
+    cursor.execute("END")
+    conn.close()
+
+    # Return the references list
+    Category = namedtuple('Category', ['id', 'name', 'subcategory', 'entry'])
+    SubCategory = namedtuple('Subcategory', ['id', 'name', 'entry'])
+    Reference = namedtuple('Reference', ['uuid', 'title', 'author', 'year'])
+
+    category_list = []
+
+    if category_buffer:
+        for category in category_buffer:
+            category_id = category[0]
+            category_name = category[1]
+
+            subcategory_list = []
+            if subcategory_buffer:
+                for subcategory in subcategory_buffer:
+                    if subcategory[2] == category_id:
+                        subcategory_id = subcategory[0]
+                        subcategory_name = subcategory[1]
+
+                        reference_list = []
+                        if reference_buffer:
+                            for reference in reference_buffer:
+                                if reference[4] == category_id and reference[5] == subcategory_id:
+                                    reference_uuid = data.uuid_string(reference[0])
+                                    reference_title = reference[1]
+                                    reference_author = reference[2]
+                                    reference_year = reference[3]
+
+                                    reference_list.append(Reference(reference_uuid, reference_title,
+                                                                    reference_author, reference_year))
+                        subcategory_list.append(SubCategory(subcategory_id, subcategory_name, reference_list))
+
+            reference_list = []
+            if reference_buffer:
+                for reference in reference_buffer:
+                    if reference[4] == category_id and reference[5] == None:
+                        reference_uuid = data.uuid_string(reference[0])
+                        reference_title = reference[1]
+                        reference_author = reference[2]
+                        reference_year = reference[3]
+
+                        reference_list.append(Reference(reference_uuid, reference_title,
+                                                        reference_author, reference_year))
+            category_list.append(Category(category_id, category_name, subcategory_list, reference_list))
+    return category_list

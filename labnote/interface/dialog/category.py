@@ -56,7 +56,7 @@ class Category(QDialog, Ui_Category):
         """ Process the category """
         if not self.category_id:
             try:
-                database.insert_ref_category(self.txt_name.text())
+                database.insert_category(self.txt_name.text())
             except (sqlite3.Error, OSError) as exception:
                 error_code = sqlite_error.sqlite_err_handler(str(exception))
 
@@ -77,7 +77,7 @@ class Category(QDialog, Ui_Category):
                 return
         else:
             try:
-                database.update_ref_category(self.txt_name.text(), self.category_id)
+                database.update_category(self.txt_name.text(), self.category_id)
             except (sqlite3.Error, OSError) as exception:
                 error_code = sqlite_error.sqlite_err_handler(str(exception))
 
@@ -153,7 +153,7 @@ class Subcategory(QDialog, Ui_Subcategory):
 
         # Get project list from the database
         try:
-            buffer = database.select_ref_category()
+            buffer = database.select_category()
         except sqlite3.Error as exception:
             message = QMessageBox()
             message.setWindowTitle("LabNote")
@@ -173,7 +173,7 @@ class Subcategory(QDialog, Ui_Subcategory):
         """ Process the category """
         if not self.subcategory_id:
             try:
-                database.insert_ref_subcategory(self.txt_name.text(), self.cbx_category.currentData())
+                database.insert_subcategory(self.txt_name.text(), self.cbx_category.currentData())
             except (sqlite3.Error, OSError) as exception:
                 error_code = sqlite_error.sqlite_err_handler(str(exception))
 
@@ -194,7 +194,7 @@ class Subcategory(QDialog, Ui_Subcategory):
                 return
         else:
             try:
-                database.update_ref_subcategory(self.txt_name.text(), self.cbx_category.currentData(),
+                database.update_subcategory(self.txt_name.text(), self.cbx_category.currentData(),
                                                 self.subcategory_id)
             except (sqlite3.Error, OSError) as exception:
                 error_code = sqlite_error.sqlite_err_handler(str(exception))

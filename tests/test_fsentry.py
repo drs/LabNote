@@ -28,8 +28,8 @@ class TestFSEntry(unittest.TestCase):
 
     def setUp(self):
         fsentry.create_main_directory()
-        database.insert_ref_category(self.category)
-        database.insert_ref_subcategory(self.subcategory, 1)
+        database.insert_category(self.category)
+        database.insert_subcategory(self.subcategory, 1)
         database.insert_ref(data.uuid_bytes(self.reference_uuid), self.reference_key, library.TYPE_ARTICLE, 1)
         database.insert_project(self.project_name)
 
