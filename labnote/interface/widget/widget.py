@@ -78,7 +78,7 @@ class CategoryFrame(QWidget):
 
         # Set style sheet
         self.frame.setStyleSheet("""
-        QFrame {
+        .QFrame {
             border-left: none;
             border-top: none;
             border-bottom: none;
@@ -108,6 +108,11 @@ class CategoryFrame(QWidget):
         # Create the treeview
         self.view_tree = DragDropTreeView()
         self.view_tree.setStyleSheet("""
+        QTreeView {
+            border: none;
+            background-color: rgb(246, 246, 246);
+        }
+        
         QTreeView::item:selected {
             background-color: rgb(216, 216, 216);
             color: black;
