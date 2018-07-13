@@ -9,36 +9,39 @@ import uuid
 import os
 
 # PyQt import
-from PyQt5.QtWidgets import QDialog, QGridLayout, QLabel, QMenu, QAction, QMessageBox,\
-    QAbstractItemView, QTreeView, QWidget, QVBoxLayout, QPlainTextEdit
-from PyQt5.QtCore import Qt, QRegExp, QModelIndex, QSettings, pyqtSignal, QFileInfo
-from PyQt5.QtGui import QFont, QRegExpValidator, QStandardItem, QColor, QPixmap, QPainter, QPen, QBrush
+from PyQt5.QtWidgets import QDialog, QGridLayout, QLabel, QMessageBox, QWidget, QVBoxLayout, QPlainTextEdit
+from PyQt5.QtCore import Qt, QRegExp, QSettings, pyqtSignal, QFileInfo
+from PyQt5.QtGui import QFont, QRegExpValidator, QColor, QPixmap, QPainter, QPen, QBrush
 
 # Project import
 from labnote.ui.ui_library import Ui_Library
-from labnote.core import stylesheet, sqlite_error, data
+from labnote.core import stylesheet, sqlite_error, data, labnote
 from labnote.interface.widget.textedit import TextEdit
-from labnote.interface.dialog.category import Category, Subcategory
 from labnote.utils import database, fsentry, directory
 from labnote.interface.widget.lineedit import LineEdit, NumberLineEdit, YearLineEdit, PagesLineEdit, SearchLineEdit
-from labnote.interface.widget.model import StandardItemModel
-from labnote.interface.widget.view import DragDropTreeView
+from labnote.interface.widget.widget import CategoryFrame
+from labnote.interface.widget import widget
+
 
 # Constant definition
 
 # Reference type
-TYPE_ARTICLE = 0
-TYPE_BOOK = 1
-TYPE_CHAPTER = 2
+TYPE_ARTICLE = labnote.TYPE_ARTICLE
+TYPE_BOOK = labnote.TYPE_BOOK
+TYPE_CHAPTER = labnote.TYPE_CHAPTER
+
+# Category frame content type
+TYPE_LIBRARY = labnote.TYPE_LIBRARY
+TYPE_PROTOCOL = labnote.TYPE_PROTOCOL
 
 # Data type
-QT_LevelRole = Qt.UserRole+1
-QT_StateRole = QT_LevelRole+1
+QT_LevelRole = labnote.QT_LevelRole
+QT_StateRole = labnote.QT_StateRole
 
 # Level type
-LEVEL_CATEGORY = 101
-LEVEL_SUBCATEGORY = 102
-LEVEL_REFERENCE = 103
+LEVEL_CATEGORY = labnote.LEVEL_CATEGORY
+LEVEL_SUBCATEGORY = labnote.LEVEL_SUBCATEGORY
+LEVEL_ENTRY = labnote.LEVEL_ENTRY
 
 
 class Library(QDialog, Ui_Library):
@@ -61,6 +64,7 @@ class Library(QDialog, Ui_Library):
         self.setupUi(self)
         self.init_ui()
         self.init_connection()
+        self.category_frame.show_list()
 
         # Show the dialog
         self.show()
@@ -74,10 +78,9 @@ class Library(QDialog, Ui_Library):
         self.txt_search = SearchLineEdit()
         self.layout_title.insertWidget(3, self.txt_search)
 
-        # Create the treeview
-        self.treeview = DragDropTreeView()
-        stylesheet.set_style_sheet(self.treeview, ":/StyleSheet/style-sheet/library/treeview.qss")
-        self.frame.layout().insertWidget(1, self.treeview)
+        # Create the category frame
+        self.category_frame = CategoryFrame('Bookshelf', widget.TYPE_LIBRARY)
+        self.main_frame.layout().insertWidget(0, self.category_frame)
 
         # Create the pdf widget
         self.pdf_box = QWidget()
@@ -105,59 +108,24 @@ class Library(QDialog, Ui_Library):
         validator = QRegExpValidator(QRegExp("^[a-zA-Z0-9_]+$"))
         self.txt_key.setValidator(validator)
 
-        # Create the manage button menu
-        self.manage_menu = QMenu(self)
-        self.manage_menu.setFont(QFont(self.font().family(), 13, QFont.Normal))
-        self.act_create_category = QAction("Create category", self)
-        self.act_create_category.triggered.connect(self.create_category)
-        self.manage_menu.addAction(self.act_create_category)
-        self.act_update_category = QAction("Update category", self)
-        self.act_update_category.triggered.connect(self.update_category)
-        self.act_update_category.setEnabled(False)
-        self.manage_menu.addAction(self.act_update_category)
-        self.act_delete_category = QAction("Delete category", self)
-        self.act_delete_category.triggered.connect(self.delete_category)
-        self.act_delete_category.setEnabled(False)
-        self.manage_menu.addAction(self.act_delete_category)
-        self.manage_menu.addSeparator()
-        self.act_create_subcategory = QAction("Create subcategory", self)
-        self.act_create_subcategory.triggered.connect(self.create_subcategory)
-        self.manage_menu.addAction(self.act_create_subcategory)
-        self.act_update_subcategory = QAction("Update subcategory", self)
-        self.act_update_subcategory.triggered.connect(self.update_subcategory)
-        self.act_update_subcategory.setEnabled(False)
-        self.manage_menu.addAction(self.act_update_subcategory)
-        self.act_delete_subcategory = QAction("Delete subcategory", self)
-        self.act_delete_subcategory.triggered.connect(self.delete_subcategory)
-        self.act_delete_subcategory.setEnabled(False)
-        self.manage_menu.addAction(self.act_delete_subcategory)
-        self.manage_menu.addSeparator()
-        self.act_delete_reference = QAction("Delete reference", self)
-        self.act_delete_reference.triggered.connect(self.delete_reference)
-        self.act_delete_reference.setEnabled(False)
-        self.manage_menu.addAction(self.act_delete_reference)
-        self.btn_manage.setMenu(self.manage_menu)
-
         # Focus policy
         self.txt_search.setFocusPolicy(self.txt_search.focusPolicy() ^ Qt.TabFocus)
 
-        # Manage list
-        self.show_list()
-        self.treeview.header().hide()
-        self.treeview.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        self.treeview.setDragDropMode(QAbstractItemView.InternalMove)
-
     def init_connection(self):
         self.comboBox.currentTextChanged.connect(self.show_field)
-        self.btn_add.clicked.connect(self.start_creating_reference)
+        self.category_frame.btn_add.clicked.connect(self.start_creating_reference)
         self.btn_save.clicked.connect(self.process_reference)
-        self.treeview.collapsed.connect(self.save_treeview_state)
-        self.treeview.expanded.connect(self.save_treeview_state)
-        self.treeview.drop_finished.connect(self.drop_finished)
+        self.category_frame.view_tree.collapsed.connect(self.save_treeview_state)
+        self.category_frame.view_tree.expanded.connect(self.save_treeview_state)
+        self.category_frame.view_tree.drop_finished.connect(self.drop_finished)
         self.pdf_widget.pdf_dropped.connect(self.add_pdf)
         self.pdf_widget.delete.connect(self.remove_pdf)
         self.pdf_added.connect(self.pdf_widget.show_pdf)
         self.pdf_deleted.connect(self.pdf_widget.remove_pdf)
+        self.category_frame.delete.connect(self.delete_reference)
+        self.category_frame.list_displayed.connect(self.restore_treeview_state)
+        self.category_frame.reference_selected.connect(self.show_reference_details)
+        self.category_frame.selection_changed.connect(self.clear_form)
 
     def get_tag_list(self):
         """ Get the list of all tag """
@@ -177,8 +145,7 @@ class Library(QDialog, Ui_Library):
 
     def add_tag(self, tag):
         """ Add tag to the reference """
-        index = self.treeview.selectionModel().currentIndex()
-        ref_uuid = index.data(Qt.UserRole)
+        ref_uuid = self.category_frame.get_user_data()
 
         try:
             database.insert_tag_ref(ref_uuid=ref_uuid, name=tag)
@@ -208,8 +175,8 @@ class Library(QDialog, Ui_Library):
         :param file: PDF file URL
         :type file: str
         """
-        index = self.treeview.selectionModel().currentIndex()
-        ref_uuid = index.data(Qt.UserRole)
+        ref_uuid = self.category_frame.get_user_data()
+        print(ref_uuid)
 
         try:
             reference_file = fsentry.add_reference_pdf(ref_uuid=ref_uuid, file=file)
@@ -225,8 +192,7 @@ class Library(QDialog, Ui_Library):
 
     def remove_pdf(self):
         """ Remove the PDF from the database and file structure """
-        index = self.treeview.selectionModel().currentIndex()
-        ref_uuid = index.data(Qt.UserRole)
+        ref_uuid = self.category_frame.get_user_data()
         try:
             fsentry.delete_reference_pdf(ref_uuid=ref_uuid)
         except (sqlite3.Error, OSError) as exception:
@@ -245,7 +211,7 @@ class Library(QDialog, Ui_Library):
         subcategory = self.get_subcategory(index)
 
         try:
-            database.update_reference_category(self.treeview.selectedIndexes()[0].data(Qt.UserRole),
+            database.update_reference_category(self.view_tree.selectedIndexes()[0].data(Qt.UserRole),
                                                category, subcategory)
         except sqlite3.Error as exception:
             message = QMessageBox(QMessageBox.Warning, "Error while loading data",
@@ -255,41 +221,12 @@ class Library(QDialog, Ui_Library):
             message.exec()
             return
 
-        self.show_list()
+        self.category_frame.show_list()
 
-    def selection_changed(self):
-        # Get the category informations
-        self.clear_form()
-
-        index = self.treeview.selectionModel().currentIndex()
-        hierarchy_level = self.get_hierarchy_level(index)
-
-        if hierarchy_level == 1:
-            self.act_update_subcategory.setEnabled(False)
-            self.act_delete_subcategory.setEnabled(False)
-            self.act_update_category.setEnabled(True)
-            self.act_delete_category.setEnabled(True)
-        elif hierarchy_level == 2:
-            self.act_update_category.setEnabled(False)
-            self.act_delete_category.setEnabled(False)
-            if index.data(QT_LevelRole) == LEVEL_REFERENCE:
-                self.show_reference_details(index.data(Qt.UserRole))
-                self.act_delete_reference.setEnabled(True)
-            else:
-                self.act_update_subcategory.setEnabled(True)
-                self.act_delete_subcategory.setEnabled(True)
-        elif hierarchy_level == 3:
-            self.act_update_subcategory.setEnabled(False)
-            self.act_delete_subcategory.setEnabled(False)
-            self.act_update_category.setEnabled(False)
-            self.act_delete_category.setEnabled(False)
-            self.act_delete_reference.setEnabled(True)
-            self.show_reference_details(index.data(Qt.UserRole))
-
-    def show_reference_details(self, uuid):
+    def show_reference_details(self, ref_uuid):
         """ Show a reference details when it is selected """
         try:
-            reference = database.select_reference(uuid)
+            reference = database.select_reference(ref_uuid)
         except sqlite3.Error as exception:
             message = QMessageBox(QMessageBox.Warning, "Error while loading data",
                                   "An error occurred while loading the reference data.", QMessageBox.Ok)
@@ -344,72 +281,11 @@ class Library(QDialog, Ui_Library):
             file = os.path.join(directory.REFERENCES_DIRECTORY_PATH + "/{}".format(uuid))
             self.pdf_widget.show_pdf(file=file)
 
-    def show_list(self):
-        """ Show the category, subcategory and references list """
-
-        reference_list = None
-
-        try:
-            reference_list = database.select_reference_category()
-        except sqlite3.Error as exception:
-            message = QMessageBox(QMessageBox.Warning, "Error while loading data",
-                                  "An error occurred while loading the references data.", QMessageBox.Ok)
-            message.setWindowTitle("LabNote")
-            message.setDetailedText(str(exception))
-            message.exec()
-            return
-
-        model = StandardItemModel()
-        root = model.invisibleRootItem()
-
-        if reference_list:
-            for category in reference_list:
-                category_item = QStandardItem(category.name)
-                category_item.setData(category.id, Qt.UserRole)
-                category_item.setData(self.prepare_category_data_string(category.id), QT_StateRole)
-                category_item.setData(LEVEL_CATEGORY, QT_LevelRole)
-                category_item.setFont(QFont(self.font().family(), 12, QFont.Bold))
-                category_item.setDragEnabled(False)
-                root.appendRow(category_item)
-
-                if category.subcategory:
-                    for subcategory in category.subcategory:
-                        subcategory_item = QStandardItem(subcategory.name)
-                        subcategory_item.setData(subcategory.id, Qt.UserRole)
-                        subcategory_item.setData(self.prepare_subcategory_data_string(subcategory.id), QT_StateRole)
-                        subcategory_item.setData(LEVEL_SUBCATEGORY, QT_LevelRole)
-                        subcategory_item.setDragEnabled(False)
-                        category_item.appendRow(subcategory_item)
-
-                        if subcategory.reference:
-                            for reference in subcategory.reference:
-                                author = reference.author.split()[0]
-                                label = "{} ({}), {}".format(author, reference.year, reference.title)
-                                reference_item = QStandardItem(label)
-                                reference_item.setData(reference.uuid, Qt.UserRole)
-                                reference_item.setData(LEVEL_REFERENCE, QT_LevelRole)
-                                reference_item.setForeground(QColor(96, 96, 96))
-                                subcategory_item.appendRow(reference_item)
-                if category.reference:
-                    for reference in category.reference:
-                        author = reference.author.split()[0]
-                        label = "{} ({}), {}".format(author, reference.year, reference.title)
-                        reference_item = QStandardItem(label)
-                        reference_item.setData(reference.uuid, Qt.UserRole)
-                        reference_item.setData(LEVEL_REFERENCE, QT_LevelRole)
-                        reference_item.setForeground(QColor(96, 96, 96))
-                        category_item.appendRow(reference_item)
-
-        self.treeview.setModel(model)
-        self.treeview.selectionModel().currentChanged.connect(self.selection_changed)
-        self.restore_treeview_state()
-
     def start_creating_reference(self):
         """ Enable new reference creation """
-        index = self.treeview.selectionModel().currentIndex()
-        if index.data(QT_LevelRole) == LEVEL_CATEGORY or \
-                index.data(QT_LevelRole) == LEVEL_SUBCATEGORY or \
-                index.data(QT_LevelRole) == LEVEL_REFERENCE:
+        if self.category_frame.get_current_level() == LEVEL_CATEGORY or \
+                self.category_frame.get_current_level() == LEVEL_SUBCATEGORY or \
+                self.category_frame.get_current_level() == LEVEL_ENTRY:
             self.article_field()
             self.txt_key.clear()
             self.creating_reference = True
@@ -425,225 +301,18 @@ class Library(QDialog, Ui_Library):
         self.enable_all(False)
         self.pdf_widget.clear_form()
 
-    def get_category(self, index):
-        """ Return a category id
-
-        :param index: Item index
-        :type index: QModelIndex
-        :return int: Category id
-        """
-        hierarchy_level = self.get_hierarchy_level(index)
-
-        if hierarchy_level == 1:
-            print(index.data(Qt.UserRole))
-            return index.data(Qt.UserRole)
-        elif hierarchy_level == 2:
-            return index.parent().data(Qt.UserRole)
-        elif hierarchy_level == 3:
-            parent = index.parent()
-            return parent.parent().data(Qt.UserRole)
-        else:
-            return None
-
-    def get_subcategory(self, index):
-        """ Return a subcategory id
-
-        :param index: Item index
-        :type index: QModelIndex
-        :return int: Subcategory id
-        """
-        hierarchy_level = self.get_hierarchy_level(index)
-
-        if hierarchy_level == 2:
-            return index.data(Qt.UserRole)
-        elif hierarchy_level == 3:
-            return index.parent().data(Qt.UserRole)
-        else:
-            return None
-
-    def is_category(self, index):
-        """ Return true if the index is a category
-
-        :param index: Item index
-        :type index: QModelIndex
-        :return bool: True if the index is a category
-        """
-        if self.get_hierarchy_level(index) == 1:
-            return True
-        return False
-
-    def is_subcategory(self, index):
-        """ Return true if the index is a subcategory
-
-        :param index: Item index
-        :type index: QModelIndex
-        :return bool: True if the index is a subcategory
-        """
-        if self.get_hierarchy_level(index) == 2:
-            return True
-        return False
-
-    def is_reference(self, index):
-        """ Return true if the index is a reference
-
-        :param index: Item index
-        :type index: QModelIndex
-        :return bool: True if the index is a reference
-        """
-        if self.get_hierarchy_level(index) == 3:
-            return True
-        return False
-
-    def get_hierarchy_level(self, index):
-        """ Get the hierarchy level for the index
-
-        :param index: Item index
-        :type index: QModelIndex
-        :return int: Hierarchy level
-        """
-        hierarchy_level = 1
-        seek_root = index
-
-        while seek_root.parent() != QModelIndex():
-            seek_root = seek_root.parent()
-            hierarchy_level = hierarchy_level + 1
-
-        return hierarchy_level
-
-    def update_category(self):
-        """ Show a dialog to update a category """
-
-        # Get the category informations
-        index = self.treeview.selectionModel().currentIndex()
-
-        if self.is_category(index):
-            name = index.data(Qt.DisplayRole)
-            selected_id = index.data(Qt.UserRole)
-
-            # Show the dialog
-            category = Category(name, selected_id)
-            category.lbl_title.setText("Update a category")
-            category.setWindowModality(Qt.WindowModal)
-            category.setParent(self, Qt.Sheet)
-            category.show()
-            category.accepted.connect(self.show_list)
-
-    def create_category(self):
-        """ Show a sheet dialog to create a new category """
-        category = Category()
-        category.lbl_title.setText("Create a new category")
-        category.setWindowModality(Qt.WindowModal)
-        category.setParent(self, Qt.Sheet)
-        category.show()
-        category.accepted.connect(self.show_list)
-
-    def delete_category(self):
-        """ Delete an existing category """
-
-        # Get the category informations
-        index = self.treeview.selectionModel().currentIndex()
-
-        if self.is_category(index):
-            selected_id = index.data(Qt.UserRole)
-
-            try:
-                database.delete_ref_category(selected_id)
-            except sqlite3.Error as exception:
-                error_code = sqlite_error.sqlite_err_handler(str(exception))
-
-                if error_code == sqlite_error.FOREIGN_KEY_CODE:
-                    message = QMessageBox()
-                    message.setWindowTitle("LabNote")
-                    message.setText("Unable to delete category")
-                    message.setInformativeText("Only empty category can be deleted.")
-                    message.setIcon(QMessageBox.Information)
-                    message.setStandardButtons(QMessageBox.Ok)
-                    message.exec()
-                    return
-                else:
-                    message = QMessageBox(QMessageBox.Warning, "Error deleting the category",
-                                          "An error occurred while deleting the category.", QMessageBox.Ok)
-                    message.setWindowTitle("LabNote")
-                    message.setDetailedText(str(exception))
-                    message.exec()
-                    return
-            self.show_list()
-
-    def create_subcategory(self):
-        """ Show a sheet dialog to create a new subcategory """
-        category = Subcategory()
-        category.lbl_title.setText("Create a new subcategory")
-        category.setWindowModality(Qt.WindowModal)
-        category.setParent(self, Qt.Sheet)
-        category.show()
-        category.accepted.connect(self.show_list)
-
-    def update_subcategory(self):
-        """ Show a dialog to update a category """
-
-        # Get the subcategory informations
-        index = self.treeview.selectionModel().currentIndex()
-
-        if self.is_subcategory(index):
-            name = index.data(Qt.DisplayRole)
-            selected_id = index.data(Qt.UserRole)
-
-            # Show the dialog
-            subcategory = Subcategory(name, selected_id)
-            subcategory.lbl_title.setText("Update a subcategory")
-            subcategory.setWindowModality(Qt.WindowModal)
-            subcategory.setParent(self, Qt.Sheet)
-            subcategory.show()
-            subcategory.accepted.connect(self.show_list)
-
-    def delete_subcategory(self):
-        """ Delete a subcategory """
-        # Get the subcategory informations
-        index = self.treeview.selectionModel().currentIndex()
-
-        if self.is_subcategory(index):
-            selected_id = index.data(Qt.UserRole)
-
-            try:
-                database.delete_ref_subcategory(selected_id)
-            except sqlite3.Error as exception:
-                error_code = sqlite_error.sqlite_err_handler(str(exception))
-
-                if error_code == sqlite_error.FOREIGN_KEY_CODE:
-                    message = QMessageBox()
-                    message.setWindowTitle("LabNote")
-                    message.setText("Unable to delete subcategory")
-                    message.setInformativeText("Only empty subcategory can be deleted.")
-                    message.setIcon(QMessageBox.Information)
-                    message.setStandardButtons(QMessageBox.Ok)
-                    message.exec()
-                    return
-                else:
-                    message = QMessageBox(QMessageBox.Warning, "Error deleting the subcategory",
-                                          "An error occurred while deleting the subcategory.", QMessageBox.Ok)
-                    message.setWindowTitle("LabNote")
-                    message.setDetailedText(str(exception))
-                    message.exec()
-                    return
-            self.show_list()
-
-    def delete_reference(self):
+    def delete_reference(self, ref_uuid):
         """ Delete a reference """
-        index = self.treeview.selectionModel().currentIndex()
-
-        if self.is_reference(index):
-            ref_uuid = index.data(Qt.UserRole)
-
-            try:
-                database.delete_reference(ref_uuid=ref_uuid)
-            except sqlite3.Error as exception:
-                message = QMessageBox(QMessageBox.Warning, "Unable to delete reference",
-                                      "An error occurred while deleting the reference.", QMessageBox.Ok)
-                message.setWindowTitle("LabNote")
-                message.setDetailedText(str(exception))
-                message.exec()
-                return
-            self.show_list()
+        try:
+            database.delete_reference(ref_uuid=ref_uuid)
+        except sqlite3.Error as exception:
+            message = QMessageBox(QMessageBox.Warning, "Unable to delete reference",
+                                  "An error occurred while deleting the reference.", QMessageBox.Ok)
+            message.setWindowTitle("LabNote")
+            message.setDetailedText(str(exception))
+            message.exec()
+            return
+        self.category_frame.show_list()
 
     def delete_layout(self, layout):
         """ Delete any layout """
@@ -682,11 +351,9 @@ class Library(QDialog, Ui_Library):
         key = self.txt_key.text()
 
         if key:
-            # Get the current index
-            index = self.treeview.selectionModel().currentIndex()
-
-            category_id = self.get_category(index)
-            subcategory_id = self.get_subcategory(index)
+            # Get the current item data
+            category_id = self.category_frame.get_category()
+            subcategory_id = self.category_frame.get_subcategory()
 
             if category_id:
                 ref_type = self.comboBox.currentText()
@@ -776,7 +443,7 @@ class Library(QDialog, Ui_Library):
                             message.exec()
                             return
                 else:
-                    ref_uuid = index.data(Qt.UserRole)
+                    ref_uuid = self.category_frame.get_user_data()
                     try:
                         if ref_type == "Article":
                             database.update_ref(ref_uuid=ref_uuid, ref_key=key, ref_type=TYPE_ARTICLE, author=author,
@@ -820,7 +487,6 @@ class Library(QDialog, Ui_Library):
                             message.setDetailedText(str(exception))
                             message.exec()
                             return
-                self.show_list()
 
     def reset_fields(self):
         self.txt_key.clear()
@@ -854,80 +520,6 @@ class Library(QDialog, Ui_Library):
         """ Delete the grid layout """
         self.delete_layout(self.grid_layout)
         self.create_grid()
-
-    def article_field(self, fields=None):
-        """ Show all the article related fields in the layout """
-        self.prepare_grid()
-
-        self.lbl_author = QLabel("Author")
-        self.lbl_author.setFont(QFont(self.font().family(), weight=QFont.Bold))
-        self.grid_layout.addWidget(self.lbl_author, 0, 0)
-        self.txt_author = LineEdit()
-        self.grid_layout.addWidget(self.txt_author, 0, 1)
-
-        self.lbl_title = QLabel("Title")
-        self.lbl_title.setFont(QFont(self.font().family(), weight=QFont.Bold))
-        self.grid_layout.addWidget(self.lbl_title, 1, 0)
-        self.txt_title = LineEdit()
-        self.grid_layout.addWidget(self.txt_title, 1, 1)
-
-        self.lbl_journal = QLabel("Journal")
-        self.lbl_journal.setFont(QFont(self.font().family(), weight=QFont.Bold))
-        self.grid_layout.addWidget(self.lbl_journal, 2, 0)
-        self.txt_journal = LineEdit()
-        self.grid_layout.addWidget(self.txt_journal, 2, 1)
-
-        self.lbl_year = QLabel("Year")
-        self.lbl_year.setFont(QFont(self.font().family(), weight=QFont.Bold))
-        self.grid_layout.addWidget(self.lbl_year, 3, 0)
-        self.txt_year = YearLineEdit()
-        self.grid_layout.addWidget(self.txt_year, 3, 1)
-
-        self.lbl_volume = QLabel("Volume")
-        self.grid_layout.addWidget(self.lbl_volume, 4, 0)
-        self.txt_volume = NumberLineEdit()
-        self.grid_layout.addWidget(self.txt_volume, 4, 1)
-
-        self.lbl_issue = QLabel("Issue")
-        self.grid_layout.addWidget(self.lbl_issue, 5, 0)
-        self.txt_issue = NumberLineEdit()
-        self.grid_layout.addWidget(self.txt_issue, 5, 1)
-
-        self.lbl_pages = QLabel("Pages")
-        self.grid_layout.addWidget(self.lbl_pages, 6, 0)
-        self.txt_pages = PagesLineEdit()
-        self.grid_layout.addWidget(self.txt_pages, 6, 1)
-
-        self.lbl_description = QLabel("Description")
-        self.lbl_description.setAlignment(Qt.AlignTop | Qt.AlignLeft)
-        self.grid_layout.addWidget(self.lbl_description, 7, 0)
-        self.txt_description = TextEdit(self.tag_list)
-        self.txt_description.create_tag.connect(self.add_tag)
-        self.txt_description.delete_tag.connect(self.remove_tag)
-        self.grid_layout.addWidget(self.txt_description, 7, 1)
-
-        self.lbl_abstract = QLabel("Abstract")
-        self.lbl_abstract.setAlignment(Qt.AlignTop | Qt.AlignLeft)
-        self.grid_layout.addWidget(self.lbl_abstract, 8, 0)
-        self.txt_abstract = QPlainTextEdit()
-        self.grid_layout.addWidget(self.txt_abstract, 8, 1)
-
-        if fields:
-            self.txt_author.setText(fields['author'])
-            self.txt_title.setText(fields['title'])
-            self.txt_journal.setText(fields['journal'])
-            self.txt_year.setText(fields['year'])
-            self.txt_volume.setText(fields['volume'])
-            self.txt_issue.setText(fields['issue'])
-            self.txt_pages.setText(fields['pages'])
-
-            if fields['description']:
-                self.txt_description.setHtml(fields['description'])
-
-            if fields['abstract']:
-                self.txt_abstract.setHtml(fields['abstract'])
-
-        self.detail_layout.insertLayout(1, self.grid_layout)
 
     def save_fields(self):
         """ Save all the article fields
@@ -1025,6 +617,80 @@ class Library(QDialog, Ui_Library):
                 'issue': issue,
                 'description': description,
                 'abstract': abstract}
+
+    def article_field(self, fields=None):
+        """ Show all the article related fields in the layout """
+        self.prepare_grid()
+
+        self.lbl_author = QLabel("Author")
+        self.lbl_author.setFont(QFont(self.font().family(), weight=QFont.Bold))
+        self.grid_layout.addWidget(self.lbl_author, 0, 0)
+        self.txt_author = LineEdit()
+        self.grid_layout.addWidget(self.txt_author, 0, 1)
+
+        self.lbl_title = QLabel("Title")
+        self.lbl_title.setFont(QFont(self.font().family(), weight=QFont.Bold))
+        self.grid_layout.addWidget(self.lbl_title, 1, 0)
+        self.txt_title = LineEdit()
+        self.grid_layout.addWidget(self.txt_title, 1, 1)
+
+        self.lbl_journal = QLabel("Journal")
+        self.lbl_journal.setFont(QFont(self.font().family(), weight=QFont.Bold))
+        self.grid_layout.addWidget(self.lbl_journal, 2, 0)
+        self.txt_journal = LineEdit()
+        self.grid_layout.addWidget(self.txt_journal, 2, 1)
+
+        self.lbl_year = QLabel("Year")
+        self.lbl_year.setFont(QFont(self.font().family(), weight=QFont.Bold))
+        self.grid_layout.addWidget(self.lbl_year, 3, 0)
+        self.txt_year = YearLineEdit()
+        self.grid_layout.addWidget(self.txt_year, 3, 1)
+
+        self.lbl_volume = QLabel("Volume")
+        self.grid_layout.addWidget(self.lbl_volume, 4, 0)
+        self.txt_volume = NumberLineEdit()
+        self.grid_layout.addWidget(self.txt_volume, 4, 1)
+
+        self.lbl_issue = QLabel("Issue")
+        self.grid_layout.addWidget(self.lbl_issue, 5, 0)
+        self.txt_issue = NumberLineEdit()
+        self.grid_layout.addWidget(self.txt_issue, 5, 1)
+
+        self.lbl_pages = QLabel("Pages")
+        self.grid_layout.addWidget(self.lbl_pages, 6, 0)
+        self.txt_pages = PagesLineEdit()
+        self.grid_layout.addWidget(self.txt_pages, 6, 1)
+
+        self.lbl_description = QLabel("Description")
+        self.lbl_description.setAlignment(Qt.AlignTop | Qt.AlignLeft)
+        self.grid_layout.addWidget(self.lbl_description, 7, 0)
+        self.txt_description = TextEdit(self.tag_list)
+        self.txt_description.create_tag.connect(self.add_tag)
+        self.txt_description.delete_tag.connect(self.remove_tag)
+        self.grid_layout.addWidget(self.txt_description, 7, 1)
+
+        self.lbl_abstract = QLabel("Abstract")
+        self.lbl_abstract.setAlignment(Qt.AlignTop | Qt.AlignLeft)
+        self.grid_layout.addWidget(self.lbl_abstract, 8, 0)
+        self.txt_abstract = QPlainTextEdit()
+        self.grid_layout.addWidget(self.txt_abstract, 8, 1)
+
+        if fields:
+            self.txt_author.setText(fields['author'])
+            self.txt_title.setText(fields['title'])
+            self.txt_journal.setText(fields['journal'])
+            self.txt_year.setText(fields['year'])
+            self.txt_volume.setText(fields['volume'])
+            self.txt_issue.setText(fields['issue'])
+            self.txt_pages.setText(fields['pages'])
+
+            if fields['description']:
+                self.txt_description.setHtml(fields['description'])
+
+            if fields['abstract']:
+                self.txt_abstract.setHtml(fields['abstract'])
+
+        self.detail_layout.insertLayout(1, self.grid_layout)
 
     def book_field(self, fields=None):
         """ Show all the book related fields in the layout """
@@ -1195,28 +861,6 @@ class Library(QDialog, Ui_Library):
 
         self.detail_layout.insertLayout(1, self.grid_layout)
 
-    def prepare_category_data_string(self, id):
-        """ Add a 'C' before the category data string
-
-        This is required to save the treeview state as the category and subcategory id are identical
-
-        :param id: Category id
-        :type id: int
-        :return str: C + id
-        """
-        return "C{}".format(id)
-
-    def prepare_subcategory_data_string(self, id):
-        """ Add an 'S' before the subcategory data string
-
-        This is required to save the treeview state as the category and subcategory id are identical
-
-        :param id: Subcategory id
-        :type id: int
-        :return str: S + id
-        """
-        return "S{}".format(id)
-
     def closeEvent(self, event):
         self.save_treeview_state()
         self.save_settings()
@@ -1244,8 +888,8 @@ class Library(QDialog, Ui_Library):
 
         # Generate list
         expanded_item = []
-        for index in self.treeview.model().get_persistant_index_list():
-            if self.treeview.isExpanded(index) and index.data(QT_StateRole):
+        for index in self.category_frame.view_tree.model().get_persistant_index_list():
+            if self.category_frame.view_tree.isExpanded(index) and index.data(QT_StateRole):
                 expanded_item.append(index.data(QT_StateRole))
 
         # Save list
@@ -1264,14 +908,14 @@ class Library(QDialog, Ui_Library):
         selected_item = settings.value("SelectedItem")
         settings.endGroup()
 
-        model = self.treeview.model()
+        model = self.category_frame.view_tree.model()
 
         if expanded_item:
             for item in expanded_item:
                 match = model.match(model.index(0, 0), QT_StateRole, item, 1, Qt.MatchRecursive)
 
                 if match:
-                    self.treeview.setExpanded(match[0], True)
+                    self.category_frame.view_tree.setExpanded(match[0], True)
 
 
 class PDFWidget(QWidget):

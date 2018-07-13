@@ -917,8 +917,8 @@ def select_reference_category():
     conn.close()
 
     # Return the references list
-    Category = namedtuple('Category', ['id', 'name', 'subcategory', 'reference'])
-    SubCategory = namedtuple('Subcategory', ['id', 'name', 'reference'])
+    Category = namedtuple('Category', ['id', 'name', 'subcategory', 'entry'])
+    SubCategory = namedtuple('Subcategory', ['id', 'name', 'entry'])
     Reference = namedtuple('Reference', ['uuid', 'title', 'author', 'year'])
 
     category_list = []
