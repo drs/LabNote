@@ -22,6 +22,7 @@
         <file>style-sheet/library/treeview.qss</file>
         <file>style-sheet/sample.qss</file>
         <file>style-sheet/dataset.qss</file>
+        <file>style-sheet/protocol.qss</file>
     </qresource>
     <qresource prefix="/Icons/NewNotebook">
         <file>icons/new-notebook/1xnotebook.png</file>

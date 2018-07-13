@@ -14,7 +14,7 @@ from PyQt5.QtCore import Qt, QSettings, QByteArray, pyqtSignal
 from labnote.ui.ui_mainwindow import Ui_MainWindow
 from labnote.core import stylesheet
 from labnote.utils import database, directory, fsentry
-from labnote.interface import project, library, sample, dataset
+from labnote.interface import project, library, sample, dataset, protocol
 from labnote.interface.dialog.notebook import Notebook
 from labnote.interface.widget.lineedit import SearchLineEdit
 from labnote.interface.widget.view import TreeView
@@ -131,6 +131,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.act_library.triggered.connect(self.open_library)
         self.act_samples.triggered.connect(self.open_sample_number)
         self.act_dataset.triggered.connect(self.open_dataset)
+        self.act_protocols.triggered.connect(self.open_protocol)
 
     """
     General functions
@@ -190,6 +191,10 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def open_dataset(self):
         """ Open the dataset dialog """
         dataset.Dataset(self)
+
+    def open_protocol(self):
+        """ Open the protocol dialog """
+        protocol.Protocol(self)
 
     """
     Notebook list functions

@@ -17,6 +17,26 @@ from labnote.interface.dialog.category import Category, Subcategory
 from labnote.utils import database
 from labnote.core import sqlite_error, labnote
 
+# Constant definition
+
+# Reference type
+TYPE_ARTICLE = labnote.TYPE_ARTICLE
+TYPE_BOOK = labnote.TYPE_BOOK
+TYPE_CHAPTER = labnote.TYPE_CHAPTER
+
+# Category frame content type
+TYPE_LIBRARY = labnote.TYPE_LIBRARY
+TYPE_PROTOCOL = labnote.TYPE_PROTOCOL
+
+# Data type
+QT_LevelRole = labnote.QT_LevelRole
+QT_StateRole = labnote.QT_StateRole
+
+# Level type
+LEVEL_CATEGORY = labnote.LEVEL_CATEGORY
+LEVEL_SUBCATEGORY = labnote.LEVEL_SUBCATEGORY
+LEVEL_ENTRY = labnote.LEVEL_ENTRY
+
 
 class NoEntryWidget(QWidget):
     """Widget that indicate that no entry is selected """
@@ -40,27 +60,6 @@ class NoEntryWidget(QWidget):
         main_layout = QVBoxLayout(self)
         main_layout.addWidget(lbl_no_entry_image)
         main_layout.addWidget(lbl_no_entry)
-
-
-# Constant definition
-
-# Reference type
-TYPE_ARTICLE = labnote.TYPE_ARTICLE
-TYPE_BOOK = labnote.TYPE_BOOK
-TYPE_CHAPTER = labnote.TYPE_CHAPTER
-
-# Category frame content type
-TYPE_LIBRARY = labnote.TYPE_LIBRARY
-TYPE_PROTOCOL = labnote.TYPE_PROTOCOL
-
-# Data type
-QT_LevelRole = labnote.QT_LevelRole
-QT_StateRole = labnote.QT_StateRole
-
-# Level type
-LEVEL_CATEGORY = labnote.LEVEL_CATEGORY
-LEVEL_SUBCATEGORY = labnote.LEVEL_SUBCATEGORY
-LEVEL_ENTRY = labnote.LEVEL_ENTRY
 
 
 class CategoryFrame(QWidget):
