@@ -68,7 +68,7 @@ class CategoryFrame(QWidget):
 
     # Signal definition
     delete = pyqtSignal(str)  # Delete the entry
-    reference_selected = pyqtSignal(str)  # A reference is selected in the treeview
+    entry_selected = pyqtSignal(str)  # A reference is selected in the treeview
     selection_changed = pyqtSignal()  # Everything except a reference is selected in the treeview
     list_displayed = pyqtSignal()  # The list showed in the treeview
 
@@ -369,12 +369,13 @@ class CategoryFrame(QWidget):
     def show_list(self):
         """ Show the category, subcategory and entry list """
 
-        reference_list = None
+        entry_list = None
 
         try:
             if self.frame_type == TYPE_LIBRARY:
-                reference_list = database.select_reference_category()
+                entry_list = database.select_reference_category()
             elif self.frame_type == TYPE_PROTOCOL:
+                entry_list = database.select_protocol_category()
 
         except sqlite3.Error as exception:
             message = QMessageBox(QMessageBox.Warning, "Error while loading data",
@@ -387,8 +388,8 @@ class CategoryFrame(QWidget):
         model = StandardItemModel()
         root = model.invisibleRootItem()
 
-        if reference_list:
-            for category in reference_list:
+        if entry_list:
+            for category in entry_list:
                 category_item = QStandardItem(category.name)
                 category_item.setData(category.id, Qt.UserRole)
                 category_item.setData(self.prepare_category_data_string(category.id), QT_StateRole)
@@ -447,7 +448,7 @@ class CategoryFrame(QWidget):
             self.act_delete_category.setEnabled(False)
             self.act_delete.setEnabled(False)
             if index.data(QT_LevelRole) == LEVEL_ENTRY:
-                self.reference_selected.emit(index.data(Qt.UserRole))
+                self.entry_selected.emit(index.data(Qt.UserRole))
                 self.act_delete.setEnabled(True)
             else:
                 self.act_update_subcategory.setEnabled(True)
@@ -458,7 +459,7 @@ class CategoryFrame(QWidget):
             self.act_update_category.setEnabled(False)
             self.act_delete_category.setEnabled(False)
             self.act_delete.setEnabled(True)
-            self.reference_selected.emit(index.data(Qt.UserRole))
+            self.entry_selected.emit(index.data(Qt.UserRole))
 
     def get_subcategory(self):
         """ Return the current subcategory id
