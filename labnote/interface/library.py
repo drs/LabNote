@@ -65,6 +65,7 @@ class Library(QDialog, Ui_Library):
         self.init_ui()
         self.init_connection()
         self.category_frame.show_list()
+        self.get_tag_list()
 
         # Show the dialog
         self.show()
@@ -124,7 +125,7 @@ class Library(QDialog, Ui_Library):
         self.pdf_deleted.connect(self.pdf_widget.remove_pdf)
         self.category_frame.delete.connect(self.delete_reference)
         self.category_frame.list_displayed.connect(self.restore_treeview_state)
-        self.category_frame.reference_selected.connect(self.show_reference_details)
+        self.category_frame.entry_selected.connect(self.show_reference_details)
         self.category_frame.selection_changed.connect(self.clear_form)
 
     def get_tag_list(self):
