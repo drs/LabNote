@@ -16,6 +16,7 @@ from labnote.interface.widget.model import StandardItemModel
 from labnote.interface.dialog.category import Category, Subcategory
 from labnote.utils import database
 from labnote.core import sqlite_error, labnote
+from labnote.ui.widget.ui_texteditor import Ui_TextEditor
 
 # Constant definition
 
@@ -572,3 +573,11 @@ class CategoryFrame(QWidget):
         :return str: S + id
         """
         return "S{}".format(id)
+
+
+class TextEditor(QWidget, Ui_TextEditor):
+    """ Complex text editor """
+    def __init__(self):
+        super(TextEditor, self).__init__()
+        self.setupUi(self)
+
