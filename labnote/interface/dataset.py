@@ -194,7 +194,7 @@ class Dataset(QDialog, Ui_Dataset):
                 message.exec()
                 return
 
-            layout.empty_layout(self.layout_entry)
+            layout.empty_layout(self, self.layout_entry)
             self.show_dataset(index)
 
     def open_dataset(self):
@@ -253,7 +253,7 @@ class Dataset(QDialog, Ui_Dataset):
     def selection_changed(self):
         """ Update the interface according to the selected item in the tree """
 
-        layout.empty_layout(self.layout_entry)
+        layout.empty_layout(self, self.layout_entry)
 
         index = self.view_dataset.selectionModel().currentIndex()
         hierarchy_level = self.get_hierarchy_level(index)
