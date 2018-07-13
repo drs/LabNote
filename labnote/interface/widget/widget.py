@@ -15,28 +15,28 @@ from labnote.interface.widget.view import DragDropTreeView
 from labnote.interface.widget.model import StandardItemModel
 from labnote.interface.dialog.category import Category, Subcategory
 from labnote.utils import database
-from labnote.core import sqlite_error, labnote
+from labnote.core import sqlite_error, common
 from labnote.ui.widget.ui_texteditor import Ui_TextEditor
 
 # Constant definition
 
 # Reference type
-TYPE_ARTICLE = labnote.TYPE_ARTICLE
-TYPE_BOOK = labnote.TYPE_BOOK
-TYPE_CHAPTER = labnote.TYPE_CHAPTER
+TYPE_ARTICLE = common.TYPE_ARTICLE
+TYPE_BOOK = common.TYPE_BOOK
+TYPE_CHAPTER = common.TYPE_CHAPTER
 
 # Category frame content type
-TYPE_LIBRARY = labnote.TYPE_LIBRARY
-TYPE_PROTOCOL = labnote.TYPE_PROTOCOL
+TYPE_LIBRARY = common.TYPE_LIBRARY
+TYPE_PROTOCOL = common.TYPE_PROTOCOL
 
 # Data type
-QT_LevelRole = labnote.QT_LevelRole
-QT_StateRole = labnote.QT_StateRole
+QT_LevelRole = common.QT_LevelRole
+QT_StateRole = common.QT_StateRole
 
 # Level type
-LEVEL_CATEGORY = labnote.LEVEL_CATEGORY
-LEVEL_SUBCATEGORY = labnote.LEVEL_SUBCATEGORY
-LEVEL_ENTRY = labnote.LEVEL_ENTRY
+LEVEL_CATEGORY = common.LEVEL_CATEGORY
+LEVEL_SUBCATEGORY = common.LEVEL_SUBCATEGORY
+LEVEL_ENTRY = common.LEVEL_ENTRY
 
 
 class NoEntryWidget(QWidget):

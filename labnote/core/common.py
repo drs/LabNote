@@ -5,7 +5,9 @@ import collections
 from PyQt5.QtGui import QColor
 from PyQt5.QtCore import Qt
 
-# Color named tuple
+"""
+Color named tuple
+"""
 
 Color = collections.namedtuple('Color', ['color', 'dark_shade'])
 
@@ -61,3 +63,30 @@ ReturnList.__new__.__defaults__ = ([], None)
 # Return a dictionary and an error
 ReturnDict = collections.namedtuple('Returns', ['dct', 'error'])
 ReturnDict.__new__.__defaults__ = ({}, None)
+
+
+"""
+Type value
+"""
+
+# Reference type
+TYPE_ARTICLE = 0
+TYPE_BOOK = 1
+TYPE_CHAPTER = 2
+
+# Category frame content type
+TYPE_LIBRARY = 48
+TYPE_PROTOCOL = 49
+
+"""
+Data level
+"""
+
+# Data type
+QT_LevelRole = Qt.UserRole+1
+QT_StateRole = QT_LevelRole+1
+
+# Level type
+LEVEL_CATEGORY = 101
+LEVEL_SUBCATEGORY = 102
+LEVEL_ENTRY = 103
