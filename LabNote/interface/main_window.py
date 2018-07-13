@@ -39,6 +39,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.current_exp_body = None
         self.body_updated = False
 
+        # Check files integrity
+        self.check_main_directory()
+
         # Initialize the GUI
         self.setupUi(self)
         self.init_ui()
@@ -46,9 +49,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         # Read program settings
         self.read_settings()
-
-        # Check files integrity
-        self.check_main_directory()
 
     def init_ui(self):
         """ Initialize all the GUI elements """
