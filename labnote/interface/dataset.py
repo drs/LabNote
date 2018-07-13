@@ -15,7 +15,7 @@ from PyQt5.QtGui import QIcon, QStandardItem, QFont
 # Project import
 from labnote.ui.ui_dataset import Ui_Dataset
 from labnote.core import stylesheet
-from labnote.utils import database, fsentry, files
+from labnote.utils import database, fsentry, files, layout
 from labnote.interface.widget.lineedit import SearchLineEdit
 from labnote.interface.dialog import dataset
 from labnote.interface.widget.model import StandardItemModel
@@ -194,7 +194,7 @@ class Dataset(QDialog, Ui_Dataset):
                 message.exec()
                 return
 
-            self.empty_layout(self.layout_entry)
+            layout.empty_layout(self.layout_entry)
             self.show_dataset(index)
 
     def open_dataset(self):
@@ -253,7 +253,7 @@ class Dataset(QDialog, Ui_Dataset):
     def selection_changed(self):
         """ Update the interface according to the selected item in the tree """
 
-        self.empty_layout(self.layout_entry)
+        layout.empty_layout(self.layout_entry)
 
         index = self.view_dataset.selectionModel().currentIndex()
         hierarchy_level = self.get_hierarchy_level(index)
@@ -416,14 +416,3 @@ class Dataset(QDialog, Ui_Dataset):
 
                 if match:
                     self.view_dataset.setExpanded(match[0], True)
-
-    def empty_layout(self, layout):
-        """ Empty any layout """
-        if layout is not None:
-            while layout.count():
-                item = layout.takeAt(0)
-                widget = item.widget()
-                if widget is not None:
-                    widget.deleteLater()
-                else:
-                    self.delete_layout(item.layout())
