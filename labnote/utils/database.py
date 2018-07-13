@@ -20,18 +20,23 @@ Database query
 
 CREATE_DATASET_TABLE = """
 CREATE TABLE dataset (
-    dt_uuid BLOB (16)     PRIMARY KEY,
+    dt_uuid BLOB (16)     PRIMARY KEY
+                          UNIQUE,
     name    VARCHAR (255) NOT NULL,
     dt_key  VARCHAR (255) UNIQUE
                           NOT NULL,
     nb_uuid BLOB (16)     REFERENCES notebook (nb_uuid) ON DELETE CASCADE,
-    UNIQUE (dt_key, nb_uuid)
+    UNIQUE (
+        dt_key,
+        nb_uuid
+    )
 )
 """
 
 CREATE_EXPERIMENT_TABLE = """
 CREATE TABLE experiment (
-    exp_uuid     BLOB (16)     PRIMARY KEY,
+    exp_uuid     BLOB (16)     PRIMARY KEY
+                               UNIQUE,
     name         VARCHAR (255) NOT NULL,
     nb_uuid      BLOB (16)     REFERENCES notebook (nb_uuid) ON DELETE CASCADE
                                NOT NULL,
@@ -64,32 +69,26 @@ CREATE TABLE project (
 
 CREATE_NOTEBOOK_TABLE = """
 CREATE TABLE notebook (
-    nb_uuid BLOB (16)     PRIMARY KEY,
+    nb_uuid BLOB (16)     PRIMARY KEY
+                          UNIQUE,
     name    VARCHAR (255) NOT NULL,
-    proj_id INTEGER       REFERENCES project (proj_id)  ON DELETE RESTRICT,
-    UNIQUE (name, proj_id)
+    proj_id INTEGER       REFERENCES project (proj_id) ON DELETE RESTRICT,
+    UNIQUE (
+        name,
+        proj_id
+    )
 )
 """
 
 CREATE_PROTOCOL_TABLE = """
 CREATE TABLE protocol (
-    prt_uuid      BLOB (16)     PRIMARY KEY,
-    name          VARCHAR (255),
-    body          TEXT,
-    date_created  DATETIME      DEFAULT (CURRENT_TIMESTAMP),
-    date_modified DATETIME
+    prt_uuid    BLOB (16)     PRIMARY KEY
+                              UNIQUE,
+    prt_key     VARCHAR (255) UNIQUE
+                              NOT NULL,
+    name        VARCHAR (255),
+    description TEXT
 )
-"""
-
-CREATE_PROTOCOL_TABLE_TRIGGER = """
-CREATE TRIGGER prt_date_updated
-         AFTER UPDATE OF body
-            ON protocol
-BEGIN
-    UPDATE protocol
-       SET date_updated = CURRENT_TIMESTAMP
-     WHERE NEW.prt_uuid = OLD.prt_uuid;
-END;
 """
 
 CREATE_REF_CATEGORY_TABLE = """
@@ -112,10 +111,13 @@ CREATE TABLE ref_subcategory (
 
 CREATE_REFS_TABLE = """
 CREATE TABLE refs (
-    ref_uuid       BLOB (16)     PRIMARY KEY,
-    ref_key        VARCHAR (255) NOT NULL       UNIQUE,
+    ref_uuid       BLOB (16)     PRIMARY KEY
+                                 UNIQUE,
+    ref_key        VARCHAR (255) NOT NULL
+                                 UNIQUE,
     ref_type       INTEGER       NOT NULL,
-    file_attached  BOOLEAN       NOT NULL       DEFAULT FALSE,
+    file_attached  BOOLEAN       NOT NULL
+                                 DEFAULT FALSE,
     title          VARCHAR (255),
     publisher      VARCHAR (255),
     year           INTEGER,
