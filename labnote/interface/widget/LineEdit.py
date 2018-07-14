@@ -7,7 +7,7 @@ from PyQt5.QtGui import QRegExpValidator, QIcon
 
 # Project import
 from labnote.core import stylesheet
-from labnote.interface.widget.completer import SearchCompleter
+from labnote.interface.widget.object import SearchCompleter
 
 
 class LineEdit(QLineEdit):

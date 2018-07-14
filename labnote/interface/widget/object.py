@@ -1,4 +1,4 @@
-""" This module contains all the completer classes used in LabNote """
+""" This module contains QObject subclasses used in LabNote """
 
 # Python import
 
