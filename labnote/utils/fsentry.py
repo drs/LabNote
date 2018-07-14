@@ -12,6 +12,11 @@ from labnote.utils import database, directory, files
 from labnote.core import data, sqlite_error
 
 
+"""
+General entry
+"""
+
+
 def check_main_directory():
     """ Create the main directory if it does not exist """
     if not os.path.isdir(directory.DEFAULT_MAIN_DIRECTORY_PATH):
@@ -29,6 +34,11 @@ def create_main_directory():
 def cleanup_main_directory():
     """ Delete the main directory """
     shutil.rmtree(directory.DEFAULT_MAIN_DIRECTORY_PATH, ignore_errors=True)
+
+
+""" 
+Notebook entry
+"""
 
 
 def create_notebook(nb_name, proj_id):
@@ -103,6 +113,11 @@ def delete_notebook(nb_uuid):
             conn.commit()
         if conn:
             conn.close()
+
+
+"""
+Reference entry
+"""
 
 
 def add_reference_pdf(ref_uuid, file):
@@ -217,6 +232,11 @@ def delete_reference(ref_uuid):
             conn.close()
 
 
+"""
+Dataset entry
+"""
+
+
 def create_dataset(dt_uuid, name, key, nb_uuid):
     """ Create a dataset in the database and in the file structure
 
@@ -290,6 +310,11 @@ def delete_dataset(dt_uuid, nb_uuid):
             conn.commit()
         if conn:
             conn.close()
+
+
+"""
+Protocol entry
+"""
 
 
 def create_protocol(prt_uuid, prt_key, category_id, name=None, subcategory_id=None):

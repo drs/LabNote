@@ -134,6 +134,7 @@ class Library(QDialog, Ui_Library):
         self.category_frame.list_displayed.connect(self.restore_treeview_state)
         self.category_frame.entry_selected.connect(self.show_reference_details)
         self.category_frame.selection_changed.connect(self.clear_form)
+        self.txt_key.textChanged.connect(self.set_modified)
 
     def get_tag_list(self):
         """ Get the list of all tag """
@@ -486,6 +487,7 @@ class Library(QDialog, Ui_Library):
             self.category_frame.view_tree.selectionModel().setCurrentIndex(match[0], QItemSelectionModel.Select)
             self.category_frame.view_tree.repaint()
         self.get_tag_list()
+        self.setWindowModified(False)
 
     def reset_fields(self):
         self.txt_key.clear()
@@ -617,6 +619,10 @@ class Library(QDialog, Ui_Library):
                 'description': description,
                 'abstract': abstract}
 
+    def set_modified(self):
+        """ Set the window state as modified """
+        self.setWindowModified(True)
+
     def article_field(self, fields=None):
         """ Show all the article related fields in the layout """
         self.prepare_grid()
@@ -625,51 +631,60 @@ class Library(QDialog, Ui_Library):
         self.lbl_author.setFont(QFont(self.font().family(), weight=QFont.Bold))
         self.grid_layout.addWidget(self.lbl_author, 0, 0)
         self.txt_author = LineEdit()
+        self.txt_author.textChanged.connect(self.set_modified)
         self.grid_layout.addWidget(self.txt_author, 0, 1)
 
         self.lbl_title = QLabel("Title")
         self.lbl_title.setFont(QFont(self.font().family(), weight=QFont.Bold))
         self.grid_layout.addWidget(self.lbl_title, 1, 0)
         self.txt_title = LineEdit()
+        self.txt_title.textChanged.connect(self.set_modified)
         self.grid_layout.addWidget(self.txt_title, 1, 1)
 
         self.lbl_journal = QLabel("Journal")
         self.lbl_journal.setFont(QFont(self.font().family(), weight=QFont.Bold))
         self.grid_layout.addWidget(self.lbl_journal, 2, 0)
         self.txt_journal = LineEdit()
+        self.txt_journal.textChanged.connect(self.set_modified)
         self.grid_layout.addWidget(self.txt_journal, 2, 1)
 
         self.lbl_year = QLabel("Year")
         self.lbl_year.setFont(QFont(self.font().family(), weight=QFont.Bold))
         self.grid_layout.addWidget(self.lbl_year, 3, 0)
         self.txt_year = YearLineEdit()
+        self.txt_year.textChanged.connect(self.set_modified)
         self.grid_layout.addWidget(self.txt_year, 3, 1)
 
         self.lbl_volume = QLabel("Volume")
         self.grid_layout.addWidget(self.lbl_volume, 4, 0)
         self.txt_volume = NumberLineEdit()
+        self.txt_volume.textChanged.connect(self.set_modified)
         self.grid_layout.addWidget(self.txt_volume, 4, 1)
 
         self.lbl_issue = QLabel("Issue")
         self.grid_layout.addWidget(self.lbl_issue, 5, 0)
         self.txt_issue = NumberLineEdit()
+        self.txt_issue.textChanged.connect(self.set_modified)
         self.grid_layout.addWidget(self.txt_issue, 5, 1)
 
         self.lbl_pages = QLabel("Pages")
         self.grid_layout.addWidget(self.lbl_pages, 6, 0)
         self.txt_pages = PagesLineEdit()
+        self.txt_pages.textChanged.connect(self.set_modified)
         self.grid_layout.addWidget(self.txt_pages, 6, 1)
 
         self.lbl_description = QLabel("Description")
         self.lbl_description.setAlignment(Qt.AlignTop | Qt.AlignLeft)
         self.grid_layout.addWidget(self.lbl_description, 7, 0)
         self.txt_description = CompleterTextEdit(self.tag_list)
+        self.txt_description.textChanged.connect(self.set_modified)
         self.grid_layout.addWidget(self.txt_description, 7, 1)
 
         self.lbl_abstract = QLabel("Abstract")
         self.lbl_abstract.setAlignment(Qt.AlignTop | Qt.AlignLeft)
         self.grid_layout.addWidget(self.lbl_abstract, 8, 0)
         self.txt_abstract = PlainTextEdit()
+        self.txt_abstract.textChanged.connect(self.set_modified)
         self.grid_layout.addWidget(self.txt_abstract, 8, 1)
 
         if fields:
@@ -697,54 +712,64 @@ class Library(QDialog, Ui_Library):
         self.lbl_author.setFont(QFont(self.font().family(), weight=QFont.Bold))
         self.grid_layout.addWidget(self.lbl_author, 0, 0)
         self.txt_author = LineEdit()
+        self.txt_author.textChanged.connect(self.set_modified)
         self.grid_layout.addWidget(self.txt_author, 0, 1)
 
         self.lbl_title = QLabel("Title")
         self.lbl_title.setFont(QFont(self.font().family(), weight=QFont.Bold))
         self.grid_layout.addWidget(self.lbl_title, 1, 0)
         self.txt_title = LineEdit()
+        self.txt_title.textChanged.connect(self.set_modified)
         self.grid_layout.addWidget(self.txt_title, 1, 1)
 
         self.lbl_year = QLabel("Year")
         self.lbl_year.setFont(QFont(self.font().family(), weight=QFont.Bold))
         self.grid_layout.addWidget(self.lbl_year, 2, 0)
         self.txt_year = YearLineEdit()
+        self.txt_year.textChanged.connect(self.set_modified)
         self.grid_layout.addWidget(self.txt_year, 2, 1)
 
         self.lbl_publisher = QLabel("Publisher")
         self.lbl_publisher.setFont(QFont(self.font().family(), weight=QFont.Bold))
         self.grid_layout.addWidget(self.lbl_publisher, 3, 0)
         self.txt_publisher = LineEdit()
+        self.txt_publisher.textChanged.connect(self.set_modified)
         self.grid_layout.addWidget(self.txt_publisher, 3, 1)
 
         self.lbl_place_published = QLabel("Place published")
         self.grid_layout.addWidget(self.lbl_place_published, 4, 0)
         self.txt_place_published = LineEdit()
+        self.txt_place_published.textChanged.connect(self.set_modified)
         self.grid_layout.addWidget(self.txt_place_published, 4, 1)
 
         self.lbl_volume = QLabel("Volume")
         self.grid_layout.addWidget(self.lbl_volume, 5, 0)
         self.txt_volume = NumberLineEdit()
+        self.txt_volume.textChanged.connect(self.set_modified)
         self.grid_layout.addWidget(self.txt_volume, 5, 1)
 
         self.lbl_pages = QLabel("Pages")
         self.grid_layout.addWidget(self.lbl_pages, 6, 0)
         self.txt_pages = PagesLineEdit()
+        self.txt_pages.textChanged.connect(self.set_modified)
         self.grid_layout.addWidget(self.txt_pages, 6, 1)
 
         self.lbl_edition = QLabel("Edition")
         self.grid_layout.addWidget(self.lbl_edition, 7, 0)
         self.txt_edition = LineEdit()
+        self.txt_edition.textChanged.connect(self.set_modified)
         self.grid_layout.addWidget(self.txt_edition, 7, 1)
 
         self.lbl_description = QLabel("Description")
         self.grid_layout.addWidget(self.lbl_description, 8, 0)
         self.txt_description = CompleterTextEdit(self.tag_list)
+        self.txt_description.textChanged.connect(self.set_modified)
         self.grid_layout.addWidget(self.txt_description, 8, 1)
 
         self.lbl_abstract = QLabel("Abstract")
         self.grid_layout.addWidget(self.lbl_abstract, 9, 0)
         self.txt_abstract = PlainTextEdit()
+        self.txt_abstract.textChanged.connect(self.set_modified)
         self.grid_layout.addWidget(self.txt_abstract, 9, 1)
 
         if fields:
@@ -774,64 +799,76 @@ class Library(QDialog, Ui_Library):
         self.lbl_author.setFont(QFont(self.font().family(), weight=QFont.Bold))
         self.grid_layout.addWidget(self.lbl_author, 0, 0)
         self.txt_author = LineEdit()
+        self.txt_author.textChanged.connect(self.set_modified)
         self.grid_layout.addWidget(self.txt_author, 0, 1)
 
         self.lbl_chapter = QLabel("Chapter")
         self.lbl_chapter.setFont(QFont(self.font().family(), weight=QFont.Bold))
         self.grid_layout.addWidget(self.lbl_chapter, 1, 0)
         self.txt_chapter = LineEdit()
+        self.txt_chapter.textChanged.connect(self.set_modified)
         self.grid_layout.addWidget(self.txt_chapter, 1, 1)
 
         self.lbl_title = QLabel("Book title")
         self.lbl_title.setFont(QFont(self.font().family(), weight=QFont.Bold))
         self.grid_layout.addWidget(self.lbl_title, 2, 0)
         self.txt_title = LineEdit()
+        self.txt_title.textChanged.connect(self.set_modified)
         self.grid_layout.addWidget(self.txt_title, 2, 1)
 
         self.lbl_year = QLabel("Year")
         self.lbl_year.setFont(QFont(self.font().family(), weight=QFont.Bold))
         self.grid_layout.addWidget(self.lbl_year, 3, 0)
         self.txt_year = YearLineEdit()
+        self.txt_year.textChanged.connect(self.set_modified)
         self.grid_layout.addWidget(self.txt_year, 3, 1)
 
         self.lbl_editor = QLabel("Editor")
         self.grid_layout.addWidget(self.lbl_editor, 4, 0)
         self.txt_editor = LineEdit()
+        self.txt_editor.textChanged.connect(self.set_modified)
         self.grid_layout.addWidget(self.txt_editor, 4, 1)
 
         self.lbl_publisher = QLabel("Publisher")
         self.grid_layout.addWidget(self.lbl_publisher, 5, 0)
         self.txt_publisher = LineEdit()
+        self.txt_publisher.textChanged.connect(self.set_modified)
         self.grid_layout.addWidget(self.txt_publisher, 5, 1)
 
         self.lbl_place_published = QLabel("Place published")
         self.grid_layout.addWidget(self.lbl_place_published, 6, 0)
         self.txt_place_published = LineEdit()
+        self.txt_place_published.textChanged.connect(self.set_modified)
         self.grid_layout.addWidget(self.txt_place_published, 6, 1)
 
         self.lbl_volume = QLabel("Volume")
         self.grid_layout.addWidget(self.lbl_volume, 7, 0)
         self.txt_volume = NumberLineEdit()
+        self.txt_volume.textChanged.connect(self.set_modified)
         self.grid_layout.addWidget(self.txt_volume, 7, 1)
 
         self.lbl_pages = QLabel("Pages")
         self.grid_layout.addWidget(self.lbl_pages, 8, 0)
         self.txt_pages = PagesLineEdit()
+        self.txt_pages.textChanged.connect(self.set_modified)
         self.grid_layout.addWidget(self.txt_pages, 8, 1)
 
         self.lbl_edition = QLabel("Edition")
         self.grid_layout.addWidget(self.lbl_edition, 9, 0)
         self.txt_edition = NumberLineEdit()
+        self.txt_edition.textChanged.connect(self.set_modified)
         self.grid_layout.addWidget(self.txt_edition, 9, 1)
 
         self.lbl_description = QLabel("Description")
         self.grid_layout.addWidget(self.lbl_description, 10, 0)
         self.txt_description = CompleterTextEdit(self.tag_list)
+        self.txt_description.textChanged.connect(self.set_modified)
         self.grid_layout.addWidget(self.txt_description, 10, 1)
 
         self.lbl_abstract = QLabel("Abstract")
         self.grid_layout.addWidget(self.lbl_abstract, 11, 0)
         self.txt_abstract = PlainTextEdit()
+        self.txt_abstract.textChanged.connect(self.set_modified)
         self.grid_layout.addWidget(self.txt_abstract, 11, 1)
 
         if fields:
