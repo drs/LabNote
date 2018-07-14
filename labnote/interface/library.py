@@ -9,14 +9,14 @@ import uuid
 import os
 
 # PyQt import
-from PyQt5.QtWidgets import QDialog, QGridLayout, QLabel, QMessageBox, QWidget, QVBoxLayout, QPlainTextEdit
-from PyQt5.QtCore import Qt, QRegExp, QSettings, pyqtSignal, QFileInfo
+from PyQt5.QtWidgets import QDialog, QGridLayout, QLabel, QMessageBox, QWidget, QVBoxLayout
+from PyQt5.QtCore import Qt, QRegExp, QSettings, pyqtSignal, QFileInfo, QItemSelectionModel
 from PyQt5.QtGui import QFont, QRegExpValidator, QColor, QPixmap, QPainter, QPen, QBrush
 
 # Project import
 from labnote.ui.ui_library import Ui_Library
 from labnote.core import stylesheet, sqlite_error, data, common
-from labnote.interface.widget.textedit import TextEdit
+from labnote.interface.widget.textedit import TagTextEdit, PlainTextEdit
 from labnote.utils import database, fsentry, directory
 from labnote.interface.widget.lineedit import LineEdit, NumberLineEdit, YearLineEdit, PagesLineEdit, SearchLineEdit
 from labnote.interface.widget.widget import CategoryFrame
@@ -64,6 +64,8 @@ class Library(QDialog, Ui_Library):
         self.setupUi(self)
         self.init_ui()
         self.init_connection()
+
+        # Show the widget content
         self.category_frame.show_list()
         self.get_tag_list()
 
@@ -111,6 +113,8 @@ class Library(QDialog, Ui_Library):
 
         # Focus policy
         self.txt_search.setFocusPolicy(self.txt_search.focusPolicy() ^ Qt.TabFocus)
+        self.category_frame.view_tree.setFocusPolicy(self.category_frame.view_tree.focusPolicy()
+                                                     ^ Qt.TabFocus)
 
     def init_connection(self):
         self.comboBox.currentTextChanged.connect(self.show_field)
@@ -156,6 +160,8 @@ class Library(QDialog, Ui_Library):
             message.setWindowTitle("LabNote")
             message.setDetailedText(str(exception))
             message.exec()
+            return
+        self.process_reference()
 
     def remove_tag(self, tags):
         """ Remove tag to the reference """
@@ -169,6 +175,8 @@ class Library(QDialog, Ui_Library):
             message.setWindowTitle("LabNote")
             message.setDetailedText(str(exception))
             message.exec()
+            return
+        self.process_reference()
 
     def add_pdf(self, file):
         """ Add a PDF to a reference
@@ -208,11 +216,11 @@ class Library(QDialog, Ui_Library):
 
     def drop_finished(self, index):
         """ Update an item information after a drag and drop mouvement """
-        category = self.get_category(index)
-        subcategory = self.get_subcategory(index)
+        category = self.category_frame.get_category(index)
+        subcategory = self.category_frame.get_subcategory(index)
 
         try:
-            database.update_reference_category(self.view_tree.selectedIndexes()[0].data(Qt.UserRole),
+            database.update_reference_category(self.category_frame.view_tree.selectedIndexes()[0].data(Qt.UserRole),
                                                category, subcategory)
         except sqlite3.Error as exception:
             message = QMessageBox(QMessageBox.Warning, "Error while loading data",
@@ -287,10 +295,11 @@ class Library(QDialog, Ui_Library):
         if self.category_frame.get_current_level() == LEVEL_CATEGORY or \
                 self.category_frame.get_current_level() == LEVEL_SUBCATEGORY or \
                 self.category_frame.get_current_level() == LEVEL_ENTRY:
-            self.article_field()
-            self.txt_key.clear()
+            self.clear_form()
             self.creating_reference = True
             self.enable_all(True)
+            self.txt_abstract.setEnabled(False)
+            self.txt_description.setEnabled(False)
             self.pdf_widget.clear_form()
             self.pdf_widget.setEnabled(False)
 
@@ -314,6 +323,7 @@ class Library(QDialog, Ui_Library):
             message.exec()
             return
         self.category_frame.show_list()
+        self.clear_form()
 
     def delete_layout(self, layout):
         """ Delete any layout """
@@ -353,8 +363,9 @@ class Library(QDialog, Ui_Library):
 
         if key:
             # Get the current item data
-            category_id = self.category_frame.get_category()
-            subcategory_id = self.category_frame.get_subcategory()
+            index = self.category_frame.view_tree.selectionModel().currentIndex()
+            category_id = self.category_frame.get_category(index)
+            subcategory_id = self.category_frame.get_subcategory(index)
 
             if category_id:
                 ref_type = self.comboBox.currentText()
@@ -414,7 +425,7 @@ class Library(QDialog, Ui_Library):
                                                 publisher=publisher, address=place, volume=volume, pages=pages,
                                                 edition=edition, description=description, abstract=abstract,
                                                 chapter=chapter, editor=editor, ref_type=TYPE_CHAPTER)
-                        self.pdf_widget.setEnabled(True)
+                        self.done_modifing_reference(ref_uuid=data.uuid_string(ref_uuid))
                     except sqlite3.Error as exception:
                         error_code = sqlite_error.sqlite_err_handler(str(exception))
 
@@ -460,6 +471,7 @@ class Library(QDialog, Ui_Library):
                                                 publisher=publisher, address=place, volume=volume, pages=pages,
                                                 edition=edition, description=description, abstract=abstract,
                                                 chapter=chapter, editor=editor, ref_type=TYPE_CHAPTER)
+                        self.done_modifing_reference(ref_uuid=ref_uuid)
                     except sqlite3.Error as exception:
                         error_code = sqlite_error.sqlite_err_handler(str(exception))
 
@@ -488,6 +500,16 @@ class Library(QDialog, Ui_Library):
                             message.setDetailedText(str(exception))
                             message.exec()
                             return
+
+    def done_modifing_reference(self, ref_uuid):
+        """ Active the interface element after the reference is saved """
+        self.category_frame.show_list()
+
+        model = self.category_frame.view_tree.model()
+        match = model.match(model.index(0, 0), Qt.UserRole, ref_uuid, 1, Qt.MatchRecursive)
+        if match:
+            self.category_frame.view_tree.selectionModel().setCurrentIndex(match[0], QItemSelectionModel.Select)
+            self.category_frame.view_tree.repaint()
 
     def reset_fields(self):
         self.txt_key.clear()
@@ -665,16 +687,20 @@ class Library(QDialog, Ui_Library):
         self.lbl_description = QLabel("Description")
         self.lbl_description.setAlignment(Qt.AlignTop | Qt.AlignLeft)
         self.grid_layout.addWidget(self.lbl_description, 7, 0)
-        self.txt_description = TextEdit(self.tag_list)
-        self.txt_description.create_tag.connect(self.add_tag)
-        self.txt_description.delete_tag.connect(self.remove_tag)
+        self.txt_description = TagTextEdit(self.tag_list)
+        self.txt_description.create.connect(self.add_tag)
+        self.txt_description.delete.connect(self.remove_tag)
         self.grid_layout.addWidget(self.txt_description, 7, 1)
 
         self.lbl_abstract = QLabel("Abstract")
         self.lbl_abstract.setAlignment(Qt.AlignTop | Qt.AlignLeft)
         self.grid_layout.addWidget(self.lbl_abstract, 8, 0)
-        self.txt_abstract = QPlainTextEdit()
+        self.txt_abstract = PlainTextEdit()
         self.grid_layout.addWidget(self.txt_abstract, 8, 1)
+
+        if self.creating_reference:
+            self.txt_description.setEnabled(False)
+            self.txt_abstract.setEnabled(False)
 
         if fields:
             self.txt_author.setText(fields['author'])
@@ -743,15 +769,19 @@ class Library(QDialog, Ui_Library):
 
         self.lbl_description = QLabel("Description")
         self.grid_layout.addWidget(self.lbl_description, 8, 0)
-        self.txt_description = TextEdit(self.tag_list)
-        self.txt_description.create_tag.connect(self.add_tag)
-        self.txt_description.delete_tag.connect(self.remove_tag)
+        self.txt_description = TagTextEdit(self.tag_list)
+        self.txt_description.create.connect(self.add_tag)
+        self.txt_description.delete.connect(self.remove_tag)
         self.grid_layout.addWidget(self.txt_description, 8, 1)
 
         self.lbl_abstract = QLabel("Abstract")
         self.grid_layout.addWidget(self.lbl_abstract, 9, 0)
-        self.txt_abstract = QPlainTextEdit()
+        self.txt_abstract = PlainTextEdit()
         self.grid_layout.addWidget(self.txt_abstract, 9, 1)
+
+        if self.creating_reference:
+            self.txt_description.setEnabled(False)
+            self.txt_abstract.setEnabled(False)
 
         if fields:
             self.txt_author.setText(fields['author'])
@@ -832,15 +862,19 @@ class Library(QDialog, Ui_Library):
 
         self.lbl_description = QLabel("Description")
         self.grid_layout.addWidget(self.lbl_description, 10, 0)
-        self.txt_description = TextEdit(self.tag_list)
-        self.txt_description.create_tag.connect(self.add_tag)
-        self.txt_description.delete_tag.connect(self.remove_tag)
+        self.txt_description = TagTextEdit(self.tag_list)
+        self.txt_description.create.connect(self.add_tag)
+        self.txt_description.delete.connect(self.remove_tag)
         self.grid_layout.addWidget(self.txt_description, 10, 1)
 
         self.lbl_abstract = QLabel("Abstract")
         self.grid_layout.addWidget(self.lbl_abstract, 11, 0)
-        self.txt_abstract = QPlainTextEdit()
+        self.txt_abstract = PlainTextEdit()
         self.grid_layout.addWidget(self.txt_abstract, 11, 1)
+
+        if self.creating_reference:
+            self.txt_description.setEnabled(False)
+            self.txt_abstract.setEnabled(False)
 
         if fields:
             self.txt_author.setText(fields['author'])
