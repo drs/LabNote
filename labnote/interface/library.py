@@ -16,7 +16,7 @@ from PyQt5.QtGui import QFont, QColor, QPixmap, QPainter, QPen, QBrush
 # Project import
 from labnote.ui.ui_library import Ui_Library
 from labnote.core import stylesheet, sqlite_error, data, common
-from labnote.interface.widget.textedit import TagTextEdit, PlainTextEdit
+from labnote.interface.widget.textedit import CompleterTextEdit, PlainTextEdit
 from labnote.utils import database, fsentry, directory
 from labnote.interface.widget.lineedit import LineEdit, NumberLineEdit, YearLineEdit, PagesLineEdit, SearchLineEdit
 from labnote.interface.widget.widget import CategoryFrame
@@ -686,9 +686,7 @@ class Library(QDialog, Ui_Library):
         self.lbl_description = QLabel("Description")
         self.lbl_description.setAlignment(Qt.AlignTop | Qt.AlignLeft)
         self.grid_layout.addWidget(self.lbl_description, 7, 0)
-        self.txt_description = TagTextEdit(self.tag_list)
-        self.txt_description.create.connect(self.add_tag)
-        self.txt_description.delete.connect(self.remove_tag)
+        self.txt_description = CompleterTextEdit(self.tag_list)
         self.grid_layout.addWidget(self.txt_description, 7, 1)
 
         self.lbl_abstract = QLabel("Abstract")
@@ -768,9 +766,7 @@ class Library(QDialog, Ui_Library):
 
         self.lbl_description = QLabel("Description")
         self.grid_layout.addWidget(self.lbl_description, 8, 0)
-        self.txt_description = TagTextEdit(self.tag_list)
-        self.txt_description.create.connect(self.add_tag)
-        self.txt_description.delete.connect(self.remove_tag)
+        self.txt_description = CompleterTextEdit(self.tag_list)
         self.grid_layout.addWidget(self.txt_description, 8, 1)
 
         self.lbl_abstract = QLabel("Abstract")
@@ -861,9 +857,7 @@ class Library(QDialog, Ui_Library):
 
         self.lbl_description = QLabel("Description")
         self.grid_layout.addWidget(self.lbl_description, 10, 0)
-        self.txt_description = TagTextEdit(self.tag_list)
-        self.txt_description.create.connect(self.add_tag)
-        self.txt_description.delete.connect(self.remove_tag)
+        self.txt_description = CompleterTextEdit(self.tag_list)
         self.grid_layout.addWidget(self.txt_description, 10, 1)
 
         self.lbl_abstract = QLabel("Abstract")

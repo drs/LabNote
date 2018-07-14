@@ -16,7 +16,7 @@ from labnote.core import stylesheet
 from labnote.interface.widget.view import DragDropTreeView
 from labnote.interface.widget.model import StandardItemModel
 from labnote.interface.dialog.category import Category, Subcategory
-from labnote.interface.widget.textedit import TagTextEdit
+from labnote.interface.widget.textedit import CompleterTextEdit
 from labnote.interface.widget.lineedit import LineEdit
 from labnote.utils import database
 from labnote.core import sqlite_error, common
@@ -655,7 +655,7 @@ class TextEditor(QWidget, Ui_TextEditor):
         self.layout().insertWidget(2, self.txt_key)
 
         # Insert descrition text edit
-        self.txt_description = TagTextEdit(self.tag_list)
+        self.txt_description = CompleterTextEdit(self.tag_list)
         self.txt_description.setPlaceholderText("Objectives of the experiment")
         self.txt_description.setFixedHeight(74)
         self.layout().insertWidget(3, self.txt_description)
@@ -870,8 +870,6 @@ class TextEditor(QWidget, Ui_TextEditor):
         self.highlight_menu.triggered.connect(self.format_highlight)
         self.style_menu.triggered.connect(self.format_style)
         self.textedit.cursorPositionChanged.connect(self.update_button)
-        self.txt_description.create.connect(self.emit_create_tag)
-        self.txt_description.delete.connect(self.emit_delete_tag)
 
     def emit_delete_tag(self, tag_list):
         self.delete_tag.emit(tag_list)
