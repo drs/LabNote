@@ -95,8 +95,8 @@ Encoding
 """
 
 
-def encode_experiment(html):
-    """ Encode experiment data to binary
+def encode(html):
+    """ Encode data to binary
 
     :param html: HTLM string to encode to binary
     :type html: str
@@ -105,8 +105,8 @@ def encode_experiment(html):
     return html.encode()
 
 
-def decode_experiment(html):
-    """ Decode experiment data to string
+def decode(html):
+    """ Decode data to string
 
     :param html: HTLM binary to decode
     :type html: bytes
