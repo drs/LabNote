@@ -7,6 +7,7 @@ from PyQt5.QtGui import QRegExpValidator, QIcon
 
 # Project import
 from labnote.core import stylesheet
+from labnote.interface.widget.completer import SearchCompleter
 
 
 class LineEdit(QLineEdit):
@@ -26,6 +27,13 @@ class SearchLineEdit(LineEdit):
         search_icon = QIcon(":/Icons/MainWindow/icons/main-window/search.png")
         self.addAction(search_icon, QLineEdit.LeadingPosition)
         stylesheet.set_style_sheet(self, ":/StyleSheet/Widget/style-sheet/widget/search.qss")
+        
+
+class TagSearchLineEdit(SearchLineEdit):
+    """ Search line edit with the tag completer """
+    def __init__(self, completer_list):
+        super(TagSearchLineEdit, self).__init__()
+        self.setCompleter(SearchCompleter(completer_list))
 
 
 class YearLineEdit(LineEdit):

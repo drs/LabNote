@@ -16,7 +16,7 @@ from labnote.core import stylesheet
 from labnote.utils import database, directory, fsentry
 from labnote.interface import project, library, sample, dataset, protocol
 from labnote.interface.dialog.notebook import Notebook
-from labnote.interface.widget.lineedit import SearchLineEdit
+from labnote.interface.widget.lineedit import TagSearchLineEdit
 from labnote.interface.widget.view import TreeView
 from labnote.interface.widget.model import StandardItemModel
 from labnote.interface.widget.widget import NoEntryWidget
@@ -26,6 +26,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     """
     Class responsible of launching the LabNote MainWindow interface.
     """
+    
+    # Class variable definition
+    tag_list = []
 
     def __init__(self):
         super(MainWindow, self).__init__()
@@ -72,6 +75,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.act_library.setIcon(QIcon(":/Icons/MainWindow/icons/main-window/library.png"))
         self.act_samples.setIcon(QIcon(":/Icons/MainWindow/icons/main-window/sample.png"))
 
+        # Get tag list
+        self.get_tag_list()
+
         # Set toolbar separator
         empty_widget_1 = QWidget()
         empty_widget_1.setFixedWidth(130)
@@ -85,7 +91,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         empty_widget_3.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.search_toolbar.addWidget(empty_widget_3)
 
-        self.txt_search = SearchLineEdit()
+        self.txt_search = TagSearchLineEdit(self.tag_list)
         self.search_toolbar.addWidget(self.txt_search)
 
         empty_widget_4 = QWidget()
@@ -136,6 +142,22 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     """
     General functions
     """
+
+    def get_tag_list(self):
+        """ Get the list of all tag """
+        tag_list = []
+
+        try:
+            tag_list = database.select_tag_list()
+        except sqlite3.Error as exception:
+            message = QMessageBox(QMessageBox.Warning, "Unable to get tag list",
+                                  "An error occurred while getting the tag list.", QMessageBox.Ok)
+            message.setWindowTitle("LabNote")
+            message.setDetailedText(str(exception))
+            message.exec()
+            return
+
+        self.tag_list = tag_list
 
     def closeEvent(self, e):
         """
