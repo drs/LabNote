@@ -83,7 +83,7 @@
      <property name="frameShadow">
       <enum>QFrame::Raised</enum>
      </property>
-     <layout class="QHBoxLayout" name="horizontalLayout_4">
+     <layout class="QHBoxLayout" name="horizontalLayout_4" stretch="0">
       <property name="spacing">
        <number>0</number>
       </property>
@@ -99,6 +99,9 @@
       <property name="bottomMargin">
        <number>0</number>
       </property>
+      <item>
+       <layout class="QVBoxLayout" name="layout_entry"/>
+      </item>
      </layout>
     </widget>
    </item>

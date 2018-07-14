@@ -1,0 +1,19 @@
+/* Frame properties */
+
+QFrame#frame {
+    border-left: 0.5px solid rgb(212, 212, 212);
+    border-top: none;
+    border-bottom: none;
+    border-right: none;
+    background-color: rgb(246, 246, 246);
+}
+
+/* Component widget */
+
+QTextEdit {
+    border: none;
+}
+
+QPlainTextEdit {
+    border: none;
+}

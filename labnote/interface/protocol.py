@@ -1,45 +1,307 @@
 """ This module contains the protocol dialog classes """
 
 # Python import
+import sqlite3
+import uuid
 
 # PyQt import
-from PyQt5.QtWidgets import QDialog
+from PyQt5.QtWidgets import QDialog, QMessageBox
+from PyQt5.QtCore import QSettings, Qt, QItemSelectionModel
 
 # Project import
 from labnote.ui.ui_protocol import Ui_Protocol
 from labnote.interface.widget.lineedit import SearchLineEdit
-from labnote.interface.widget.widget import CategoryFrame
-from labnote.interface.textbox import TextEdit
-from labnote.core import labnote, stylesheet
+from labnote.interface.widget.widget import CategoryFrame, ProtocolTextEditor, NoEntryWidget
+from labnote.core import stylesheet, common, data, sqlite_error
+from labnote.utils import database, layout, fsentry, date
 
 
 class Protocol(QDialog, Ui_Protocol):
     """ Class responsible of managing the protocol window interface """
+
+    # Class variable definition
+    tag_list = []
+    creating_protocol = False
+
     def __init__(self, parent=None):
         super(Protocol, self).__init__(parent=parent)
         # Initialize the GUI
         self.setupUi(self)
         self.init_ui()
         self.init_connection()
+        self.category_frame.show_list()
 
         self.show()
 
     def init_ui(self):
+        # General properties
+        self.setWindowTitle("LabNote - Protocol")
+
         # Show category frame
-        self.category_frame = CategoryFrame('Protocol', labnote.TYPE_PROTOCOL)
+        self.category_frame = CategoryFrame('Protocol', common.TYPE_PROTOCOL)
         self.frame.layout().insertWidget(0, self.category_frame)
+        self.frame.layout().setStretch(1, 10)
 
         # Show search button
         self.txt_search = SearchLineEdit()
         self.layout_search.insertWidget(2, self.txt_search)
 
-        # Show textedit
-        self.textedit = TextEdit()
-        self.frame.layout().insertWidget(1, self.textedit)
-        self.frame.layout().setStretch(1, 10)
-
         # Set stylesheet
         stylesheet.set_style_sheet(self, ":/StyleSheet/style-sheet/protocol.qss")
 
+        # Read settings
+        self.read_settings()
+
+        # Get tag list
+        self.get_tag_list()
+
     def init_connection(self):
         self.btn_close.clicked.connect(self.close)
+        self.category_frame.view_tree.expanded.connect(self.save_treeview_state)
+        self.category_frame.view_tree.collapsed.connect(self.save_treeview_state)
+        self.category_frame.list_displayed.connect(self.restore_treeview_state)
+        self.category_frame.entry_selected.connect(self.show_protocol_details)
+        self.category_frame.btn_add.clicked.connect(self.start_creating_protocol)
+        self.category_frame.selection_changed.connect(self.clear_form)
+        self.category_frame.delete.connect(self.delete_protocol)
+
+    def get_tag_list(self):
+        """ Get the list of all tag """
+        tag_list = []
+
+        try:
+            tag_list = database.select_tag_list()
+        except sqlite3.Error as exception:
+            message = QMessageBox(QMessageBox.Warning, "Unable to get tag list",
+                                  "An error occurred while getting the tag list.", QMessageBox.Ok)
+            message.setWindowTitle("LabNote")
+            message.setDetailedText(str(exception))
+            message.exec()
+            return
+
+        self.tag_list = tag_list
+
+    def clear_form(self):
+        """ Clear all data in the form """
+        self.creating_protocol = False
+        layout.empty_layout(self, self.layout_entry)
+
+        index = self.category_frame.view_tree.selectionModel().currentIndex()
+        if not self.category_frame.is_entry(index):
+            self.layout_entry.addWidget(NoEntryWidget(), Qt.AlignHCenter, Qt.AlignCenter)
+
+    def delete_protocol(self, prt_uuid):
+        """ Delete a protocol """
+        try:
+            fsentry.delete_protocol(prt_uuid=prt_uuid)
+        except sqlite3.Error as exception:
+            message = QMessageBox(QMessageBox.Warning, "Unable to delete protocol",
+                                  "An error occurred while deleting the protocol.", QMessageBox.Ok)
+            message.setWindowTitle("LabNote")
+            message.setDetailedText(str(exception))
+            message.exec()
+            return
+        self.category_frame.show_list()
+        self.clear_form()
+
+    def start_creating_protocol(self):
+        """ Enable new reference creation """
+        if self.category_frame.get_current_level() == common.LEVEL_CATEGORY or \
+                self.category_frame.get_current_level() == common.LEVEL_SUBCATEGORY or \
+                self.category_frame.get_current_level() == common.LEVEL_ENTRY:
+            self.creating_protocol = True
+            self.create_editor()
+            self.editor.btn_save.setText("Create")
+
+    def create_editor(self):
+        """ Add the editor widget to the layout """
+        layout.empty_layout(self, self.layout_entry)
+        self.editor = ProtocolTextEditor(self.tag_list)
+        self.editor.btn_save.clicked.connect(self.process_protocol)
+        self.layout_entry.addWidget(self.editor)
+
+    def process_protocol(self):
+        """ Process the protocol in the database and the file system """
+
+        key = self.editor.txt_key.text()
+
+        if key:
+            # Get the current item data
+            index = self.category_frame.view_tree.selectionModel().currentIndex()
+            category_id = self.category_frame.get_category(index)
+            subcategory_id = self.category_frame.get_subcategory(index)
+
+            if category_id:
+                # Get the protocol content
+                name = data.prepare_string(self.editor.txt_title.toPlainText())
+                description = data.prepare_textedit(self.editor.txt_description)
+                body = self.editor.textedit.toHtml()
+
+                if self.creating_protocol:
+                    prt_uuid = str(uuid.uuid4())
+
+                    try:
+                        fsentry.create_protocol(prt_uuid=prt_uuid, prt_key=key, category_id=category_id,
+                                                name=name, subcategory_id=subcategory_id)
+                    except (sqlite3.Error, OSError) as exception:
+                        error_code = sqlite_error.sqlite_err_handler(str(exception))
+
+                        if error_code == sqlite_error.NOT_NULL_CODE:
+                            message = QMessageBox()
+                            message.setWindowTitle("LabNote")
+                            message.setText("Unable to create protocol")
+                            message.setInformativeText("The protocol key must not be empty.")
+                            message.setIcon(QMessageBox.Information)
+                            message.setStandardButtons(QMessageBox.Ok)
+                            message.exec()
+                            return
+                        elif error_code == sqlite_error.UNIQUE_CODE:
+                            message = QMessageBox()
+                            message.setWindowTitle("LabNote")
+                            message.setText("Unable to create protocol")
+                            message.setInformativeText("The protocol key must be unique.")
+                            message.setIcon(QMessageBox.Information)
+                            message.setStandardButtons(QMessageBox.Ok)
+                            message.exec()
+                            return
+                        else:
+                            message = QMessageBox(QMessageBox.Warning, "Unable to create protocol",
+                                                  "An error occurred while creating the protocol.", QMessageBox.Ok)
+                            message.setWindowTitle("LabNote")
+                            message.setDetailedText(str(exception))
+                            message.exec()
+                            return
+                    self.done_modifing_protocol(prt_uuid=prt_uuid)
+                else:
+                    prt_uuid = self.category_frame.get_user_data()
+
+                    try:
+                        fsentry.save_protocol(prt_uuid=prt_uuid, prt_key=key, name=name, description=description,
+                                              body=body)
+                    except (sqlite3.Error, OSError) as exception:
+                        error_code = sqlite_error.sqlite_err_handler(str(exception))
+
+                        if error_code == sqlite_error.NOT_NULL_CODE:
+                            message = QMessageBox()
+                            message.setWindowTitle("LabNote")
+                            message.setText("Unable to save protocol")
+                            message.setInformativeText("The protocol key must not be empty.")
+                            message.setIcon(QMessageBox.Information)
+                            message.setStandardButtons(QMessageBox.Ok)
+                            message.exec()
+                            return
+                        elif error_code == sqlite_error.UNIQUE_CODE:
+                            message = QMessageBox()
+                            message.setWindowTitle("LabNote")
+                            message.setText("Unable to save protocol")
+                            message.setInformativeText("The protocol key must be unique.")
+                            message.setIcon(QMessageBox.Information)
+                            message.setStandardButtons(QMessageBox.Ok)
+                            message.exec()
+                            return
+                        else:
+                            message = QMessageBox(QMessageBox.Warning, "Unable to save protocol",
+                                                  "An error occurred while saving the protocol.", QMessageBox.Ok)
+                            message.setWindowTitle("LabNote")
+                            message.setDetailedText(str(exception))
+                            message.exec()
+                            return
+                    self.done_modifing_protocol(prt_uuid=prt_uuid)
+
+    def done_modifing_protocol(self, prt_uuid):
+        """ Active the interface element after the protocol is saved """
+        self.category_frame.show_list()
+
+        model = self.category_frame.view_tree.model()
+        match = model.match(model.index(0, 0), Qt.UserRole, prt_uuid, 1, Qt.MatchRecursive)
+        if match:
+            self.category_frame.view_tree.selectionModel().setCurrentIndex(match[0], QItemSelectionModel.Select)
+            self.category_frame.view_tree.repaint()
+
+    def show_protocol_details(self, prt_uuid):
+        """ Show a reference details when it is selected """
+        try:
+            protocol = fsentry.read_protocol(prt_uuid)
+        except sqlite3.Error as exception:
+            message = QMessageBox(QMessageBox.Warning, "Error while loading data",
+                                  "An error occurred while loading the protocol data.", QMessageBox.Ok)
+            message.setWindowTitle("LabNote")
+            message.setDetailedText(str(exception))
+            message.exec()
+            return
+
+        # Show content
+        self.create_editor()
+        self.editor.txt_key.setText(protocol['key'])
+
+        name = protocol['name']
+        if name:
+            self.editor.txt_title.setPlainText(name)
+
+        description = protocol['description']
+        if description:
+            self.editor.txt_description.setHtml(description)
+
+        created_date = protocol['created']
+        if created_date:
+            self.editor.lbl_created.setText(date.utc_to_local(created_date))
+
+        updated_date = protocol['updated']
+        if updated_date:
+            self.editor.lbl_updated.setText(date.utc_to_local(updated_date))
+
+    def closeEvent(self, event):
+        self.save_treeview_state()
+        self.save_settings()
+        event.accept()
+
+    def save_settings(self):
+        """ Save the dialog geometry """
+        settings = QSettings("Samuel Drouin", "LabNote")
+        settings.beginGroup("Protocol")
+        settings.setValue("Geometry", self.saveGeometry())
+        settings.setValue("Maximized", self.isMaximized())
+        settings.endGroup()
+
+    def read_settings(self):
+        """ Restore the dialog geometry """
+        settings = QSettings("Samuel Drouin", "LabNote")
+        settings.beginGroup("Protocol")
+        self.restoreGeometry(settings.value("Geometry", self.saveGeometry()))
+        if settings.value("Maximized", self.isMaximized()):
+            self.showMaximized()
+        settings.endGroup()
+
+    def save_treeview_state(self):
+        """ Save the treeview expanded state """
+
+        # Generate list
+        expanded_item = []
+        for index in self.category_frame.view_tree.model().get_persistant_index_list():
+            if self.category_frame.view_tree.isExpanded(index) and index.data(common.QT_StateRole):
+                expanded_item.append(index.data(common.QT_StateRole))
+
+        # Save list
+        settings = QSettings("Samuel Drouin", "LabNote")
+        settings.beginGroup("Protocol")
+        settings.setValue("ExpandedItem", expanded_item)
+        settings.endGroup()
+
+    def restore_treeview_state(self):
+        """ Restore the treeview expended state """
+
+        # Get list
+        settings = QSettings("Samuel Drouin", "LabNote")
+        settings.beginGroup("Protocol")
+        expanded_item = settings.value("ExpandedItem")
+        selected_item = settings.value("SelectedItem")
+        settings.endGroup()
+
+        model = self.category_frame.view_tree.model()
+
+        if expanded_item:
+            for item in expanded_item:
+                match = model.match(model.index(0, 0), common.QT_StateRole, item, 1, Qt.MatchRecursive)
+
+                if match:
+                    self.category_frame.view_tree.setExpanded(match[0], True)

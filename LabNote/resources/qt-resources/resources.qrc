@@ -44,6 +44,8 @@
         <file>style-sheet/widget/search.qss</file>
         <file>style-sheet/widget/view/project_notebook_tree_view.qss</file>
         <file>style-sheet/widget/widget/no_entry_widget.qss</file>
+        <file>style-sheet/widget/widget/text_editor_button_frame.qss</file>
+        <file>style-sheet/widget/widget/text_editor.qss</file>
     </qresource>
     <qresource prefix="/Icon/Sample">
         <file>icons/sample/import.png</file>

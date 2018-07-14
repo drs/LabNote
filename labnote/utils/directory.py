@@ -4,6 +4,7 @@ import os
 DEFAULT_MAIN_DIRECTORY_PATH = os.path.expanduser("~/Documents/LabNote")
 NOTEBOOK_DIRECTORY_PATH = os.path.join(DEFAULT_MAIN_DIRECTORY_PATH + "/Notebook")
 REFERENCES_DIRECTORY_PATH = os.path.join(DEFAULT_MAIN_DIRECTORY_PATH + "/References")
+PROTOCOL_DIRECTORY_PATH = os.path.join(DEFAULT_MAIN_DIRECTORY_PATH + "/Protocols")
 
 
 def notebook_path(nb_uuid):
@@ -36,3 +37,23 @@ def dataset_path(nb_uuid, dt_uuid):
     :return str: Dataset path
     """
     return os.path.join(dataset_notebook_path(nb_uuid=nb_uuid) + "/{}".format(dt_uuid))
+
+
+def protocol_path(prt_uuid):
+    """ Return the protocol path
+
+    :param prt_uuid: Protocol uuid
+    :type prt_uuid: str
+    :return str: Protocol path
+    """
+    return os.path.join(PROTOCOL_DIRECTORY_PATH + "/{}".format(prt_uuid))
+
+
+def protocol_resource_path(prt_uuid):
+    """ Return the protocol resource directory path
+
+    :param prt_uuid: Protocol uuid
+    :type prt_uuid: str
+    :return str: Protocol resource directory path
+    """
+    return os.path.join(protocol_path(prt_uuid) + "/resources")

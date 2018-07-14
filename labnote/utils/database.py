@@ -81,14 +81,17 @@ CREATE TABLE notebook (
 
 CREATE_PROTOCOL_TABLE = """
 CREATE TABLE protocol (
-    prt_uuid     BLOB (16)     PRIMARY KEY
-                               UNIQUE,
-    prt_key      VARCHAR (255) UNIQUE
-                               NOT NULL,
-    name         VARCHAR (255),
-    description  TEXT,
-    date_created DATETIME      DEFAULT (CURRENT_TIMESTAMP),
-    date_updated DATETIME
+    prt_uuid       BLOB (16)     PRIMARY KEY
+                                 UNIQUE,
+    prt_key        VARCHAR (255) UNIQUE
+                                 NOT NULL,
+    name           VARCHAR (255),
+    description    TEXT,
+    date_created   DATETIME      DEFAULT (CURRENT_TIMESTAMP),
+    date_updated   DATETIME,
+    category_id    INTEGER       REFERENCES category (category_id) ON DELETE RESTRICT
+                                 NOT NULL,
+    subcategory_id INTEGER       REFERENCES subcategory (subcategory_id) ON DELETE RESTRICT
 )
 """
 
@@ -146,7 +149,7 @@ CREATE TABLE refs (
     description    TEXT,
     abstract       TEXT,
     subcategory_id INTEGER       REFERENCES subcategory (subcategory_id) ON DELETE RESTRICT,
-    category_id    INTEGER       REFERENCES subcategory (subcategory_id) ON DELETE RESTRICT
+    category_id    INTEGER       REFERENCES category (category_id) ON DELETE RESTRICT
                                  NOT NULL
 )
 """
@@ -409,8 +412,16 @@ INSERT_TAG_REF = """
 INSERT OR IGNORE INTO refs_tag (ref_uuid, tag_id) VALUES (:ref_uuid, (SELECT tag_id FROM tags WHERE name = :name))
 """
 
+SELECT_REFERENCE_TAG = """
+SELECT tag_id FROM refs_tag WHERE ref_uuid=:ref_uuid
+"""
+
 DELETE_TAG = """
 DELETE FROM tags WHERE name = :name
+"""
+
+DELETE_TAG_ID = """
+DELETE FROM tags WHERE tag_id=:tag_id
 """
 
 DELETE_TAG_REF = """
@@ -516,8 +527,36 @@ DELETE_DATASET = """
 DELETE FROM dataset WHERE dt_uuid = :dt_uuid
 """
 
+SELECT_PROTOCOL_LIST = """
+SELECT prt_uuid, name, category_id, subcategory_id FROM protocol
+"""
+
+INSERT_PROTOCOL = """
+INSERT INTO protocol (prt_uuid, prt_key, name, category_id, subcategory_id) VALUES 
+(:prt_uuid, :prt_key, :name, :category_id, :subcategory_id)
+"""
+
+UPDATE_PROTOCOL = """
+UPDATE protocol SET 
+  prt_key=:prt_key, 
+  name=:name,
+  description=:description
+WHERE prt_uuid=:prt_uuid
+"""
+
+UPDATE_PROTOCOL_CATEGORY = """
+UPDATE protocol SET
+  category_id=:category_id, 
+  subcategory_id=:subcategory_id
+WHERE prt_uuid=:prt_uuid
+"""
+
+DELETE_PROTOCOL = """
+DELETE FROM protocol WHERE prt_uuid=:prt_uuid
+"""
+
 SELECT_PROTOCOL = """
-SELECT prt_uuid, prt_key, name, description, date_created, date_updated FROM protocol
+SELECT prt_key, name, description, date_created, date_updated FROM protocol WHERE prt_uuid=:prt_uuid
 """
 
 
@@ -1020,15 +1059,6 @@ def select_reference(ref_uuid):
             'description': buffer[0][16], 'abstract': buffer[0][17]}
 
 
-def delete_reference(ref_uuid):
-    """ Delete a reference from the database
-
-    :param ref_uuid: Reference UUID
-    :type ref_uuid: str
-    """
-    execute_query(DELETE_REF, ref_uuid=data.uuid_bytes(ref_uuid))
-
-
 def update_reference_category(ref_uuid, category_id, subcategory_id=None):
     """ Update reference category and subcategory
 
@@ -1054,7 +1084,7 @@ def insert_tag_ref(ref_uuid, name):
 
         cursor.execute("BEGIN")
         cursor.execute(INSERT_TAG, {'name': name})
-        cursor.execute(INSERT_TAG_REF, {'ref_uuid': ref_uuid, 'name': name})
+        cursor.execute(INSERT_TAG_REF, {'ref_uuid': data.uuid_bytes(ref_uuid), 'name': name})
         cursor.execute("END")
 
 
@@ -1092,7 +1122,7 @@ def select_tag_list():
     tag_list = []
 
     for tag in buffer:
-        tag_list.append({'name': tag[0]})
+        tag_list.append(tag[0])
 
     return tag_list
 
@@ -1279,15 +1309,15 @@ def select_protocol_category():
     category_buffer = cursor.fetchall()
     cursor.execute(SELECT_SUBCATEGORY)
     subcategory_buffer = cursor.fetchall()
-    cursor.execute(SELECT_REFS)
-    reference_buffer = cursor.fetchall()
+    cursor.execute(SELECT_PROTOCOL_LIST)
+    protocol_buffer = cursor.fetchall()
     cursor.execute("END")
     conn.close()
 
     # Return the references list
     Category = namedtuple('Category', ['id', 'name', 'subcategory', 'entry'])
     SubCategory = namedtuple('Subcategory', ['id', 'name', 'entry'])
-    Reference = namedtuple('Reference', ['uuid', 'title', 'author', 'year'])
+    Protocol = namedtuple('Protocol', ['uuid', 'title', 'author', 'year'])
 
     category_list = []
 
@@ -1303,29 +1333,23 @@ def select_protocol_category():
                         subcategory_id = subcategory[0]
                         subcategory_name = subcategory[1]
 
-                        reference_list = []
-                        if reference_buffer:
-                            for reference in reference_buffer:
-                                if reference[4] == category_id and reference[5] == subcategory_id:
-                                    reference_uuid = data.uuid_string(reference[0])
-                                    reference_title = reference[1]
-                                    reference_author = reference[2]
-                                    reference_year = reference[3]
+                        protocol_list = []
+                        if protocol_buffer:
+                            for protocol in protocol_buffer:
+                                if protocol[2] == category_id and protocol[3] == subcategory_id:
+                                    protocol_uuid = data.uuid_string(protocol[0])
+                                    protocol_name = protocol[1]
 
-                                    reference_list.append(Reference(reference_uuid, reference_title,
-                                                                    reference_author, reference_year))
-                        subcategory_list.append(SubCategory(subcategory_id, subcategory_name, reference_list))
+                                    protocol_list.append(Protocol(protocol_uuid, protocol_name, None, None))
+                        subcategory_list.append(SubCategory(subcategory_id, subcategory_name, protocol_list))
 
-            reference_list = []
-            if reference_buffer:
-                for reference in reference_buffer:
-                    if reference[4] == category_id and reference[5] == None:
-                        reference_uuid = data.uuid_string(reference[0])
-                        reference_title = reference[1]
-                        reference_author = reference[2]
-                        reference_year = reference[3]
+            protocol_list = []
+            if protocol_buffer:
+                for protocol in protocol_buffer:
+                    if protocol[2] == category_id and protocol[3] is None:
+                        protocol_uuid = data.uuid_string(protocol[0])
+                        protocol_name = protocol[1]
 
-                        reference_list.append(Reference(reference_uuid, reference_title,
-                                                        reference_author, reference_year))
-            category_list.append(Category(category_id, category_name, subcategory_list, reference_list))
+                        protocol_list.append(Protocol(protocol_uuid, protocol_name, None, None))
+            category_list.append(Category(category_id, category_name, subcategory_list, protocol_list))
     return category_list

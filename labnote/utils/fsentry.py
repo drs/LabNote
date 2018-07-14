@@ -9,7 +9,7 @@ import sqlite3
 
 # Projet import
 from labnote.utils import database, directory, files
-from labnote.core import data
+from labnote.core import data, sqlite_error
 
 
 def check_main_directory():
@@ -171,6 +171,52 @@ def delete_reference_pdf(ref_uuid):
             conn.close()
 
 
+def delete_reference(ref_uuid):
+    """ Delete a reference from the database and cleanup any PDF file from the file system
+    or tag in the database """
+
+    conn = None
+    cursor = None
+    exception = False
+
+    try:
+        conn = sqlite3.connect(database.MAIN_DATABASE_FILE_PATH)
+        conn.execute("PRAGMA foreign_keys = ON")
+        cursor = conn.cursor()
+        cursor.execute("BEGIN ")
+        cursor.execute(database.SELECT_REFERENCE_TAG, {'ref_uuid': data.uuid_bytes(ref_uuid)})
+        tag_ids = cursor.fetchall()
+        cursor.execute(database.DELETE_REF, {'ref_uuid': data.uuid_bytes(ref_uuid)})
+
+        if tag_ids:
+            try:
+                for tag_id in tag_ids[0]:
+                    cursor.execute(database.DELETE_TAG_ID, {'tag_id': tag_id})
+            except sqlite3.Error as excpt:
+                if sqlite_error.sqlite_err_handler(str(excpt)) == sqlite_error.FOREIGN_KEY_CODE:
+                    pass
+                else:
+                    raise
+
+        reference_file = files.reference_file_path(ref_uuid=ref_uuid)
+    except sqlite3.Error:
+        exception = True
+        raise
+    except FileNotFoundError:
+        pass
+    except OSError:
+        if conn:
+            conn.rollback()
+        exception = True
+        raise
+    finally:
+        if not exception:
+            if cursor:
+                cursor.execute("END")
+        if conn:
+            conn.close()
+
+
 def create_dataset(dt_uuid, name, key, nb_uuid):
     """ Create a dataset in the database and in the file structure
 
@@ -244,3 +290,141 @@ def delete_dataset(dt_uuid, nb_uuid):
             conn.commit()
         if conn:
             conn.close()
+
+
+def create_protocol(prt_uuid, prt_key, category_id, name=None, subcategory_id=None):
+    """ Create a protocol in the database and the file system
+
+    :param prt_uuid: Protocol UUID
+    :type prt_uuid: str
+    :param prt_key: Protocol key
+    :type prt_key: str
+    :param name: Protocol name
+    :type name: str
+    """
+
+    conn = None
+    exception = False
+
+    try:
+        conn = sqlite3.connect(database.MAIN_DATABASE_FILE_PATH)
+        conn.execute("PRAGMA foreign_keys = ON")
+        cursor = conn.cursor()
+        cursor.execute(database.INSERT_PROTOCOL, {'prt_uuid': data.uuid_bytes(prt_uuid),
+                                                  'prt_key': prt_key,
+                                                  'name': name,
+                                                  'category_id': category_id,
+                                                  'subcategory_id': subcategory_id})
+
+        protocol_path = directory.protocol_path(prt_uuid=prt_uuid)
+        protocol_resource_path = directory.protocol_resource_path(prt_uuid=prt_uuid)
+        os.mkdir(protocol_path)
+        os.mkdir(protocol_resource_path)
+    except sqlite3.Error:
+        exception = True
+        raise
+    except OSError:
+        if conn:
+            conn.rollback()
+        exception = True
+        raise
+    finally:
+        if not exception:
+            conn.commit()
+        if conn:
+            conn.close()
+
+
+def save_protocol(prt_uuid, prt_key, name, description, body):
+    """ Save changes to a protocol in the database and the file system """
+
+    conn = None
+    file = None
+    exception = False
+
+    try:
+        conn = sqlite3.connect(database.MAIN_DATABASE_FILE_PATH)
+        conn.execute("PRAGMA foreign_keys = ON")
+        cursor = conn.cursor()
+        cursor.execute(database.UPDATE_PROTOCOL, {'prt_uuid': data.uuid_bytes(prt_uuid),
+                                                  'prt_key': prt_key,
+                                                  'name': name,
+                                                  'description': description})
+
+        file = open(files.protocol_file(prt_uuid), 'wb')
+        file.write(data.encode(body))
+    except sqlite3.Error:
+        exception = True
+        raise
+    except OSError:
+        if conn:
+            conn.rollback()
+        exception = True
+        raise
+    finally:
+        if not exception:
+            conn.commit()
+        if conn:
+            conn.close()
+        if file:
+            file.close()
+
+
+def delete_protocol(prt_uuid):
+    """ Delete a protocol from the database and the file structure
+
+    :param prt_uuid: Protocol uuid
+    :type prt_uuid: str
+    """
+
+    conn = None
+    exception = False
+
+    try:
+        conn = sqlite3.connect(database.MAIN_DATABASE_FILE_PATH)
+        conn.execute("PRAGMA foreign_keys = ON")
+        cursor = conn.cursor()
+        cursor.execute(database.DELETE_PROTOCOL, {'prt_uuid': data.uuid_bytes(prt_uuid)})
+
+        protocol_path = directory.protocol_path(prt_uuid=prt_uuid)
+        shutil.rmtree(protocol_path, ignore_errors=True)
+    except sqlite3.Error:
+        exception = True
+        raise
+    except OSError:
+        if conn:
+            conn.rollback()
+        exception = True
+        raise
+    finally:
+        if not exception:
+            conn.commit()
+        if conn:
+            conn.close()
+
+
+def read_protocol(prt_uuid):
+    """ Read a protocol content from the database and the file system
+
+    :param prt_uuid: Protocol uuid
+    :type prt_uuid: str
+    :return {}: Protocol content
+    """
+
+    buffer = None
+    body_buffer = None
+
+    try:
+        with sqlite3.connect(database.MAIN_DATABASE_FILE_PATH) as conn:
+            cursor = conn.cursor()
+            cursor.execute(database.SELECT_PROTOCOL, {'prt_uuid': data.uuid_bytes(prt_uuid)})
+            buffer = cursor.fetchall()[0]
+
+        with open(files.protocol_file(prt_uuid), 'rb') as file:
+            body_buffer = data.decode(file.read())
+    except (sqlite3.Error, OSError):
+        raise
+
+    protocol = {'key': buffer[0], 'name': buffer[1], 'description': buffer[2], 'created': buffer[3],
+                'updated': buffer[4], 'body': body_buffer}
+    return protocol

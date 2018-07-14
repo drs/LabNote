@@ -58,3 +58,13 @@ def dataset_excel_file(dt_uuid, nb_uuid):
     :type nb_uuid: str
     """
     return os.path.join(directory.dataset_path(nb_uuid=nb_uuid, dt_uuid=dt_uuid) + "/{}.xlsx".format(dt_uuid))
+
+
+def protocol_file(prt_uuid):
+    """ Return the path to a protocol file in the file system
+
+    :param prt_uuid: Protocol uuid
+    :type prt_uuid: str
+    :return str: Protocol file path
+    """
+    return os.path.join(directory.protocol_path(prt_uuid=prt_uuid) + "/{}.labnp".format(prt_uuid))

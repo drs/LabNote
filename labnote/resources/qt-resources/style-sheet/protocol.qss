@@ -1,9 +1,11 @@
 /*
 Central frame
 */
+
 QFrame#frame {
     border-left: none;
     border-top: 0.5px solid rgb(196, 196, 196);
     border-bottom: 0.5px solid rgb(196, 196, 196);
     border-right: none;
+    background-color: rgb(236, 236, 236)
 }
