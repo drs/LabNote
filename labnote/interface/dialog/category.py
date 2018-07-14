@@ -5,14 +5,14 @@ import sqlite3
 
 # PyQt import
 from PyQt5.QtWidgets import QDialog, QMessageBox
-from PyQt5.QtCore import QRegExp, pyqtSignal, Qt
-from PyQt5.QtGui import QRegExpValidator
+from PyQt5.QtCore import pyqtSignal, Qt
 
 # Project import
 from labnote.ui.dialog.ui_category import Ui_Category
 from labnote.ui.dialog.ui_subcategory import Ui_Subcategory
 from labnote.utils import database
 from labnote.core import sqlite_error
+from labnote.interface.widget.object import NameValidator
 
 
 class Category(QDialog, Ui_Category):
@@ -35,8 +35,7 @@ class Category(QDialog, Ui_Category):
         self.setFixedSize(400, 133)
 
         # Set category name validator
-        validator = QRegExpValidator(QRegExp("^[0-9a-zA-ZÀ-ÿ -._]+$"))
-        self.txt_name.setValidator(validator)
+        self.txt_name.setValidator(NameValidator())
         self.txt_name.setAttribute(Qt.WA_MacShowFocusRect, 0)
 
         # Create button
@@ -126,8 +125,7 @@ class Subcategory(QDialog, Ui_Subcategory):
         self.setFixedSize(400, 169)
 
         # Set category name validator
-        validator = QRegExpValidator(QRegExp("^[0-9a-zA-ZÀ-ÿ -._]+$"))
-        self.txt_name.setValidator(validator)
+        self.txt_name.setValidator(NameValidator())
         self.txt_name.setAttribute(Qt.WA_MacShowFocusRect, 0)
 
         # Create button

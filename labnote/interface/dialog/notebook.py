@@ -7,13 +7,14 @@ import sqlite3
 
 # PyQt import
 from PyQt5.QtWidgets import QDialog, QMessageBox
-from PyQt5.QtGui import QPixmap, QRegExpValidator
+from PyQt5.QtGui import QPixmap
 from PyQt5.QtCore import QRegExp, Qt
 
 # Project import
 from labnote.ui.dialog.ui_notebook import Ui_Notebook
 from labnote.utils import database, fsentry
 from labnote.core import sqlite_error
+from labnote.interface.widget.object import NameValidator
 
 
 class Notebook(QDialog, Ui_Notebook):
@@ -47,8 +48,7 @@ class Notebook(QDialog, Ui_Notebook):
         self.show_project_list()
 
         # Set notebook name validator
-        validator = QRegExpValidator(QRegExp("^[0-9a-zA-ZÀ-ÿ -._]+$"))
-        self.txt_name.setValidator(validator)
+        self.txt_name.setValidator(NameValidator())
 
         # Make the combobox read only for update
         if self.notebook_id:

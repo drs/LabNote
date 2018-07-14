@@ -6,13 +6,13 @@ import uuid
 
 # PyQt import
 from PyQt5.QtWidgets import QDialog, QMessageBox
-from PyQt5.QtCore import QRegExp, Qt, pyqtSignal
-from PyQt5.QtGui import QRegExpValidator
+from PyQt5.QtCore import Qt, pyqtSignal
 
 # Project import
 from labnote.ui.dialog.ui_dataset import Ui_Dataset
 from labnote.utils import database, fsentry
 from labnote.core import sqlite_error, data
+from labnote.interface.widget.object import NameValidator, KeyValidator
 
 
 class DatasetDialog(QDialog, Ui_Dataset):
@@ -39,11 +39,9 @@ class DatasetDialog(QDialog, Ui_Dataset):
         self.setFixedSize(400, 202)
 
         # Set validator
-        name_validator = QRegExpValidator(QRegExp("^[0-9a-zA-ZÀ-ÿ-_. ]+$"))
-        self.txt_name.setValidator(name_validator)
+        self.txt_name.setValidator(NameValidator())
 
-        key_validator = QRegExpValidator(QRegExp("^[a-z]{1}[0-9a-z_-]+$"))
-        self.txt_key.setValidator(key_validator)
+        self.txt_key.setValidator(KeyValidator())
 
         # Set lineedit properties
         self.txt_name.setAttribute(Qt.WA_MacShowFocusRect, 0)

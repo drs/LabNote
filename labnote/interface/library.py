@@ -10,8 +10,8 @@ import os
 
 # PyQt import
 from PyQt5.QtWidgets import QDialog, QGridLayout, QLabel, QMessageBox, QWidget, QVBoxLayout
-from PyQt5.QtCore import Qt, QRegExp, QSettings, pyqtSignal, QFileInfo, QItemSelectionModel
-from PyQt5.QtGui import QFont, QRegExpValidator, QColor, QPixmap, QPainter, QPen, QBrush
+from PyQt5.QtCore import Qt, QSettings, pyqtSignal, QFileInfo, QItemSelectionModel
+from PyQt5.QtGui import QFont, QColor, QPixmap, QPainter, QPen, QBrush
 
 # Project import
 from labnote.ui.ui_library import Ui_Library
@@ -21,6 +21,7 @@ from labnote.utils import database, fsentry, directory
 from labnote.interface.widget.lineedit import LineEdit, NumberLineEdit, YearLineEdit, PagesLineEdit, SearchLineEdit
 from labnote.interface.widget.widget import CategoryFrame
 from labnote.interface.widget import widget
+from labnote.interface.widget.object import KeyValidator
 
 
 # Constant definition
@@ -108,8 +109,7 @@ class Library(QDialog, Ui_Library):
         self.clear_form()
 
         # Key validator
-        validator = QRegExpValidator(QRegExp("^[a-zA-Z0-9_]+$"))
-        self.txt_key.setValidator(validator)
+        self.txt_key.setValidator(KeyValidator())
 
         # Focus policy
         self.txt_search.setFocusPolicy(self.txt_search.focusPolicy() ^ Qt.TabFocus)
