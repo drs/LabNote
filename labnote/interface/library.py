@@ -185,7 +185,6 @@ class Library(QDialog, Ui_Library):
         :type file: str
         """
         ref_uuid = self.category_frame.get_user_data()
-        print(ref_uuid)
 
         try:
             reference_file = fsentry.add_reference_pdf(ref_uuid=ref_uuid, file=file)
@@ -314,7 +313,7 @@ class Library(QDialog, Ui_Library):
     def delete_reference(self, ref_uuid):
         """ Delete a reference """
         try:
-            database.delete_reference(ref_uuid=ref_uuid)
+            fsentry.delete_reference(ref_uuid=ref_uuid)
         except sqlite3.Error as exception:
             message = QMessageBox(QMessageBox.Warning, "Unable to delete reference",
                                   "An error occurred while deleting the reference.", QMessageBox.Ok)
