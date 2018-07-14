@@ -58,9 +58,13 @@ class Library(QDialog, Ui_Library):
     # Signals definition
     pdf_added = pyqtSignal(str)
     pdf_deleted = pyqtSignal()
+    closed = pyqtSignal()
 
-    def __init__(self, parent=None):
+    def __init__(self, tag_list, parent=None):
         super(Library, self).__init__(parent)
+        # Initialize global variable
+        self.tag_list = tag_list
+
         # Initialize the GUI
         self.setupUi(self)
         self.init_ui()
@@ -68,7 +72,6 @@ class Library(QDialog, Ui_Library):
 
         # Show the widget content
         self.category_frame.show_list()
-        self.get_tag_list()
 
         # Show the dialog
         self.show()
@@ -147,36 +150,6 @@ class Library(QDialog, Ui_Library):
             return
 
         self.tag_list = tag_list
-
-    def add_tag(self, tag):
-        """ Add tag to the reference """
-        ref_uuid = self.category_frame.get_user_data()
-
-        try:
-            database.insert_tag_ref(ref_uuid=ref_uuid, name=tag)
-        except sqlite3.Error as exception:
-            message = QMessageBox(QMessageBox.Warning, "Unable to add tag",
-                                  "An error occurred while adding the tag.", QMessageBox.Ok)
-            message.setWindowTitle("LabNote")
-            message.setDetailedText(str(exception))
-            message.exec()
-            return
-        self.process_reference()
-
-    def remove_tag(self, tags):
-        """ Remove tag to the reference """
-
-        try:
-            for tag in tags:
-                database.delete_tag_ref(name=tag)
-        except sqlite3.Error as exception:
-            message = QMessageBox(QMessageBox.Warning, "Unable to remove tag",
-                                  "An error occurred while removing the tag.", QMessageBox.Ok)
-            message.setWindowTitle("LabNote")
-            message.setDetailedText(str(exception))
-            message.exec()
-            return
-        self.process_reference()
 
     def add_pdf(self, file):
         """ Add a PDF to a reference
@@ -297,8 +270,6 @@ class Library(QDialog, Ui_Library):
             self.clear_form()
             self.creating_reference = True
             self.enable_all(True)
-            self.txt_abstract.setEnabled(False)
-            self.txt_description.setEnabled(False)
             self.pdf_widget.clear_form()
             self.pdf_widget.setEnabled(False)
 
@@ -368,6 +339,7 @@ class Library(QDialog, Ui_Library):
 
             if category_id:
                 ref_type = self.comboBox.currentText()
+                anchor = self.txt_description.anchors()
 
                 if ref_type == "Article":
                     author = data.prepare_string(self.txt_author.text())
@@ -411,19 +383,21 @@ class Library(QDialog, Ui_Library):
                             database.insert_ref(ref_uuid=ref_uuid, ref_key=key, ref_type=TYPE_ARTICLE,
                                                 category_id=category_id, subcategory_id=subcategory_id, author=author,
                                                 title=title, journal=journal, year=year, volume=volume, issue=issue,
-                                                pages=pages, description=description, abstract=abstract)
+                                                pages=pages, description=description, abstract=abstract,
+                                                tag_list=anchor['tag'])
                         elif ref_type == "Book":
                             database.insert_ref(ref_uuid=ref_uuid, ref_key=key, category_id=category_id,
                                                 subcategory_id=subcategory_id, author=author, title=title, year=year,
                                                 publisher=publisher, address=place, volume=volume, pages=pages,
                                                 edition=edition, description=description, abstract=abstract,
-                                                ref_type=TYPE_BOOK)
+                                                ref_type=TYPE_BOOK, tag_list=anchor['tag'])
                         elif ref_type == "Chapter":
                             database.insert_ref(ref_uuid=ref_uuid, ref_key=key, category_id=category_id,
                                                 subcategory_id=subcategory_id, author=author, title=title, year=year,
                                                 publisher=publisher, address=place, volume=volume, pages=pages,
                                                 edition=edition, description=description, abstract=abstract,
-                                                chapter=chapter, editor=editor, ref_type=TYPE_CHAPTER)
+                                                chapter=chapter, editor=editor, ref_type=TYPE_CHAPTER,
+                                                tag_list=anchor['tag'])
                         self.done_modifing_reference(ref_uuid=data.uuid_string(ref_uuid))
                     except sqlite3.Error as exception:
                         error_code = sqlite_error.sqlite_err_handler(str(exception))
@@ -454,22 +428,24 @@ class Library(QDialog, Ui_Library):
                             message.exec()
                             return
                 else:
-                    ref_uuid = self.category_frame.get_user_data()
+                    ref_uuid = data.uuid_bytes(self.category_frame.get_user_data())
                     try:
                         if ref_type == "Article":
                             database.update_ref(ref_uuid=ref_uuid, ref_key=key, ref_type=TYPE_ARTICLE, author=author,
                                                 title=title, journal=journal, year=year, volume=volume, issue=issue,
-                                                pages=pages, description=description, abstract=abstract)
+                                                pages=pages, description=description, abstract=abstract,
+                                                tag_list=anchor['tag'])
                         elif ref_type == "Book":
                             database.update_ref(ref_uuid=ref_uuid, ref_key=key, author=author, title=title, year=year,
                                                 publisher=publisher, address=place, volume=volume, pages=pages,
                                                 edition=edition, description=description, abstract=abstract,
-                                                ref_type=TYPE_BOOK)
+                                                ref_type=TYPE_BOOK, tag_list=anchor['tag'])
                         elif ref_type == "Chapter":
                             database.update_ref(ref_uuid=ref_uuid, ref_key=key, author=author, title=title, year=year,
                                                 publisher=publisher, address=place, volume=volume, pages=pages,
                                                 edition=edition, description=description, abstract=abstract,
-                                                chapter=chapter, editor=editor, ref_type=TYPE_CHAPTER)
+                                                chapter=chapter, editor=editor, ref_type=TYPE_CHAPTER,
+                                                tag_list=anchor['tag'])
                         self.done_modifing_reference(ref_uuid=ref_uuid)
                     except sqlite3.Error as exception:
                         error_code = sqlite_error.sqlite_err_handler(str(exception))
@@ -477,7 +453,7 @@ class Library(QDialog, Ui_Library):
                         if error_code == sqlite_error.NOT_NULL_CODE:
                             message = QMessageBox()
                             message.setWindowTitle("LabNote")
-                            message.setText("Unable to create reference")
+                            message.setText("Unable to update reference")
                             message.setInformativeText("The reference key must not be empty.")
                             message.setIcon(QMessageBox.Information)
                             message.setStandardButtons(QMessageBox.Ok)
@@ -486,15 +462,15 @@ class Library(QDialog, Ui_Library):
                         elif error_code == sqlite_error.UNIQUE_CODE:
                             message = QMessageBox()
                             message.setWindowTitle("LabNote")
-                            message.setText("Unable to create reference")
+                            message.setText("Unable to update reference")
                             message.setInformativeText("The reference key must be unique.")
                             message.setIcon(QMessageBox.Information)
                             message.setStandardButtons(QMessageBox.Ok)
                             message.exec()
                             return
                         else:
-                            message = QMessageBox(QMessageBox.Warning, "Unable to create reference",
-                                                  "An error occurred while creating the reference.", QMessageBox.Ok)
+                            message = QMessageBox(QMessageBox.Warning, "Unable to update reference",
+                                                  "An error occurred while updating the reference.", QMessageBox.Ok)
                             message.setWindowTitle("LabNote")
                             message.setDetailedText(str(exception))
                             message.exec()
@@ -509,6 +485,7 @@ class Library(QDialog, Ui_Library):
         if match:
             self.category_frame.view_tree.selectionModel().setCurrentIndex(match[0], QItemSelectionModel.Select)
             self.category_frame.view_tree.repaint()
+        self.get_tag_list()
 
     def reset_fields(self):
         self.txt_key.clear()
@@ -695,10 +672,6 @@ class Library(QDialog, Ui_Library):
         self.txt_abstract = PlainTextEdit()
         self.grid_layout.addWidget(self.txt_abstract, 8, 1)
 
-        if self.creating_reference:
-            self.txt_description.setEnabled(False)
-            self.txt_abstract.setEnabled(False)
-
         if fields:
             self.txt_author.setText(fields['author'])
             self.txt_title.setText(fields['title'])
@@ -773,10 +746,6 @@ class Library(QDialog, Ui_Library):
         self.grid_layout.addWidget(self.lbl_abstract, 9, 0)
         self.txt_abstract = PlainTextEdit()
         self.grid_layout.addWidget(self.txt_abstract, 9, 1)
-
-        if self.creating_reference:
-            self.txt_description.setEnabled(False)
-            self.txt_abstract.setEnabled(False)
 
         if fields:
             self.txt_author.setText(fields['author'])
@@ -865,10 +834,6 @@ class Library(QDialog, Ui_Library):
         self.txt_abstract = PlainTextEdit()
         self.grid_layout.addWidget(self.txt_abstract, 11, 1)
 
-        if self.creating_reference:
-            self.txt_description.setEnabled(False)
-            self.txt_abstract.setEnabled(False)
-
         if fields:
             self.txt_author.setText(fields['author'])
             self.txt_chapter.setText(fields['chapter'])
@@ -892,6 +857,7 @@ class Library(QDialog, Ui_Library):
     def closeEvent(self, event):
         self.save_treeview_state()
         self.save_settings()
+        self.closed.emit()
         event.accept()
 
     def save_settings(self):

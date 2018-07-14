@@ -6,7 +6,7 @@ import uuid
 
 # PyQt import
 from PyQt5.QtWidgets import QDialog, QMessageBox
-from PyQt5.QtCore import QSettings, Qt, QItemSelectionModel
+from PyQt5.QtCore import QSettings, Qt, QItemSelectionModel, pyqtSignal
 
 # Project import
 from labnote.ui.ui_protocol import Ui_Protocol
@@ -23,8 +23,14 @@ class Protocol(QDialog, Ui_Protocol):
     tag_list = []
     creating_protocol = False
 
-    def __init__(self, parent=None):
+    # Signals
+    closed = pyqtSignal()
+
+    def __init__(self, tag_list, parent=None):
         super(Protocol, self).__init__(parent=parent)
+        # Initialize global variable
+        self.tag_list = tag_list
+
         # Initialize the GUI
         self.setupUi(self)
         self.init_ui()
@@ -51,9 +57,6 @@ class Protocol(QDialog, Ui_Protocol):
 
         # Read settings
         self.read_settings()
-
-        # Get tag list
-        self.get_tag_list()
 
     def init_connection(self):
         self.btn_close.clicked.connect(self.close)
@@ -217,6 +220,7 @@ class Protocol(QDialog, Ui_Protocol):
         if match:
             self.category_frame.view_tree.selectionModel().setCurrentIndex(match[0], QItemSelectionModel.Select)
             self.category_frame.view_tree.repaint()
+        self.get_tag_list()
 
     def show_protocol_details(self, prt_uuid):
         """ Show a reference details when it is selected """
@@ -253,6 +257,7 @@ class Protocol(QDialog, Ui_Protocol):
     def closeEvent(self, event):
         self.save_treeview_state()
         self.save_settings()
+        self.closed.emit()
         event.accept()
 
     def save_settings(self):

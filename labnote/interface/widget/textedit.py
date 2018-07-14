@@ -289,7 +289,7 @@ class CompleterTextEdit(TextEdit):
         dataset_list = set([])
         protocol_list = set([])
 
-        while cursor.movePosition(QTextCursor.NextWord):
+        while cursor.movePosition(QTextCursor.NextCharacter):
             if cursor.charFormat().isAnchor():
                 href = cursor.charFormat().anchorHref().split('/')
                 prefix = href[0]
@@ -306,14 +306,15 @@ class CompleterTextEdit(TextEdit):
 
         anchor = {}
         if self.accept_tag:
-            anchor['tag'] = tag_list
+            anchor['tag'] = list(tag_list)
         if self.accept_reference:
-            anchor['reference'] = reference_list
+            anchor['reference'] = list(reference_list)
         if self.accept_dataset:
-            anchor['dataset'] = dataset_list
+            anchor['dataset'] = list(dataset_list)
         if self.accept_protocol:
-            anchor['protocol'] = protocol_list
+            anchor['protocol'] = list(protocol_list)
 
+        print(anchor)
         return anchor
 
     def format_completion(self, *args):

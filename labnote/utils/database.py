@@ -6,7 +6,7 @@ from collections import namedtuple
 # Project import
 from labnote.utils import directory
 from labnote.utils.conversion import uuid_bytes, uuid_string
-from labnote.core import data
+from labnote.core import data, sqlite_error
 
 """
 Database path
@@ -425,11 +425,15 @@ DELETE FROM tags WHERE tag_id=:tag_id
 """
 
 DELETE_TAG_REF = """
-DELETE FROM refs_tag WHERE tag_id = (SELECT tag_id FROM tags WHERE name = :name)
+DELETE FROM refs_tag WHERE tag_id = (SELECT tag_id FROM tags WHERE name = :name) AND ref_uuid = :ref_uuid
 """
 
 SELECT_TAG = """
 SELECT name FROM tags
+"""
+
+SELECT_REFERENCE_TAG_NAME = """
+SELECT name FROM tags WHERE tag_id = (SELECT tag_id FROM refs_tag WHERE ref_uuid=:ref_uuid)
 """
 
 SELECT_SAMPLE = """
@@ -1023,22 +1027,128 @@ def select_reference_category():
 
 def insert_ref(ref_uuid, ref_key, ref_type, category_id, subcategory_id=None, file_attached=False, title=None,
                publisher=None, year=None, author=None, editor=None, volume=None, address=None, edition=None,
-               journal=None, chapter=None, pages=None, issue=None, description=None, abstract=None):
+               journal=None, chapter=None, pages=None, issue=None, description=None, abstract=None, tag_list=None):
     """ Insert a reference """
-    execute_query(INSERT_REF, ref_uuid=ref_uuid, ref_key=ref_key, ref_type=ref_type, file_attached=file_attached,
-                  title=title, publisher=publisher, year=year, author=author, editor=editor, volume=volume,
-                  address=address, edition=edition, journal=journal, chapter=chapter, pages=pages, issue=issue,
-                  description=description, abstract=abstract, subcategory_id=subcategory_id, category_id=category_id)
+
+    # Execute the query
+    with sqlite3.connect(MAIN_DATABASE_FILE_PATH) as conn:
+        conn.isolation_level = None
+        conn.execute("PRAGMA foreign_keys = ON;")
+        cursor = conn.cursor()
+
+        # Insert the reference in the database
+
+        cursor.execute("BEGIN")
+        cursor.execute(INSERT_REF, {'ref_uuid': ref_uuid,
+                                        'ref_key': ref_key,
+                                        'ref_type': ref_type,
+                                        'file_attached': file_attached,
+                                        'title': title,
+                                        'publisher': publisher,
+                                        'year': year,
+                                        'author': author,
+                                        'editor': editor,
+                                        'volume': volume,
+                                        'address': address,
+                                        'edition': edition,
+                                        'journal': journal,
+                                        'chapter': chapter,
+                                        'pages': pages,
+                                        'issue': issue,
+                                        'description': description,
+                                        'abstract': abstract,
+                                        'subcategory_id': subcategory_id,
+                                        'category_id': category_id})
+
+        # Add the tags
+
+        if tag_list:
+            for tag in tag_list:
+                cursor.execute(INSERT_TAG, {'name': tag})
+                cursor.execute(INSERT_TAG_REF, {'ref_uuid': ref_uuid, 'name': tag})
+
+        cursor.execute("COMMIT")
 
 
 def update_ref(ref_uuid, ref_key, ref_type, title=None, publisher=None, year=None, author=None, editor=None,
                volume=None, address=None, edition=None, journal=None, chapter=None, pages=None, issue=None,
-               description=None, abstract=None):
+               description=None, abstract=None, tag_list=None):
     """ Update a reference """
-    execute_query(UPDATE_REF, ref_key=ref_key, ref_type=ref_type, title=title, publisher=publisher, year=year,
-                  author=author, editor=editor, volume=volume, address=address, edition=edition, journal=journal,
-                  chapter=chapter, pages=pages, issue=issue, description=description, abstract=abstract,
-                  ref_uuid=data.uuid_bytes(ref_uuid))
+
+    # Execute the query
+    with sqlite3.connect(MAIN_DATABASE_FILE_PATH) as conn:
+        conn.isolation_level = None
+        conn.execute("PRAGMA foreign_keys = ON;")
+        cursor = conn.cursor()
+
+        cursor.execute("BEGIN")
+
+        # Update the reference in the database
+        cursor.execute(UPDATE_REF, {'ref_uuid': ref_uuid,
+                                    'ref_key': ref_key,
+                                    'ref_type': ref_type,
+                                    'title': title,
+                                    'publisher': publisher,
+                                    'year': year,
+                                    'author': author,
+                                    'editor': editor,
+                                    'volume': volume,
+                                    'address': address,
+                                    'edition': edition,
+                                    'journal': journal,
+                                    'chapter': chapter,
+                                    'pages': pages,
+                                    'issue': issue,
+                                    'description': description,
+                                    'abstract': abstract})
+
+        # Handle the tags
+        cursor.execute(SELECT_REFERENCE_TAG_NAME, {'ref_uuid': ref_uuid})
+        current_tag_list = cursor.fetchall()
+
+        if tag_list:
+            # Create missing tags
+            for tag in tag_list:
+                if current_tag_list:
+                    if tag not in current_tag_list[0]:
+                        cursor.execute(INSERT_TAG, {'name': tag})
+                        cursor.execute(INSERT_TAG_REF, {'ref_uuid': ref_uuid, 'name': tag})
+                else:
+                    cursor.execute(INSERT_TAG, {'name': tag})
+                    cursor.execute(INSERT_TAG_REF, {'ref_uuid': ref_uuid, 'name': tag})
+            # Remove removed tags
+            if current_tag_list:
+                for tag in current_tag_list[0]:
+                    if tag not in tag_list:
+                        cursor.execute(DELETE_TAG_REF, {'name': tag, 'ref_uuid': ref_uuid})
+
+                        # Ignore foreign key exception
+                        # They are expected to occur if the tag is used elsewhere
+                        try:
+                            cursor.execute(DELETE_TAG, {'name': tag})
+                        except sqlite3.Error as exception:
+                            error_code = sqlite_error.sqlite_err_handler(str(exception))
+                            if error_code == sqlite_error.FOREIGN_KEY_CODE:
+                                pass
+                            else:
+                                raise
+        else:
+            if current_tag_list:
+                for tag in current_tag_list[0]:
+                    cursor.execute(DELETE_TAG_REF, {'name': tag, 'ref_uuid': ref_uuid})
+
+                    # Ignore foreign key exception
+                    # They are expected to occur if the tag is used elsewhere
+                    try:
+                        cursor.execute(DELETE_TAG, {'name': tag})
+                    except sqlite3.Error as exception:
+                        error_code = sqlite_error.sqlite_err_handler(str(exception))
+                        if error_code == sqlite_error.FOREIGN_KEY_CODE:
+                            pass
+                        else:
+                            raise
+
+        cursor.execute("COMMIT")
 
 
 def select_reference(ref_uuid):
@@ -1068,43 +1178,20 @@ def update_reference_category(ref_uuid, category_id, subcategory_id=None):
                   ref_uuid=data.uuid_bytes(ref_uuid))
 
 
-def insert_tag_ref(ref_uuid, name):
-    """ Insert the reference tag
+def select_reference_tag_name(ref_uuid):
+    """ Select all the tag for a reference
 
     :param ref_uuid: Reference UUID
-    :type ref_uuid: str
-    :param name: Tag name
-    :type name: str
+    :type ref_uuid: bytes
+    :return [str]: List of all tag name for the reference
     """
+    buffer = execute_query(SELECT_REFERENCE_TAG_NAME, ref_uuid=ref_uuid)
 
-    # Execute the query
-    with sqlite3.connect(MAIN_DATABASE_FILE_PATH) as conn:
-        conn.isolation_level = None
-        cursor = conn.cursor()
+    tag_list = []
 
-        cursor.execute("BEGIN")
-        cursor.execute(INSERT_TAG, {'name': name})
-        cursor.execute(INSERT_TAG_REF, {'ref_uuid': data.uuid_bytes(ref_uuid), 'name': name})
-        cursor.execute("END")
-
-
-def delete_tag_ref(name):
-    """ Insert the reference tag
-
-    :param name: Tag name
-    :type name: str
-    """
-
-    # Execute the query
-    with sqlite3.connect(MAIN_DATABASE_FILE_PATH) as conn:
-        conn.isolation_level = None
-        conn.execute("PRAGMA foreign_keys = ON")
-        cursor = conn.cursor()
-
-        cursor.execute("BEGIN")
-        cursor.execute(DELETE_TAG_REF, {'name': name})
-        cursor.execute(DELETE_TAG, {'name': name})
-        cursor.execute("END")
+    for tag in buffer:
+        tag_list.append(tag[0])
+    return tag_list
 
 
 """
@@ -1296,6 +1383,8 @@ def select_dataset():
 """
 Protocol query
 """
+
+
 def select_protocol_category():
     """ Select all the protocols """
 

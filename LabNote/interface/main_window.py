@@ -204,7 +204,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def open_library(self):
         """ Open the library dialog """
-        library.Library(self)
+        lib = library.Library(tag_list=self.tag_list, parent=self)
+        lib.closed.connect(self.get_tag_list)
 
     def open_sample_number(self):
         """ Open the sample number dialog """
@@ -216,7 +217,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def open_protocol(self):
         """ Open the protocol dialog """
-        protocol.Protocol(self)
+        prt = protocol.Protocol(tag_list=self.tag_list, parent=self)
+        prt.closed.connect(self.get_tag_list)
 
     """
     Notebook list functions
