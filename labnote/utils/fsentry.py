@@ -584,3 +584,242 @@ def read_protocol(prt_uuid):
     protocol = {'key': buffer[0], 'name': buffer[1], 'description': buffer[2], 'created': buffer[3],
                 'updated': buffer[4], 'body': body_buffer}
     return protocol
+
+
+"""
+Experiment entry
+"""
+
+
+def create_experiment(exp_uuid, nb_uuid, name, exp_key=None, description=None, body=None, tag_list=None,
+                      reference_list=None, dataset_list=None, protocol_list=None):
+    """ Create a protocol in the database and the file system
+
+    :param prt_uuid: Protocol UUID
+    :type prt_uuid: str
+    :param prt_key: Protocol key
+    :type prt_key: str
+    :param name: Protocol name
+    :type name: str
+    """
+
+    conn = None
+    cursor = None
+    file = None
+    exception = False
+
+    try:
+        # Add protocol in the database
+        conn = sqlite3.connect(database.MAIN_DATABASE_FILE_PATH)
+        conn.execute("PRAGMA foreign_keys = ON")
+        cursor = conn.cursor()
+        cursor.execute("BEGIN")
+        cursor.execute(database.INSERT_EXPERIMENT, {'exp_uuid': data.uuid_bytes(exp_uuid),
+                                                    'exp_key': exp_key,
+                                                    'name': name,
+                                                    'description': description,
+                                                    'nb_uuid': data.uuid_bytes(nb_uuid)})
+
+        if tag_list:
+            for tag in tag_list:
+                cursor.execute(database.INSERT_TAG, {'name': tag})
+                cursor.execute(database.INSERT_TAG_EXPERIMENT, {'exp_uuid': data.uuid_bytes(exp_uuid),
+                                                                'name': tag})
+
+        if reference_list:
+            for reference in reference_list:
+                cursor.execute(database.INSERT_REF_EXPERIMENT, {'exp_uuid': data.uuid_bytes(exp_uuid),
+                                                                'ref_key': reference})
+
+        if dataset_list:
+            for dataset in dataset_list:
+                cursor.execute(database.INSERT_DATASET_EXPERIMENT, {'exp_uuid': data.uuid_bytes(exp_uuid),
+                                                                    'dt_key': dataset})
+
+        if protocol_list:
+            for protocol in protocol_list:
+                cursor.execute(database.INSERT_PROTOCOL_EXPERIMENT, {'exp_uuid': data.uuid_bytes(exp_uuid),
+                                                                     'prt_key': protocol})
+
+
+        # Create the file directory
+        experiment_path = directory.experiment_path(nb_uuid, exp_uuid)
+        experiment_resource_path = directory.experiment_resource_path(nb_uuid, exp_uuid)
+        os.mkdir(experiment_path)
+        os.mkdir(experiment_resource_path)
+
+        # Create the protocol body file
+        file = open(files.experiment_file(nb_uuid, exp_uuid), 'wb')
+        file.write(data.encode(body))
+    except sqlite3.Error:
+        if conn:
+            if cursor:
+                cursor.execute("ROLLBACK ")
+        exception = True
+        raise
+    except OSError:
+        if conn:
+            if cursor:
+                cursor.execute("ROLLBACK ")
+        exception = True
+        raise
+    finally:
+        if not exception:
+            if cursor:
+                cursor.execute("COMMIT")
+        if conn:
+            conn.close()
+        if file:
+            file.close()
+
+
+def save_experiment(exp_uuid, nb_uuid, name, exp_key, description, body, tag_list, reference_list, dataset_list,
+                    protocol_list, deleted_image):
+    """ Save changes to an experiment in the database and the file system """
+
+    conn = None
+    cursor = None
+    file = None
+    exception = False
+
+    try:
+        conn = sqlite3.connect(database.MAIN_DATABASE_FILE_PATH)
+        conn.execute("PRAGMA foreign_keys = ON")
+        cursor = conn.cursor()
+        cursor.execute("BEGIN")
+        cursor.execute(database.UPDATE_EXPERIMENT, {'exp_key': exp_key,
+                                                    'name': name,
+                                                    'description': description,
+                                                    'exp_uuid': data.uuid_bytes(exp_uuid)})
+
+        uuid_dict =  {'exp_uuid': data.uuid_bytes(exp_uuid)}
+
+        # Handle the tags
+        cursor.execute(database.SELECT_EXPERIMENT_TAG_NAME, uuid_dict)
+        current_tag_list = cursor.fetchall()
+        cursor.execute(database.SELECT_EXPERIMENT_REFERENCE_KEY, uuid_dict)
+        current_reference_list = cursor.fetchall()
+        cursor.execute(database.SELECT_EXPERIMENT_DATASET_KEY, uuid_dict)
+        current_dataset_list = cursor.fetchall()
+        cursor.execute(database.SELECT_EXPERIMENT_PROTOCOL_KEY,  uuid_dict)
+        current_protocol_list = cursor.fetchall()
+
+        database.process_tag(cursor=cursor, insert_list=tag_list, current_list=current_tag_list,
+                             insert=database.INSERT_TAG_EXPERIMENT, delete=database.DELETE_TAG_EXPERIMENT,
+                             value=uuid_dict)
+        database.process_key(cursor=cursor, insert_list=reference_list, current_list=current_reference_list,
+                             insert=database.INSERT_REF_EXPERIMENT, delete=database.DELETE_REF_EXPERIMENT,
+                             uuid=uuid_dict, key='ref_key')
+        database.process_key(cursor=cursor, insert_list=dataset_list, current_list=current_dataset_list,
+                             insert=database.INSERT_DATASET_EXPERIMENT, delete=database.DELETE_DATASET_EXPERIMENT,
+                             uuid=uuid_dict, key='dt_key')
+        database.process_key(cursor=cursor, insert_list=protocol_list, current_list=current_protocol_list,
+                             insert=database.INSERT_PROTOCOL_EXPERIMENT, delete=database.DELETE_PROTOCOL_EXPERIMENT,
+                             uuid=uuid_dict, key='prt_key')
+
+        # Create the protocol body file
+        file = open(files.experiment_file(nb_uuid, exp_uuid), 'wb')
+        file.write(data.encode(body))
+
+        # Remove deleted image
+        if deleted_image:
+            for path in deleted_image:
+                os.remove(path)
+    except sqlite3.Error:
+        if conn:
+            if cursor:
+                cursor.execute("ROLLBACK ")
+        exception = True
+        raise
+    except OSError:
+        if conn:
+            if cursor:
+                cursor.execute("ROLLBACK ")
+        exception = True
+        raise
+    finally:
+        if not exception:
+            if cursor:
+                cursor.execute("COMMIT")
+        if conn:
+            conn.close()
+        if file:
+            file.close()
+
+
+def delete_experiment(nb_uuid, exp_uuid):
+    """ Delete an experiment from the database and the file structure
+
+    :param exp_uuid: Experiment uuid
+    :type exp_uuid: str
+    """
+
+    conn = None
+    cursor = None
+    exception = False
+
+    try:
+        conn = sqlite3.connect(database.MAIN_DATABASE_FILE_PATH)
+        conn.execute("PRAGMA foreign_keys = ON")
+        cursor = conn.cursor()
+        cursor.execute("BEGIN")
+
+        cursor.execute(database.SELECT_EXPERIMENT_TAG, {'exp_uuid': data.uuid_bytes(exp_uuid)})
+        tag_ids = cursor.fetchall()
+
+        cursor.execute(database.DELETE_EXPERIMENT, {'prt_uuid': data.uuid_bytes(exp_uuid)})
+
+        if tag_ids:
+            try:
+                for tag_id in tag_ids[0]:
+                    cursor.execute(database.DELETE_TAG_ID, {'tag_id': tag_id})
+            except sqlite3.Error as excpt:
+                if sqlite_error.sqlite_err_handler(str(excpt)) == sqlite_error.FOREIGN_KEY_CODE:
+                    pass
+                else:
+                    raise
+
+        experiment_path = directory.experiment_path(nb_uuid=nb_uuid, exp_uuid=exp_uuid)
+        shutil.rmtree(experiment_path, ignore_errors=True)
+    except sqlite3.Error:
+        if conn:
+            if cursor:
+                cursor.execute("ROLLBACK ")
+        exception = True
+        raise
+    except OSError:
+        if conn:
+            if cursor:
+                cursor.execute("ROLLBACK")
+        exception = True
+        raise
+    finally:
+        if not exception:
+            if cursor:
+                cursor.execute("COMMIT")
+        if conn:
+            conn.close()
+
+
+def read_experiment(nb_uuid, exp_uuid):
+    """ Read a protocol content from the database and the file system
+
+    :param prt_uuid: Protocol uuid
+    :type prt_uuid: str
+    :return {}: Protocol content
+    """
+
+    try:
+        with sqlite3.connect(database.MAIN_DATABASE_FILE_PATH) as conn:
+            cursor = conn.cursor()
+            cursor.execute(database.SELECT_EXPERIMENT, {'exp_uuid': data.uuid_bytes(exp_uuid)})
+            buffer = cursor.fetchall()[0]
+
+        with open(files.experiment_file(nb_uuid=nb_uuid, exp_uuid=exp_uuid), 'rb') as file:
+            body_buffer = data.decode(file.read())
+    except (sqlite3.Error, OSError):
+        raise
+
+    protocol = {'key': buffer[0], 'name': buffer[1], 'description': buffer[2], 'created': buffer[3],
+                'updated': buffer[4], 'body': body_buffer}
+    return protocol

@@ -366,7 +366,7 @@
     </layout>
    </item>
    <item>
-    <layout class="QHBoxLayout" name="horizontalLayout_3">
+    <layout class="QHBoxLayout" name="save_layout">
      <property name="leftMargin">
       <number>6</number>
      </property>

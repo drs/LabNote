@@ -483,6 +483,7 @@ class ImageTextEdit(CompleterTextEdit):
     # Class variable definition
     accept_image = False
     uuid = None
+    parent_uuid = None
     deleted_image = set([])
 
     # Signals
@@ -524,9 +525,10 @@ class ImageTextEdit(CompleterTextEdit):
 
         return QTextEdit.eventFilter(self, object, event)
 
-    def set_uuid(self, uuid):
+    def set_uuid(self, uuid, parent_uuid=None):
         self.accept_image = True
         self.uuid = uuid
+        self.parent_uuid = parent_uuid
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Backspace:

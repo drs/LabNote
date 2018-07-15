@@ -80,3 +80,16 @@ def protocol_file(prt_uuid):
     :return str: Protocol file path
     """
     return os.path.join(directory.protocol_path(prt_uuid=prt_uuid) + "/{}.labnp".format(prt_uuid))
+
+
+def experiment_file(nb_uuid, exp_uuid):
+    """ Return the path to a experiment file in the file system
+
+    :param nb_uuid: Notebook uuid
+    :type nb_uuid: str
+    :param exp_uuid: Experiment uuid
+    :type exp_uuid: str
+    :return str: Experiment file path
+    """
+    return os.path.join(directory.experiment_path(nb_uuid, exp_uuid) + "/{}.labnp".format(exp_uuid))
+

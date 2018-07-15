@@ -191,7 +191,6 @@ CREATE TABLE experiment_dataset (
                        NOT NULL,
     dt_uuid  BLOB (16) REFERENCES dataset (dt_uuid) ON DELETE RESTRICT
                        NOT NULL,
-    limits   TEXT, 
     PRIMARY KEY (exp_uuid, dt_uuid)
 )
 """
@@ -597,6 +596,90 @@ SELECT_EXPERIMENT_KEY_NOTEBOOK = """
 SELECT exp_key FROM experiment WHERE nb_uuid=:nb_uuid
 """
 
+SELECT_EXPERIMENT_NOTEBOOK = """
+SELECT exp_uuid, name, exp_key FROM experiment WHERE nb_uuid=:nb_uuid ORDER BY exp_key ASC
+"""
+
+INSERT_EXPERIMENT = """
+INSERT INTO experiment (exp_uuid, exp_key, name, nb_uuid, description) VALUES 
+(:exp_uuid, :exp_key, :name, :nb_uuid, :description)
+"""
+
+UPDATE_EXPERIMENT = """
+UPDATE experiment SET
+exp_key=:exp_key,
+name=:name,
+description=:description
+WHERE exp_uuid=:exp_uuid
+"""
+
+DELETE_EXPERIMENT = """
+DELETE FROM experiment WHERE exp_uuid=:exp_uuid
+"""
+
+SELECT_EXPERIMENT = """
+SELECT exp_key, name, description, date_created, date_updated FROM experiment WHERE exp_uuid=:exp_uuid
+"""
+
+INSERT_TAG_EXPERIMENT = """
+INSERT OR IGNORE INTO experiment_tag (exp_uuid, tag_id) 
+VALUES (:exp_uuid, (SELECT tag_id FROM tags WHERE name = :name))
+"""
+
+DELETE_TAG_EXPERIMENT = """
+DELETE FROM experiment_tag WHERE tag_id = (SELECT tag_id FROM tags WHERE name=:name) AND exp_uuid=:exp_uuid
+"""
+
+
+INSERT_REF_EXPERIMENT = """
+INSERT OR IGNORE INTO experiment_references (exp_uuid, ref_uuid) VALUES 
+(:exp_uuid, (SELECT ref_uuid FROM refs WHERE ref_key=:ref_key))
+"""
+
+DELETE_REF_EXPERIMENT = """
+DELETE FROM experiment_references WHERE ref_uuid = (SELECT ref_uuid FROM refs WHERE ref_key=:ref_key) 
+AND exp_uuid=:exp_uuid
+"""
+
+INSERT_DATASET_EXPERIMENT = """
+INSERT OR IGNORE INTO experiment_dataset (exp_uuid, dt_uuid) VALUES 
+(:exp_uuid, (SELECT dt_uuid FROM dataset WHERE dt_key=:dt_key))
+"""
+
+DELETE_DATASET_EXPERIMENT = """
+DELETE FROM experiment_dataset WHERE dt_uuid = (SELECT dt_uuid FROM dataset WHERE dt_key=:dt_key) 
+AND exp_uuid=:exp_uuid
+"""
+
+INSERT_PROTOCOL_EXPERIMENT = """
+INSERT OR IGNORE INTO experiment_protocol (exp_uuid, prt_uuid) VALUES 
+(:exp_uuid, (SELECT prt_uuid FROM protocol WHERE prt_key=:prt_key))
+"""
+
+DELETE_PROTOCOL_EXPERIMENT = """
+DELETE FROM experiment_protocol WHERE prt_uuid = (SELECT prt_uuid FROM protocol WHERE prt_key=:prt_key) 
+AND exp_uuid=:exp_uuid
+"""
+
+SELECT_EXPERIMENT_TAG_NAME = """
+SELECT name FROM tags WHERE tag_id = (SELECT tag_id FROM experiment_tag WHERE exp_uuid=:exp_uuid)
+"""
+
+SELECT_EXPERIMENT_REFERENCE_KEY = """
+SELECT ref_key FROM refs WHERE ref_uuid = (SELECT ref_uuid FROM experiment_references WHERE exp_uuid=:exp_uuid)
+"""
+
+SELECT_EXPERIMENT_DATASET_KEY = """
+SELECT dt_key FROM dataset WHERE dt_uuid = (SELECT dt_uuid FROM experiment_dataset WHERE exp_uuid=:exp_uuid)
+"""
+
+SELECT_EXPERIMENT_PROTOCOL_KEY = """
+SELECT prt_key FROM protocol WHERE prt_uuid = (SELECT prt_uuid FROM experiment_protocol WHERE exp_uuid=:exp_uuid)
+"""
+
+SELECT_EXPERIMENT_TAG = """
+SELECT tag_id FROM experiment_tag WHERE exp_uuid=:exp_uuid
+"""
 
 
 
@@ -680,6 +763,87 @@ def execute_query_last_insert_rowid(query, **kwargs):
     conn.close()
 
     return buffer
+
+
+"""
+Process functions
+"""
+
+
+def process_tag(cursor, insert_list, current_list, insert, delete, value):
+    if insert_list:
+        # Create missing tags
+        for tag in insert_list:
+            if current_list:
+                if tag not in current_list[0]:
+                    cursor.execute(INSERT_TAG, {'name': tag})
+                    value['name'] = tag
+                    cursor.execute(insert, value)
+            else:
+                cursor.execute(INSERT_TAG, {'name': tag})
+                value['name'] = tag
+                cursor.execute(insert, value)
+        # Remove removed tags
+        if current_list:
+            for tag in current_list[0]:
+                if tag not in insert_list:
+                    value['name'] = tag
+                    cursor.execute(delete, value)
+
+                    # Ignore foreign key exception
+                    # They are expected to occur if the tag is used elsewhere
+                    try:
+                        cursor.execute(DELETE_TAG, {'name': tag})
+                    except sqlite3.Error as expt:
+                        error_code = sqlite_error.sqlite_err_handler(str(expt))
+                        if error_code == sqlite_error.FOREIGN_KEY_CODE:
+                            pass
+                        else:
+                            raise
+    else:
+        # Remove removed tags
+        if current_list:
+            for tag in current_list[0]:
+                if tag not in insert_list:
+                    value['name'] = tag
+                    cursor.execute(delete, value)
+
+                    # Ignore foreign key exception
+                    # They are expected to occur if the tag is used elsewhere
+                    try:
+                        cursor.execute(DELETE_TAG, {'name': tag})
+                    except sqlite3.Error as expt:
+                        error_code = sqlite_error.sqlite_err_handler(str(expt))
+                        if error_code == sqlite_error.FOREIGN_KEY_CODE:
+                            pass
+                        else:
+                            raise
+
+
+def process_key(cursor, insert_list, current_list, insert, delete, uuid, key):
+    if insert_list:
+        # Create missing key
+        for reference in insert_list:
+            if current_list:
+                if reference not in current_list[0]:
+                    value = uuid[key] = reference
+                    cursor.execute(insert, value)
+            else:
+                value = uuid[key] = reference
+                cursor.execute(insert, value)
+        # Remove removed key
+        if current_list:
+            for reference in current_list[0]:
+                if reference not in insert_list:
+                    value = uuid[key] = reference
+                    cursor.execute(delete, value)
+    else:
+        # Remove removed reference
+        if current_list:
+            for reference in current_list[0]:
+                if reference not in insert_list:
+                    value = uuid[key] = reference
+                    cursor.execute(delete, value)
 
 
 """
@@ -1485,3 +1649,17 @@ def select_experiment_key_notebook(nb_uuid):
         key_list.append(key[0])
 
     return key_list
+
+
+def get_experiment_list_notebook(nb_uuid):
+    """ Get all the experiment name and key for a specific notebook """
+
+    # Execute the query
+    buffer = execute_query(SELECT_EXPERIMENT_NOTEBOOK, nb_uuid=nb_uuid)
+
+    experiment_list = []
+
+    for experiment in buffer:
+        experiment_list.append({'exp_uuid': experiment[0], 'name': experiment[1], 'key': experiment[2]})
+
+    return experiment_list

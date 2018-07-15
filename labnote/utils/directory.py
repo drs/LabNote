@@ -68,3 +68,27 @@ def protocol_image_path(prt_uuid, extension):
     :return str: Protocol image path
     """
     return os.path.join(protocol_resource_path(prt_uuid=prt_uuid) + "/{}.{}".format(str(uuid.uuid4()), extension))
+
+
+def experiment_path(nb_uuid, exp_uuid):
+    """ Return the experiment path
+
+    :param nb_uuid: Notebook uuid
+    :type nb_uuid: str
+    :param exp_uuid: Experiment uuid
+    :type exp_uuid: str
+    :return str: Experiment path
+    """
+    return os.path.join(notebook_path(nb_uuid) + "/{}".format(exp_uuid))
+
+
+def experiment_resource_path(nb_uuid, exp_uuid):
+    """ Return the experiment resource directory path
+
+    :param nb_uuid: Notebook uuid
+    :type nb_uuid: str
+    :param exp_uuid: Experiment uuid
+    :type exp_uuid: str
+    :return str: Experiment resource directory path
+    """
+    return os.path.join(experiment_path(nb_uuid, exp_uuid) + "/resources")

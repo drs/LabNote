@@ -94,13 +94,9 @@ QFrame#frame {
     background-color: rgb(246, 246, 246);
 }
 
-QFrame#entry_frame {
-    border: none;
-    background-color: white;
-}
-
 QListWidget#lst_entry::item {
     border-bottom: 0.5px solid rgb(212, 212, 212);
+    background-color: white;
 }
 
 QListView#lst_entry::item:selected {

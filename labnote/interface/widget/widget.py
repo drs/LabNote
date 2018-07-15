@@ -2,7 +2,7 @@
 
 # Python import
 import sqlite3
-import math
+import sip
 
 # PyQt import
 from PyQt5.QtWidgets import QWidget, QLabel, QVBoxLayout, QFrame, QHBoxLayout, QPushButton, QAction, QMenu, \
@@ -1427,4 +1427,5 @@ class ExperimentTextEditor(TextEditor):
                                                    reference_list=reference_list,
                                                    dataset_list=dataset_list, protocol_list=protocol_list)
         self.txt_key.setCompleter(QCompleter(key_list))
-
+        self.btn_save.deleteLater()
+        sip.delete(self.save_layout)
