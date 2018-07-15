@@ -563,6 +563,18 @@ SELECT_PROTOCOL = """
 SELECT prt_key, name, description, date_created, date_updated FROM protocol WHERE prt_uuid=:prt_uuid
 """
 
+SELECT_REFERENCE_KEY = """
+SELECT ref_key FROM refs
+"""
+
+SELECT_PROTOCOL_KEY = """
+SELECT prt_key FROM protocol
+"""
+
+SELECT_DATASET_KEY = """
+SELECT dt_key FROM dataset
+"""
+
 
 """
 Database creation
@@ -1194,6 +1206,20 @@ def select_reference_tag_name(ref_uuid):
     return tag_list
 
 
+def select_reference_key():
+    """ Get all the dataset key from the database """
+
+    # Execute the query
+    buffer = execute_query(SELECT_REFERENCE_KEY)
+
+    # Return the tag list
+    reference_list = []
+
+    for reference in buffer:
+        reference_list.append(reference[0])
+    return reference_list
+
+
 """
 Tag query
 """
@@ -1380,6 +1406,20 @@ def select_dataset():
     return project_list
 
 
+def select_dataset_key():
+    """ Get all the dataset key from the database """
+
+    # Execute the query
+    buffer = execute_query(SELECT_DATASET_KEY)
+
+    # Return the tag list
+    dataset_list = []
+
+    for dataset in buffer:
+        dataset_list.append(dataset[0])
+
+    return dataset_list
+
 """
 Protocol query
 """
@@ -1442,3 +1482,18 @@ def select_protocol_category():
                         protocol_list.append(Protocol(protocol_uuid, protocol_name, None, None))
             category_list.append(Category(category_id, category_name, subcategory_list, protocol_list))
     return category_list
+
+
+def select_protocol_key():
+    """ Get all the dataset key from the database """
+
+    # Execute the query
+    buffer = execute_query(SELECT_PROTOCOL_KEY)
+
+    # Return the tag list
+    protocol_list = []
+
+    for protocol in buffer:
+        protocol_list.append(protocol[0])
+
+    return protocol_list

@@ -6,12 +6,12 @@ This module contains the textedit subclasses used in LabNote software
 
 # PyQt import
 from PyQt5.QtWidgets import QTextEdit, QCompleter, QPlainTextEdit
-from PyQt5.QtCore import Qt, QStringListModel, pyqtSignal
-from PyQt5.QtGui import QTextCursor, QTextCharFormat, QColor
+from PyQt5.QtCore import Qt, QStringListModel, QUrl, QFileInfo
+from PyQt5.QtGui import QTextCursor, QTextCharFormat, QColor, QImage, QImageReader, QTextDocument
 
 # Project import
-from labnote.resources import resources
-from labnote.core import stylesheet
+from labnote.utils import files
+from labnote.core import common
 
 
 class PlainTextEdit(QPlainTextEdit):
@@ -54,18 +54,13 @@ class CompleterTextEdit(TextEdit):
     completer = None
     completer_status = False
     completer_type = -1
-    tag_list = []
     accept_tag = False
-    reference_list = []
     accept_reference = False
-    dataset_list = []
     accept_dataset = False
-    protocol_list = []
     accept_protocol = False
 
     def __init__(self, tag_list=None, reference_list=None, dataset_list=None, protocol_list=None):
         super(CompleterTextEdit, self).__init__()
-
         if tag_list is not None:
             self.tag_list = set(tag_list)
             self.accept_tag = True
@@ -314,7 +309,6 @@ class CompleterTextEdit(TextEdit):
         if self.accept_protocol:
             anchor['protocol'] = list(protocol_list)
 
-        print(anchor)
         return anchor
 
     def format_completion(self, *args):
@@ -389,6 +383,7 @@ class CompleterTextEdit(TextEdit):
             cursor.mergeCharFormat(fmt)
 
     def start_completer(self, completer_list, completer_type):
+        print(completer_list)
         completer = QCompleter()
         completer.setModel(QStringListModel(list(completer_list)))
         completer.setModelSorting(QCompleter.CaseInsensitivelySortedModel)
@@ -499,51 +494,66 @@ class CompleterTextEdit(TextEdit):
             return False
 
 
-# class ImageTextEdit(TextEdit):
-#     """ Completer text edit subclass that handle image drag and drop and copy paste """
-#
-#     def canInsertFromMimeData(self, source):
-#         """ Reimplanted QTextBrowser function
-#
-#         This function check if the source has image or urls
-#
-#         :param source: Source data
-#         :type source: QMimeData
-#         :returns: If source has image, url or can be inserted from mime data
-#         """
-#         if source.hasImage():
-#             return source.hasImage()
-#         elif source.hasUrls():
-#             return source.hasUrls()
-#         else:
-#             return QTextEdit().canInsertFromMimeData(source)
-#
-#     def insertFromMimeData(self, source):
-#         """ Insert source from mime data in the text browser
-#
-#         :param source: Source data
-#         :type source: QMimeData
-#         """
-#         if source.hasImage():
-#             self.insert_image(QUrl(), source.imageData())
-#         elif source.hasUrls():
-#             for url in source.urls():
-#                 info = QFileInfo(url.toLocalFile())
-#                 if info.suffix().lower().encode('latin-1') in QImageReader.supportedImageFormats():
-#                     self.insert_image(url, QImage(info.filePath()))
-#         else:
-#             self.insertPlainText(source.text())
-#
-#     def insert_image(self, url, image):
-#         """ Insert image in the document
-#
-#         :param url: File url
-#         :type url: QUrl
-#         :param image: Image
-#         :type image: QImage
-#         """
-#         if url:
-#             files.copy_file_to_data()
-#         if image:
-#             self.document().addResource(QTextDocument.ImageResource, url, image)
-#             self.textCursor().insertImage(str(url.toLocalFile()))
+class ImageTextEdit(CompleterTextEdit):
+    """ Completer text edit subclass that handle image drag and drop and copy paste """
+
+    # Class variable definition
+    accept_image = False
+    uuid = None
+    editor_type = -1
+
+    def __init__(self, editor_type, reference_list=None, dataset_list=None, protocol_list=None):
+        super(ImageTextEdit, self).__init__(reference_list=reference_list,
+                                            dataset_list=dataset_list, protocol_list=protocol_list)
+        self.editor_type = editor_type
+
+    def set_uuid(self, value, uuid):
+        self.accept_image = value
+        self.uuid = uuid
+
+    def canInsertFromMimeData(self, source):
+        """ Reimplanted QTextBrowser function
+
+        This function check if the source has image or urls
+
+        :param source: Source data
+        :type source: QMimeData
+        :returns: If source has image, url or can be inserted from mime data
+        """
+        if self.accept_image:
+            if source.hasUrls():
+                return source.hasUrls()
+            return QTextEdit().canInsertFromMimeData(source)
+        else:
+            return False
+
+    def insertFromMimeData(self, source):
+        """ Insert source from mime data in the text browser
+
+        :param source: Source data
+        :type source: QMimeData
+        """
+        if source.hasUrls():
+            for url in source.urls():
+                info = QFileInfo(url.toLocalFile())
+                if info.suffix().lower().encode('latin-1') in QImageReader.supportedImageFormats():
+                    self.insert_image(url)
+        else:
+            self.insertPlainText(source.text())
+
+    def insert_image(self, url):
+        """ Insert image in the document
+
+        :param url: File url
+        :type url: QUrl
+        """
+        path = None
+        if url:
+            if self.editor_type == common.TYPE_PROTOCOL:
+                path = files.add_image_protocol(self.uuid, url.toLocalFile(), QFileInfo(url.toLocalFile()).suffix())
+
+        if path:
+            image = QImage(path)
+            if image:
+                self.document().addResource(QTextDocument.ImageResource, url, image)
+                self.textCursor().insertImage(str(url.toLocalFile()))

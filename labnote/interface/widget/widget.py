@@ -16,7 +16,7 @@ from labnote.core import stylesheet
 from labnote.interface.widget.view import DragDropTreeView
 from labnote.interface.widget.model import StandardItemModel
 from labnote.interface.dialog.category import Category, Subcategory
-from labnote.interface.widget.textedit import CompleterTextEdit
+from labnote.interface.widget.textedit import CompleterTextEdit, ImageTextEdit
 from labnote.interface.widget.lineedit import LineEdit
 from labnote.utils import database
 from labnote.core import sqlite_error, common
@@ -619,17 +619,17 @@ class CategoryFrame(QWidget):
 class TextEditor(QWidget, Ui_TextEditor):
     """ Complex text editor """
 
-    # Class variable definition
-    tag_list = []
-    
     # Signal definition
     delete_tag = pyqtSignal(list)
     create_tag = pyqtSignal(str)
     
-    def __init__(self, tag_list):
+    def __init__(self, tag_list=None, reference_list=None, dataset_list=None, protocol_list=None):
         super(TextEditor, self).__init__()
         # Set class variable
         self.tag_list = tag_list
+        self.reference_list = reference_list
+        self.dataset_list = dataset_list
+        self.protocol_list = protocol_list
 
         self.setupUi(self)
         self.init_ui()
@@ -655,13 +655,14 @@ class TextEditor(QWidget, Ui_TextEditor):
         self.layout().insertWidget(2, self.txt_key)
 
         # Insert descrition text edit
-        self.txt_description = CompleterTextEdit(self.tag_list)
+        self.txt_description = CompleterTextEdit(tag_list=self.tag_list)
         self.txt_description.setPlaceholderText("Objectives of the experiment")
         self.txt_description.setFixedHeight(74)
         self.layout().insertWidget(3, self.txt_description)
 
         # Insert textedit in layout
-        self.textedit = QTextEdit()
+        self.textedit = ImageTextEdit(editor_type=common.TYPE_PROTOCOL, reference_list=self.reference_list,
+                                      dataset_list=self.dataset_list, protocol_list=self.protocol_list)
         self.textedit.setStyleSheet("border-top: 0.5px solid rgb(212, 212, 212)")
         self.layout().insertWidget(4, self.textedit, 10)
 
@@ -1371,8 +1372,8 @@ class TextEditor(QWidget, Ui_TextEditor):
 
 
 class ProtocolTextEditor(TextEditor):
-    def __init__(self, tag_list):
-        super(ProtocolTextEditor, self).__init__(tag_list=tag_list)
+    def __init__(self, tag_list, reference_list):
+        super(ProtocolTextEditor, self).__init__(tag_list=tag_list, reference_list=reference_list)
         self.txt_key.setPlaceholderText("Protocol key")
         self.txt_description.setPlaceholderText("Description of the protocol")
         self.txt_title.setPlaceholderText("Untitled protocol")
