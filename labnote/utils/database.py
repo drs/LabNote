@@ -37,12 +37,17 @@ CREATE_EXPERIMENT_TABLE = """
 CREATE TABLE experiment (
     exp_uuid     BLOB (16)     PRIMARY KEY
                                UNIQUE,
+    exp_key      VARCHAR (255),
     name         VARCHAR (255) NOT NULL,
     nb_uuid      BLOB (16)     REFERENCES notebook (nb_uuid) ON DELETE CASCADE
                                NOT NULL,
     description  TEXT,
     date_created DATETIME      DEFAULT (CURRENT_TIMESTAMP),
-    date_updated DATETIME
+    date_updated DATETIME, 
+    UNIQUE (
+        exp_key,
+        exp_uuid
+    )
 )
 """
 
@@ -259,15 +264,6 @@ INSERT_NOTEBOOK = """
 INSERT INTO notebook (nb_uuid, name, proj_id) VALUES (:nb_uuid, :name, :proj_id)
 """
 
-INSERT_EXPERIMENT = """
-INSERT INTO experiment (exp_uuid, nb_uuid, name, objective) 
-VALUES (:exp_uuid, :nb_uuid, :name, :objective)
-"""
-
-SELECT_NOTEBOOK_EXPERIMENT = """
-SELECT exp_uuid, name, objective FROM experiment WHERE nb_uuid = :nb_uuid
-"""
-
 UPDATE_NOTEBOOK = """
 UPDATE notebook SET 
 name = :name, 
@@ -277,18 +273,6 @@ proj_id = :proj_id
 
 DELETE_NOTEBOOK = """
 DELETE FROM notebook WHERE nb_uuid = :nb_uuid
-"""
-
-SELECT_EXPERIMENT = """
-SELECT name, objective FROM experiment WHERE exp_uuid = :exp_uuid
-"""
-
-UPDATE_EXPERIMENT = """
-UPDATE experiment SET name = :name, objective = :objective WHERE  exp_uuid = :exp_uuid
-"""
-
-DELETE_EXPERIMENT = """
-DELETE FROM experiment WHERE exp_uuid = :exp_uuid
 """
 
 SELECT_PROJECT = """
@@ -609,6 +593,13 @@ SELECT_REFERENCE_UUID_KEY = """
 SELECT ref_uuid FROM refs WHERE ref_key=:ref_key
 """
 
+SELECT_EXPERIMENT_KEY_NOTEBOOK = """
+SELECT exp_key FROM experiment WHERE nb_uuid=:nb_uuid
+"""
+
+
+
+
 """
 Database creation
 """
@@ -782,83 +773,6 @@ def select_notebook_project():
 
             project_list.append(Project(project_id, project_name, notebook_list))
     return project_list
-
-
-"""
-Experiment table query
-"""
-
-
-def create_experiment(name, exp_uuid, obj, nb_uuid):
-    """ Create a new experiment in the main database
-
-    :param name: Experiment name
-    :type name: str
-    :param exp_uuid: Experiment UUID
-    :type exp_uuid: UUID
-    :param obj: Experiment objective
-    :type obj: str
-    :param nb_uuid: UUID of the notebook that contains the experiment
-    :type nb_uuid: str
-    """
-    execute_query(INSERT_EXPERIMENT, exp_uuid=uuid_bytes(exp_uuid),
-                  nb_uuid=uuid_bytes(nb_uuid), name=name, objective=obj)
-
-
-def update_experiment(exp_uuid, name, objective):
-    """ Update the name of a notebook
-
-    :param exp_uuid: Experiment uuid
-    :type exp_uuid: str
-    :param name: Experiment name
-    :type name: str
-    :param objective: Experiment objective
-    :type objective: str
-    """
-    execute_query(UPDATE_EXPERIMENT, name=name, objective=objective, exp_uuid=uuid_bytes(exp_uuid))
-
-
-def delete_experiment(exp_uuid):
-    """ Delete an experiment from the database
-
-    :param exp_uuid: UUID of the notebook to delete
-    :type exp_uuid: str
-    """
-    execute_query(DELETE_EXPERIMENT, exp_uuid=uuid_bytes(exp_uuid))
-
-
-def get_experiment_list_notebook(nb_uuid):
-    """ Get the experiment list for a specific notebook
-
-    :param nb_uuid: UUID of the notebook
-    :type nb_uuid: str
-    :return: [{'uuid': str, 'name' : str, 'objective': str}]
-    """
-    # Execute the query
-    buffer = execute_query(SELECT_NOTEBOOK_EXPERIMENT, nb_uuid=uuid_bytes(nb_uuid))
-
-    # Return the experiment list
-    experiement_list = []
-
-    for experiment in buffer:
-        experiement_list.append({'uuid': uuid_string(experiment[0]), 'name': experiment[1],
-                                 'objective': experiment[2]})
-
-    return experiement_list
-
-
-def get_experiment_informations(exp_uuid):
-    """ Get informations for an experiment
-
-    :param exp_uuid: Experiment UUID
-    :type exp_uuid: str
-    :return: {'uuid': str, 'name' : str, 'objective': str}
-    """
-    # Execute query
-    buffer = execute_query(SELECT_EXPERIMENT, exp_uuid=uuid_bytes(exp_uuid))
-
-    # Return experiment informations
-    return {'name': buffer[0][0], 'objective': buffer[0][1]}
 
 
 """
@@ -1541,3 +1455,23 @@ def select_protocol_key():
         protocol_list.append(protocol[0])
 
     return protocol_list
+
+
+"""
+Experiment query
+"""
+
+
+def select_experiment_key_notebook(nb_uuid):
+    """ Get all the experiment key for a specific notebook """
+
+    # Execute the query
+    buffer = execute_query(SELECT_EXPERIMENT_KEY_NOTEBOOK, nb_uuid=nb_uuid)
+
+    # Return the tag list
+    key_list = []
+
+    for key in buffer:
+        key_list.append(key[0])
+
+    return key_list
