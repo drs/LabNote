@@ -74,10 +74,9 @@ TYPE_ARTICLE = 0
 TYPE_BOOK = 1
 TYPE_CHAPTER = 2
 
-# Content type
+# Category frame content type
 TYPE_LIBRARY = 48
 TYPE_PROTOCOL = 49
-TYPE_EXPERIMENT = 50
 
 """
 Data level

@@ -1,6 +1,5 @@
 # Python import
 import os
-import uuid
 
 DEFAULT_MAIN_DIRECTORY_PATH = os.path.expanduser("~/Documents/LabNote")
 NOTEBOOK_DIRECTORY_PATH = os.path.join(DEFAULT_MAIN_DIRECTORY_PATH + "/Notebook")
@@ -58,13 +57,3 @@ def protocol_resource_path(prt_uuid):
     :return str: Protocol resource directory path
     """
     return os.path.join(protocol_path(prt_uuid) + "/resources")
-
-
-def protocol_image_path(prt_uuid, extention):
-    """ Return the protocol image path
-
-    :param prt_uuid: Protocol uuid
-    :type prt_uuid: str
-    :return str: Protocol image path
-    """
-    return os.path.join(protocol_resource_path(prt_uuid=prt_uuid + "/{}.{}".format(str(uuid.uuid4()), extention)))

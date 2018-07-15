@@ -317,7 +317,7 @@ Protocol entry
 """
 
 
-def create_protocol(prt_uuid, prt_key, category_id, body, description=None, name=None, subcategory_id=None):
+def create_protocol(prt_uuid, prt_key, category_id, name=None, subcategory_id=None):
     """ Create a protocol in the database and the file system
 
     :param prt_uuid: Protocol UUID
@@ -329,30 +329,22 @@ def create_protocol(prt_uuid, prt_key, category_id, body, description=None, name
     """
 
     conn = None
-    file = None
     exception = False
 
     try:
-        # Add protocol in the database
         conn = sqlite3.connect(database.MAIN_DATABASE_FILE_PATH)
         conn.execute("PRAGMA foreign_keys = ON")
         cursor = conn.cursor()
         cursor.execute(database.INSERT_PROTOCOL, {'prt_uuid': data.uuid_bytes(prt_uuid),
                                                   'prt_key': prt_key,
                                                   'name': name,
-                                                  'description': description,
                                                   'category_id': category_id,
                                                   'subcategory_id': subcategory_id})
 
-        # Create the file directory
         protocol_path = directory.protocol_path(prt_uuid=prt_uuid)
         protocol_resource_path = directory.protocol_resource_path(prt_uuid=prt_uuid)
         os.mkdir(protocol_path)
         os.mkdir(protocol_resource_path)
-
-        # Create the protocol body file
-        file = open(files.protocol_file(prt_uuid), 'wb')
-        file.write(data.encode(body))
     except sqlite3.Error:
         exception = True
         raise
@@ -366,8 +358,6 @@ def create_protocol(prt_uuid, prt_key, category_id, body, description=None, name
             conn.commit()
         if conn:
             conn.close()
-        if file:
-            file.close()
 
 
 def save_protocol(prt_uuid, prt_key, name, description, body):

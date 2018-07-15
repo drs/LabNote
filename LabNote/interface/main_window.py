@@ -29,9 +29,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     
     # Class variable definition
     tag_list = []
-    reference_list = []
-    dataset_list = []
-    protocol_list = []
 
     def __init__(self):
         super(MainWindow, self).__init__()
@@ -78,11 +75,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.act_library.setIcon(QIcon(":/Icons/MainWindow/icons/main-window/library.png"))
         self.act_samples.setIcon(QIcon(":/Icons/MainWindow/icons/main-window/sample.png"))
 
-        # Get list
+        # Get tag list
         self.get_tag_list()
-        self.get_reference_list()
-        self.get_dataset_list()
-        self.get_protocol_list()
 
         # Set toolbar separator
         empty_widget_1 = QWidget()
@@ -165,54 +159,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         self.tag_list = tag_list
 
-    def get_reference_list(self):
-        """ Get the list of all tag """
-        reference_list = []
-
-        try:
-            reference_list = database.select_reference_key()
-        except sqlite3.Error as exception:
-            message = QMessageBox(QMessageBox.Warning, "Unable to get reference list",
-                                  "An error occurred while getting the reference list.", QMessageBox.Ok)
-            message.setWindowTitle("LabNote")
-            message.setDetailedText(str(exception))
-            message.exec()
-            return
-
-        self.reference_list = reference_list
-
-    def get_protocol_list(self):
-        """ Get the list of all tag """
-        protocol_list = []
-
-        try:
-            protocol_list = database.select_protocol_key()
-        except sqlite3.Error as exception:
-            message = QMessageBox(QMessageBox.Warning, "Unable to get tag list",
-                                  "An error occurred while getting the tag list.", QMessageBox.Ok)
-            message.setWindowTitle("LabNote")
-            message.setDetailedText(str(exception))
-            message.exec()
-            return
-
-        self.protocol_list = protocol_list
-
-    def get_dataset_list(self):
-        """ Get the list of all tag """
-        dataset_list = []
-
-        try:
-            dataset_list = database.select_dataset_key()
-        except sqlite3.Error as exception:
-            message = QMessageBox(QMessageBox.Warning, "Unable to get tag list",
-                                  "An error occurred while getting the tag list.", QMessageBox.Ok)
-            message.setWindowTitle("LabNote")
-            message.setDetailedText(str(exception))
-            message.exec()
-            return
-
-        self.dataset_list = dataset_list
-
     def closeEvent(self, e):
         """
         Write the program geometry and state to settings
@@ -271,7 +217,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     def open_protocol(self):
         """ Open the protocol dialog """
-        prt = protocol.Protocol(tag_list=self.tag_list, reference_list=self.reference_list, parent=self)
+        prt = protocol.Protocol(tag_list=self.tag_list, parent=self)
         prt.closed.connect(self.get_tag_list)
 
     """
