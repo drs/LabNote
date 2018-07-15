@@ -88,13 +88,13 @@ class CompleterTextEdit(TextEdit):
         cursor.movePosition(QTextCursor.End, QTextCursor.KeepAnchor)
 
         # Set the initial format
-        if self.launch:
-            fmt = QTextCharFormat()
-            fmt.setFontUnderline(False)
-            fmt.setForeground(Qt.black)
+        #if self.launch:
+            #fmt = QTextCharFormat()
+            #fmt.setFontUnderline(False)
+            #fmt.setForeground(Qt.black)
 
-            cursor.mergeCharFormat(fmt)
-            self.launch = False
+            #cursor.mergeCharFormat(fmt)
+            #self.launch = False
 
         self.blockSignals(False)
         self.textChanged.disconnect(self.set_base_format)
@@ -122,40 +122,19 @@ class CompleterTextEdit(TextEdit):
                 return
 
         if self.accept_reference and is_reference:
-            if not self.completer_status and self.textCursor().hasSelection():
-                selection = self.textCursor().selection().toPlainText()
-                if not self.has_space(selection) and not self.has_word_separator(selection):
-                    self.format_completion(self.textCursor().selectionStart(),
-                                           self.textCursor().selectionEnd(),
-                                           REFERENCE_COMPLETER)
-                    return
-            elif not self.completer_status:
+            if not self.completer_status:
                 self.start_completer(self.reference_list, REFERENCE_COMPLETER)
             else:
                 return
 
         if self.accept_dataset and is_dataset:
-            if not self.completer_status and self.textCursor().hasSelection():
-                selection = self.textCursor().selection().toPlainText()
-                if not self.has_space(selection) and not self.has_word_separator(selection):
-                    self.format_completion(self.textCursor().selectionStart(),
-                                           self.textCursor().selectionEnd(),
-                                           DATASET_COMPLETER)
-                    return
-            elif not self.completer_status:
+            if not self.completer_status:
                 self.start_completer(self.dataset_list, DATASET_COMPLETER)
             else:
                 return
 
         if self.accept_protocol and is_protocol:
-            if not self.completer_status and self.textCursor().hasSelection():
-                selection = self.textCursor().selection().toPlainText()
-                if not self.has_space(selection) and not self.has_word_separator(selection):
-                    self.format_completion(self.textCursor().selectionStart(),
-                                           self.textCursor().selectionEnd(),
-                                           PROTOCOL_COMPLETER)
-                    return
-            elif not self.completer_status:
+            if not self.completer_status:
                 self.start_completer(self.protocol_list, PROTOCOL_COMPLETER)
             else:
                 return
@@ -255,7 +234,10 @@ class CompleterTextEdit(TextEdit):
                 event.key() == Qt.Key_Enter or event.key() == Qt.Key_Return or \
                 event.key() == Qt.Key_Escape or event.key() == Qt.Key_Tab or \
                 event.key() == Qt.Key_Backtab:
-            self.format_completion()
+            if self.completer_type == TAG_COMPLETER:
+                self.format_completion()
+            else:
+                QTextEdit.keyPressEvent(self, event)
             self.stop_completer()
             return
 
@@ -374,12 +356,6 @@ class CompleterTextEdit(TextEdit):
 
             if args[2] == TAG_COMPLETER:
                 fmt.setAnchorHref("tag/{}".format(old_text))
-            elif args[2] == REFERENCE_COMPLETER:
-                fmt.setAnchorHref("reference/{}".format(old_text))
-            elif args[2] == DATASET_COMPLETER:
-                fmt.setAnchorHref("dataset/{}".format(old_text))
-            elif args[2] == PROTOCOL_COMPLETER:
-                fmt.setAnchorHref("protocol/{}".format(old_text))
             cursor.mergeCharFormat(fmt)
 
     def start_completer(self, completer_list, completer_type):

@@ -143,12 +143,17 @@ class Protocol(QDialog, Ui_Protocol):
                 description = data.prepare_textedit(self.editor.txt_description)
                 body = self.editor.txt_body.toHtml()
 
+                description_anchor = self.editor.txt_description.anchors()
+                body_anchor = self.editor.txt_body.anchors()
+
                 if self.creating_protocol:
                     prt_uuid = str(uuid.uuid4())
 
                     try:
                         fsentry.create_protocol(prt_uuid=prt_uuid, prt_key=key, category_id=category_id,
-                                                name=name, subcategory_id=subcategory_id, body=body)
+                                                name=name, subcategory_id=subcategory_id, body=body,
+                                                tag_list=description_anchor['tag'],
+                                                reference_list=body_anchor['reference'])
                     except (sqlite3.Error, OSError) as exception:
                         error_code = sqlite_error.sqlite_err_handler(str(exception))
 
@@ -183,7 +188,9 @@ class Protocol(QDialog, Ui_Protocol):
 
                     try:
                         fsentry.save_protocol(prt_uuid=prt_uuid, prt_key=key, name=name, description=description,
-                                              body=body)
+                                              body=body, tag_list=description_anchor['tag'],
+                                              reference_list=body_anchor['reference'],
+                                              deleted_image=self.editor.txt_body.deleted_image)
                     except (sqlite3.Error, OSError) as exception:
                         error_code = sqlite_error.sqlite_err_handler(str(exception))
 

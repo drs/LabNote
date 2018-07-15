@@ -221,7 +221,8 @@ def delete_reference(ref_uuid):
         pass
     except OSError:
         if conn:
-            conn.rollback()
+            if cursor:
+                cursor.execute("ROLLBACK")
         exception = True
         raise
     finally:
@@ -317,7 +318,8 @@ Protocol entry
 """
 
 
-def create_protocol(prt_uuid, prt_key, category_id, body, description=None, name=None, subcategory_id=None):
+def create_protocol(prt_uuid, prt_key, category_id, body, tag_list, reference_list,
+                    description=None, name=None, subcategory_id=None):
     """ Create a protocol in the database and the file system
 
     :param prt_uuid: Protocol UUID
@@ -329,6 +331,7 @@ def create_protocol(prt_uuid, prt_key, category_id, body, description=None, name
     """
 
     conn = None
+    cursor = None
     file = None
     exception = False
 
@@ -337,12 +340,22 @@ def create_protocol(prt_uuid, prt_key, category_id, body, description=None, name
         conn = sqlite3.connect(database.MAIN_DATABASE_FILE_PATH)
         conn.execute("PRAGMA foreign_keys = ON")
         cursor = conn.cursor()
+        cursor.execute("BEGIN")
         cursor.execute(database.INSERT_PROTOCOL, {'prt_uuid': data.uuid_bytes(prt_uuid),
                                                   'prt_key': prt_key,
                                                   'name': name,
                                                   'description': description,
                                                   'category_id': category_id,
                                                   'subcategory_id': subcategory_id})
+
+        if tag_list:
+            for tag in tag_list:
+                cursor.execute(database.INSERT_TAG, {'name': tag})
+                cursor.execute(database.INSERT_TAG_PROTOCOL, {'prot_uuid': data.uuid_bytes(prt_uuid), 'name': tag})
+
+        if reference_list:
+            for reference in reference_list:
+                cursor.execute(database.INSERT_REF_PROTOCOL, {'prot_uuid': data.uuid_bytes(prt_uuid), 'ref_key': reference})
 
         # Create the file directory
         protocol_path = directory.protocol_path(prt_uuid=prt_uuid)
@@ -354,23 +367,28 @@ def create_protocol(prt_uuid, prt_key, category_id, body, description=None, name
         file = open(files.protocol_file(prt_uuid), 'wb')
         file.write(data.encode(body))
     except sqlite3.Error:
+        if conn:
+            if cursor:
+                cursor.execute("ROLLBACK ")
         exception = True
         raise
     except OSError:
         if conn:
-            conn.rollback()
+            if cursor:
+                cursor.execute("ROLLBACK ")
         exception = True
         raise
     finally:
         if not exception:
-            conn.commit()
+            if cursor:
+                cursor.execute("COMMIT")
         if conn:
             conn.close()
         if file:
             file.close()
 
 
-def save_protocol(prt_uuid, prt_key, name, description, body):
+def save_protocol(prt_uuid, prt_key, name, description, body, tag_list, reference_list, deleted_image):
     """ Save changes to a protocol in the database and the file system """
 
     conn = None
@@ -381,13 +399,98 @@ def save_protocol(prt_uuid, prt_key, name, description, body):
         conn = sqlite3.connect(database.MAIN_DATABASE_FILE_PATH)
         conn.execute("PRAGMA foreign_keys = ON")
         cursor = conn.cursor()
+        cursor.execute("BEGIN")
         cursor.execute(database.UPDATE_PROTOCOL, {'prt_uuid': data.uuid_bytes(prt_uuid),
                                                   'prt_key': prt_key,
                                                   'name': name,
                                                   'description': description})
 
+        # Handle the tags
+        cursor.execute(database.SELECT_PROTOCOL_TAG_NAME, {'prot_uuid': data.uuid_bytes(prt_uuid)})
+        current_tag_list = cursor.fetchall()
+        cursor.execute(database.SELECT_PROTOCOL_REFERENCE_KEY, {'prot_uuid': data.uuid_bytes(prt_uuid)})
+        current_reference_list = cursor.fetchall()
+
+        if tag_list:
+            # Create missing tags
+            for tag in tag_list:
+                if current_tag_list:
+                    if tag not in current_tag_list[0]:
+                        cursor.execute(database.INSERT_TAG, {'name': tag})
+                        cursor.execute(database.INSERT_TAG_PROTOCOL,
+                                       {'prot_uuid': data.uuid_bytes(prt_uuid), 'name': tag})
+                else:
+                    cursor.execute(database.INSERT_TAG, {'name': tag})
+                    cursor.execute(database.INSERT_TAG_PROTOCOL,
+                                   {'prot_uuid': data.uuid_bytes(prt_uuid), 'name': tag})
+            # Remove removed tags
+            if current_tag_list:
+                for tag in current_tag_list[0]:
+                    if tag not in tag_list:
+                        cursor.execute(database.DELETE_TAG_PROTOCOL,
+                                       {'name': tag, 'prot_uuid': data.uuid_bytes(prt_uuid)})
+
+                        # Ignore foreign key exception
+                        # They are expected to occur if the tag is used elsewhere
+                        try:
+                            cursor.execute(database.DELETE_TAG, {'name': tag})
+                        except sqlite3.Error as expt:
+                            error_code = sqlite_error.sqlite_err_handler(str(expt))
+                            if error_code == sqlite_error.FOREIGN_KEY_CODE:
+                                pass
+                            else:
+                                raise
+        else:
+            # Remove removed tags
+            if current_tag_list:
+                for tag in current_tag_list[0]:
+                    if tag not in tag_list:
+                        cursor.execute(database.DELETE_TAG_PROTOCOL,
+                                       {'name': tag, 'prot_uuid': data.uuid_bytes(prt_uuid)})
+
+                        # Ignore foreign key exception
+                        # They are expected to occur if the tag is used elsewhere
+                        try:
+                            cursor.execute(database.DELETE_TAG, {'name': tag})
+                        except sqlite3.Error as expt:
+                            error_code = sqlite_error.sqlite_err_handler(str(expt))
+                            if error_code == sqlite_error.FOREIGN_KEY_CODE:
+                                pass
+                            else:
+                                raise
+
+        if reference_list:
+            # Create missing reference
+            for reference in reference_list:
+                if current_reference_list:
+                    if reference not in current_reference_list[0]:
+                        cursor.execute(database.INSERT_REF_PROTOCOL,
+                                       {'prot_uuid': data.uuid_bytes(prt_uuid), 'ref_key': reference})
+                else:
+                    cursor.execute(database.INSERT_REF_PROTOCOL,
+                                   {'prot_uuid': data.uuid_bytes(prt_uuid), 'ref_key': reference})
+            # Remove removed reference
+            if current_reference_list:
+                for reference in current_reference_list[0]:
+                    if reference not in reference_list:
+                        cursor.execute(database.DELETE_REFERENCE_PROTOCOL,
+                                       {'ref_key': reference, 'prot_uuid': data.uuid_bytes(prt_uuid)})
+        else:
+            # Remove removed reference
+            if current_reference_list:
+                for reference in current_reference_list[0]:
+                    if reference not in reference_list:
+                        cursor.execute(database.DELETE_REFERENCE_PROTOCOL,
+                                       {'ref_key': reference, 'prot_uuid': data.uuid_bytes(prt_uuid)})
+
+        # Save the text file
         file = open(files.protocol_file(prt_uuid), 'wb')
         file.write(data.encode(body))
+
+        # Remove deleted image
+        if deleted_image:
+            for path in deleted_image:
+                os.remove(path)
     except sqlite3.Error:
         exception = True
         raise
@@ -413,13 +516,29 @@ def delete_protocol(prt_uuid):
     """
 
     conn = None
+    cursor = None
     exception = False
 
     try:
         conn = sqlite3.connect(database.MAIN_DATABASE_FILE_PATH)
         conn.execute("PRAGMA foreign_keys = ON")
         cursor = conn.cursor()
+        cursor.execute("BEGIN")
+
+        cursor.execute(database.SELECT_PROTOCOL_TAG, {'prot_uuid': data.uuid_bytes(prt_uuid)})
+        tag_ids = cursor.fetchall()
+
         cursor.execute(database.DELETE_PROTOCOL, {'prt_uuid': data.uuid_bytes(prt_uuid)})
+
+        if tag_ids:
+            try:
+                for tag_id in tag_ids[0]:
+                    cursor.execute(database.DELETE_TAG_ID, {'tag_id': tag_id})
+            except sqlite3.Error as excpt:
+                if sqlite_error.sqlite_err_handler(str(excpt)) == sqlite_error.FOREIGN_KEY_CODE:
+                    pass
+                else:
+                    raise
 
         protocol_path = directory.protocol_path(prt_uuid=prt_uuid)
         shutil.rmtree(protocol_path, ignore_errors=True)
@@ -428,12 +547,14 @@ def delete_protocol(prt_uuid):
         raise
     except OSError:
         if conn:
-            conn.rollback()
+            if cursor:
+                cursor.execute("ROLLBACK")
         exception = True
         raise
     finally:
         if not exception:
-            conn.commit()
+            if cursor:
+                cursor.execute("COMMIT")
         if conn:
             conn.close()
 

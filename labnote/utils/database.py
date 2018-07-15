@@ -575,6 +575,35 @@ SELECT_DATASET_KEY = """
 SELECT dt_key FROM dataset
 """
 
+INSERT_TAG_PROTOCOL = """
+INSERT OR IGNORE INTO protocol_tag (prot_uuid, tag_id) 
+VALUES (:prot_uuid, (SELECT tag_id FROM tags WHERE name = :name))
+"""
+
+INSERT_REF_PROTOCOL = """
+INSERT OR IGNORE INTO protocol_references (prot_uuid, ref_uuid) VALUES 
+(:prot_uuid, (SELECT ref_uuid FROM refs WHERE ref_key = :ref_key))
+"""
+
+SELECT_PROTOCOL_TAG_NAME = """
+SELECT name FROM tags WHERE tag_id = (SELECT tag_id FROM protocol_tag WHERE prot_uuid=:prot_uuid)
+"""
+
+SELECT_PROTOCOL_REFERENCE_KEY = """
+SELECT ref_key FROM refs WHERE ref_uuid = (SELECT ref_uuid FROM protocol_references WHERE prot_uuid=:prot_uuid)
+"""
+
+DELETE_TAG_PROTOCOL = """
+DELETE FROM protocol_tag WHERE tag_id = (SELECT tag_id FROM tags WHERE name=:name) AND prot_uuid=:prot_uuid
+"""
+
+DELETE_REFERENCE_PROTOCOL = """
+DELETE FROM protocol_references WHERE ref_uuid = (SELECT ref_uuid FROM refs WHERE ref_key = :ref_key) AND prot_uuid=:prot_uuid
+"""
+
+SELECT_PROTOCOL_TAG = """
+SELECT tag_id FROM protocol_tag WHERE prot_uuid=:prot_uuid
+"""
 
 """
 Database creation
