@@ -410,10 +410,28 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         try:
             ref_uuid = database.select_reference_uuid_key(ref_key)
         except sqlite3.Error:
-            pass
+            return
 
         if ref_uuid:
             library.Library(self.tag_list, ref_uuid=data.uuid_string(ref_uuid), parent=self)
+
+    def show_dataset(self, dt_key):
+        try:
+            dt_uuid = database.select_dataset_uuid_key(dt_key)
+        except sqlite3.Error:
+            return
+
+        if dt_uuid:
+            dataset.Dataset(self.tag_list, dt_uuid=data.uuid_string(dt_uuid), parent=self)
+
+    def show_protocol(self, prt_key):
+        try:
+            prt_uuid = database.select_protocol_uuid_key(prt_key)
+        except sqlite3.Error:
+            return
+
+        if prt_uuid:
+            protocol.Protocol(self.tag_list, dt_uuid=data.uuid_string(prt_uuid), parent=self)
 
     def process_experiment(self):
         """ Process the experiment in the database and the file system """
