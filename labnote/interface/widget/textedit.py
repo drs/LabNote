@@ -5,9 +5,9 @@ This module contains the textedit subclasses used in LabNote software
 # Python import
 
 # PyQt import
-from PyQt5.QtWidgets import QTextEdit, QCompleter, QPlainTextEdit
+from PyQt5.QtWidgets import QTextEdit, QCompleter, QPlainTextEdit, QApplication
 from PyQt5.QtCore import Qt, QStringListModel, QUrl, QFileInfo, QEvent, pyqtSignal
-from PyQt5.QtGui import QTextCursor, QColor, QImage, QImageReader
+from PyQt5.QtGui import QTextCursor, QColor, QImage, QImageReader, QTextCharFormat
 
 # Project import
 from labnote.utils import files
@@ -76,6 +76,29 @@ class CompleterTextEdit(TextEdit):
         if protocol_list is not None:
             self.protocol_list = set(protocol_list)
             self.accept_protocol = True
+
+    def setHtml(self, html):
+        QTextEdit.setHtml(self, html)
+        self.set_tag_format()
+
+    def set_tag_format(self):
+        """ Set the TextEdit base format """
+        cursor = self.textCursor()
+        cursor.setPosition(0)
+
+        while not cursor.atEnd():
+            cursor.setPosition(cursor.selectionEnd())
+            cursor.movePosition(QTextCursor.NextCharacter, QTextCursor.KeepAnchor)
+            fmt = QTextCharFormat()
+
+            if cursor.charFormat().isAnchor():
+                href = cursor.charFormat().anchorHref().split('/')
+                prefix = href[0]
+
+                if prefix == 'tag':
+                    fmt.setFontUnderline(False)
+                    fmt.setBackground(QColor(182, 211, 230, 150))
+                    cursor.mergeCharFormat(fmt)
 
     def keyPressEvent(self, event):
         """ Handle keypress event for the completer """
@@ -168,6 +191,7 @@ class CompleterTextEdit(TextEdit):
             cursor.setPosition(new_position, QTextCursor.KeepAnchor)
             fmt = cursor.charFormat()
             fmt.setAnchor(False)
+            fmt.setUnderlineStyle(QTextCharFormat.NoUnderline)
             if cursor.charFormat().anchorHref().split('/')[0] == 'tag':
                 fmt.setBackground(Qt.white)
             cursor.mergeCharFormat(fmt)
@@ -298,8 +322,8 @@ class CompleterTextEdit(TextEdit):
             fmt = cursor.charFormat()
             fmt.setAnchor(True)
             if self.completer_type == TAG_COMPLETER:
-                fmt.setBackground(QColor(212, 212, 212, 150))
                 fmt.setFontUnderline(False)
+                fmt.setBackground(QColor(182, 211, 230, 150))
                 fmt.setForeground(Qt.black)
 
             if self.completer_type == TAG_COMPLETER:
@@ -330,9 +354,12 @@ class CompleterTextEdit(TextEdit):
 
             # Set the format
             fmt = cursor.charFormat()
-            if self.completer_type == TAG_COMPLETER:
-                fmt.setBackground(QColor(212, 212, 212, 150))
             fmt.setAnchor(True)
+
+            if self.completer_type == TAG_COMPLETER:
+                fmt.setFontUnderline(False)
+                fmt.setBackground(QColor(182, 211, 230, 150))
+                fmt.setForeground(Qt.black)
 
             if args[2] == TAG_COMPLETER:
                 fmt.setAnchorHref("tag/{}".format(old_text))
@@ -370,7 +397,8 @@ class CompleterTextEdit(TextEdit):
     def insert_completion(self, completion):
         """ Insert the completed word """
         extra = len(completion) - len(self.completer.completionPrefix())
-        self.textCursor().insertText(completion[-extra:])
+        if extra != 0:
+            self.textCursor().insertText(completion[-extra:])
         self.format_completion()
 
     def select_anchor(self):
@@ -483,6 +511,16 @@ class ImageTextEdit(CompleterTextEdit):
                     self.dataset_pressed.emit(suffix)
                 elif prefix == 'protocol':
                     self.protocol_pressed.emit(suffix)
+
+        if event.type() == QEvent.MouseMove:
+            anchor = self.anchorAt(event.pos())
+            if anchor:
+                QApplication.setOverrideCursor(Qt.PointingHandCursor)
+            else:
+                QApplication.setOverrideCursor(Qt.ArrowCursor)
+
+        if event.type() == QEvent.Leave:
+            QApplication.setOverrideCursor(Qt.ArrowCursor)
 
         return QTextEdit.eventFilter(self, object, event)
 

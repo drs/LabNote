@@ -918,11 +918,13 @@ class TextEditor(QWidget, Ui_TextEditor):
         """ Show the interface element required to edit title """
         self.icon_frame.setVisible(False)
         self.txt_description.setVisible(True)
+        self.txt_key.setVisible(True)
 
     def edit_body(self):
         """ Show the interface element required to edit the body """
         self.icon_frame.setVisible(True)
         self.txt_description.setVisible(False)
+        self.txt_key.setVisible(False)
 
     def change_list_button_icon(self, action):
         """Change the list button icon to the selected list format
@@ -1416,15 +1418,3 @@ class ProtocolTextEditor(TextEditor):
         self.txt_key.setPlaceholderText("Protocol key")
         self.txt_description.setPlaceholderText("Description of the protocol")
         self.txt_title.setPlaceholderText("Untitled protocol")
-
-    def edit_title(self):
-        """ Show the interface element required to edit title """
-        self.icon_frame.setVisible(False)
-        self.txt_description.setVisible(True)
-        self.txt_key.setVisible(True)
-
-    def edit_body(self):
-        """ Show the interface element required to edit the body """
-        self.icon_frame.setVisible(True)
-        self.txt_description.setVisible(False)
-        self.txt_key.setVisible(False)
