@@ -28,6 +28,7 @@ def create_main_directory():
     os.mkdir(directory.DEFAULT_MAIN_DIRECTORY_PATH)
     os.mkdir(directory.NOTEBOOK_DIRECTORY_PATH)
     os.mkdir(directory.REFERENCES_DIRECTORY_PATH)
+    os.mkdir(directory.PROTOCOL_DIRECTORY_PATH)
     database.create_main_database()
 
 
