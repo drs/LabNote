@@ -60,7 +60,7 @@ class Library(QDialog, Ui_Library):
     pdf_deleted = pyqtSignal()
     closed = pyqtSignal()
 
-    def __init__(self, tag_list, parent=None):
+    def __init__(self, tag_list, parent=None, ref_uuid=None):
         super(Library, self).__init__(parent)
         # Initialize global variable
         self.tag_list = tag_list
@@ -72,6 +72,9 @@ class Library(QDialog, Ui_Library):
 
         # Show the widget content
         self.category_frame.show_list()
+
+        if ref_uuid:
+            self.show_reference(ref_uuid)
 
         # Show the dialog
         self.show()
@@ -135,6 +138,18 @@ class Library(QDialog, Ui_Library):
         self.category_frame.entry_selected.connect(self.show_reference_details)
         self.category_frame.selection_changed.connect(self.clear_form)
         self.txt_key.textChanged.connect(self.set_modified)
+
+    def show_reference(self, ref_uuid):
+        """ Show the reference with the given uuid
+
+        :param ref_uuid: Reference uuid
+        :type ref_uuid: str
+        """
+        model = self.category_frame.view_tree.model()
+        match = model.match(model.index(0, 0), Qt.UserRole, ref_uuid, 1, Qt.MatchRecursive)
+        if match:
+            self.category_frame.view_tree.selectionModel().setCurrentIndex(match[0], QItemSelectionModel.Select)
+            self.category_frame.view_tree.repaint()
 
     def get_tag_list(self):
         """ Get the list of all tag """

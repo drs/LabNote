@@ -14,6 +14,7 @@ from labnote.interface.widget.lineedit import SearchLineEdit
 from labnote.interface.widget.widget import CategoryFrame, ProtocolTextEditor, NoEntryWidget
 from labnote.core import stylesheet, common, data, sqlite_error
 from labnote.utils import database, layout, fsentry, date
+from labnote.interface.library import Library
 
 
 class Protocol(QDialog, Ui_Protocol):
@@ -67,6 +68,15 @@ class Protocol(QDialog, Ui_Protocol):
         self.category_frame.btn_add.clicked.connect(self.start_creating_protocol)
         self.category_frame.selection_changed.connect(self.clear_form)
         self.category_frame.delete.connect(self.delete_protocol)
+
+    def show_reference(self, ref_key):
+        try:
+            ref_uuid = database.select_reference_uuid_key(ref_key)
+        except sqlite3.Error:
+            pass
+
+        if ref_uuid:
+            Library(self.tag_list, ref_uuid=data.uuid_string(ref_uuid), parent=self)
 
     def get_tag_list(self):
         """ Get the list of all tag """
@@ -124,6 +134,7 @@ class Protocol(QDialog, Ui_Protocol):
         if prt_uuid:
             self.editor.txt_body.set_uuid(prt_uuid)
         self.editor.btn_save.clicked.connect(self.process_protocol)
+        self.editor.txt_body.reference_pressed.connect(self.show_reference)
         self.layout_entry.addWidget(self.editor)
 
     def process_protocol(self):

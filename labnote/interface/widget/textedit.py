@@ -6,8 +6,8 @@ This module contains the textedit subclasses used in LabNote software
 
 # PyQt import
 from PyQt5.QtWidgets import QTextEdit, QCompleter, QPlainTextEdit
-from PyQt5.QtCore import Qt, QStringListModel, QUrl, QFileInfo
-from PyQt5.QtGui import QTextCursor, QTextCharFormat, QColor, QImage, QImageReader, QTextBlock
+from PyQt5.QtCore import Qt, QStringListModel, QUrl, QFileInfo, QEvent, pyqtSignal
+from PyQt5.QtGui import QTextCursor, QColor, QImage, QImageReader
 
 # Project import
 from labnote.utils import files
@@ -76,28 +76,6 @@ class CompleterTextEdit(TextEdit):
         if protocol_list is not None:
             self.protocol_list = set(protocol_list)
             self.accept_protocol = True
-
-        self.textChanged.connect(self.set_base_format)
-
-    def set_base_format(self):
-        """ Set the TextEdit base format """
-        self.blockSignals(True)
-
-        cursor = self.textCursor()
-        cursor.setPosition(0)
-        cursor.movePosition(QTextCursor.End, QTextCursor.KeepAnchor)
-
-        # Set the initial format
-        #if self.launch:
-            #fmt = QTextCharFormat()
-            #fmt.setFontUnderline(False)
-            #fmt.setForeground(Qt.black)
-
-            #cursor.mergeCharFormat(fmt)
-            #self.launch = False
-
-        self.blockSignals(False)
-        self.textChanged.disconnect(self.set_base_format)
 
     def keyPressEvent(self, event):
         """ Handle keypress event for the completer """
@@ -318,9 +296,11 @@ class CompleterTextEdit(TextEdit):
 
             # Set the format
             fmt = cursor.charFormat()
+            fmt.setAnchor(True)
             if self.completer_type == TAG_COMPLETER:
                 fmt.setBackground(QColor(212, 212, 212, 150))
-            fmt.setAnchor(True)
+                fmt.setFontUnderline(False)
+                fmt.setForeground(Qt.black)
 
             if self.completer_type == TAG_COMPLETER:
                 fmt.setAnchorHref("tag/{}".format(old_text))
@@ -477,10 +457,34 @@ class ImageTextEdit(CompleterTextEdit):
     uuid = None
     deleted_image = set([])
 
+    # Signals
+    reference_pressed = pyqtSignal(str)
+    dataset_pressed = pyqtSignal(str)
+    protocol_pressed = pyqtSignal(str)
+
     def __init__(self, editor_type, reference_list=None, dataset_list=None, protocol_list=None):
         super(ImageTextEdit, self).__init__(reference_list=reference_list,
                                             dataset_list=dataset_list, protocol_list=protocol_list)
         self.editor_type = editor_type
+        self.setMouseTracking(True)
+        self.viewport().setMouseTracking(True)
+        self.installEventFilter(self)
+        self.viewport().installEventFilter(self)
+
+    def eventFilter(self, object, event):
+        if event.type() == QEvent.MouseButtonPress:
+            anchor = self.anchorAt(event.pos())
+            if anchor:
+                prefix = anchor.split('/')[0]
+                suffix = anchor.split('/')[1]
+                if prefix == 'reference':
+                    self.reference_pressed.emit(suffix)
+                elif prefix == 'dataset':
+                    self.dataset_pressed.emit(suffix)
+                elif prefix == 'protocol':
+                    self.protocol_pressed.emit(suffix)
+
+        return QTextEdit.eventFilter(self, object, event)
 
     def set_uuid(self, uuid):
         self.accept_image = True

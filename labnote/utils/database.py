@@ -605,6 +605,10 @@ SELECT_PROTOCOL_TAG = """
 SELECT tag_id FROM protocol_tag WHERE prot_uuid=:prot_uuid
 """
 
+SELECT_REFERENCE_UUID_KEY = """
+SELECT ref_uuid FROM refs WHERE ref_key=:ref_key
+"""
+
 """
 Database creation
 """
@@ -1247,6 +1251,17 @@ def select_reference_key():
     for reference in buffer:
         reference_list.append(reference[0])
     return reference_list
+
+
+def select_reference_uuid_key(ref_key):
+    """ Get the reference uuid from the key
+
+    :param ref_key: Reference key
+    :type ref_key: str
+    """
+    buffer = execute_query(SELECT_REFERENCE_UUID_KEY, ref_key=ref_key)
+
+    return buffer[0][0]
 
 
 """

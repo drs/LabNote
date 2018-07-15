@@ -856,7 +856,6 @@ class TextEditor(QWidget, Ui_TextEditor):
 
         # Set visible components and event filter
         self.icon_frame.setVisible(False)
-        self.txt_title.setMouseTracking(True)
         self.txt_title.installEventFilter(self)
         self.txt_body.installEventFilter(self)
         self.txt_description.setVisible(False)
@@ -913,7 +912,7 @@ class TextEditor(QWidget, Ui_TextEditor):
                 self.edit_title()
             if object == self.txt_body:
                 self.edit_body()
-        return QWidget().eventFilter(object, event)
+        return QWidget.eventFilter(self, object, event)
 
     def edit_title(self):
         """ Show the interface element required to edit title """
