@@ -31,9 +31,42 @@ class SearchLineEdit(LineEdit):
 
 class TagSearchLineEdit(SearchLineEdit):
     """ Search line edit with the tag completer """
-    def __init__(self, completer_list):
+
+    completer = None
+
+    def __init__(self, tag_list):
         super(TagSearchLineEdit, self).__init__()
-        self.setCompleter(SearchCompleter(completer_list))
+        self.setCompleter(SearchCompleter(tag_list))
+        self.setValidator(QRegExpValidator(QRegExp("^([0-9a-zA-z_-]+[, ]{2})+$")))
+
+    def keyPressEvent(self, event):
+        # Process event normally
+        QLineEdit.keyPressEvent(self, event)
+        
+        # Handle the completer
+        if not self.completer:
+            return
+
+        self.completer.setCompletionPrefix(self.cursorWord(self.text()))
+        if len(self.completer.completionPrefix()) < 1:
+            self.completer.popup().hide()
+            return
+
+        rect = self.cursorRect()
+        rect.setWidth(self.completer.popup().sizeHintForColumn(0) +
+                      self.completer.popup().verticalScrollBar().sizeHint().width())
+        self.completer.complete()
+
+    def cursorWord(self, sentence):
+        return sentence[sentence.rfind(' ')+1:]
+
+    def setCompleter(self, completer):
+        self.completer = completer
+        self.completer.setWidget(self)
+        self.completer.activated.connect(self.insert_completion)
+
+    def insert_completion(self, completion):
+        self.setText(self.text().replace(self.text()[self.text().rfind(','):], completion))
 
 
 class YearLineEdit(LineEdit):
