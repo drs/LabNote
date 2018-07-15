@@ -9,7 +9,7 @@ import subprocess
 # PyQt import
 from PyQt5.QtWidgets import QDialog, QMessageBox, QMenu, QAction, QFileDialog, QTabWidget, QTableWidget, \
     QTableWidgetItem, QAbstractItemView
-from PyQt5.QtCore import QSize, Qt, QSettings, QDir
+from PyQt5.QtCore import QSize, Qt, QSettings, QDir, pyqtSignal
 from PyQt5.QtGui import QIcon, QStandardItem, QFont
 
 # Project import
@@ -37,6 +37,10 @@ LEVEL_DATASET = 103
 
 class Dataset(QDialog, Ui_Dataset):
     """ Class responsible of diplaying the dataset window interface """
+
+    # Signals
+    closed = pyqtSignal()
+
     def __init__(self, parent=None):
         super(Dataset, self).__init__(parent)
 
@@ -364,6 +368,7 @@ class Dataset(QDialog, Ui_Dataset):
     def closeEvent(self, event):
         self.save_treeview_state()
         self.save_settings()
+        self.closed.emit()
         event.accept()
 
     def save_settings(self):
