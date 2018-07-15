@@ -239,51 +239,6 @@
     </item>
    </layout>
   </widget>
-  <widget class="QMenuBar" name="menubar">
-   <property name="geometry">
-    <rect>
-     <x>0</x>
-     <y>0</y>
-     <width>800</width>
-     <height>22</height>
-    </rect>
-   </property>
-   <widget class="QMenu" name="menuFile">
-    <property name="title">
-     <string>File</string>
-    </property>
-    <addaction name="act_new_experiment"/>
-    <addaction name="separator"/>
-    <addaction name="actionExport_as_PDF"/>
-   </widget>
-   <widget class="QMenu" name="menuNotebook">
-    <property name="title">
-     <string>Notebook</string>
-    </property>
-    <addaction name="actionNew_notebook"/>
-    <addaction name="actionEdit_notebook"/>
-    <addaction name="separator"/>
-    <addaction name="actionDelete_notebook"/>
-   </widget>
-   <widget class="QMenu" name="menuExperiment">
-    <property name="title">
-     <string>Experiment</string>
-    </property>
-    <addaction name="actionNew_experiment_2"/>
-    <addaction name="actionDuplicate_experiment"/>
-   </widget>
-   <widget class="QMenu" name="menuData">
-    <property name="title">
-     <string>Data</string>
-    </property>
-    <addaction name="act_protocols"/>
-    <addaction name="act_dataset"/>
-   </widget>
-   <addaction name="menuFile"/>
-   <addaction name="menuNotebook"/>
-   <addaction name="menuExperiment"/>
-   <addaction name="menuData"/>
-  </widget>
   <widget class="QStatusBar" name="statusBar"/>
   <widget class="QToolBar" name="experiment_toolbar">
    <property name="windowTitle">
@@ -373,6 +328,53 @@
     <bool>false</bool>
    </attribute>
    <addaction name="act_samples"/>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>800</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuFile">
+    <property name="title">
+     <string>File</string>
+    </property>
+    <addaction name="act_save"/>
+   </widget>
+   <widget class="QMenu" name="menuData">
+    <property name="geometry">
+     <rect>
+      <x>323</x>
+      <y>100</y>
+      <width>250</width>
+      <height>122</height>
+     </rect>
+    </property>
+    <property name="minimumSize">
+     <size>
+      <width>250</width>
+      <height>0</height>
+     </size>
+    </property>
+    <property name="maximumSize">
+     <size>
+      <width>250</width>
+      <height>16777215</height>
+     </size>
+    </property>
+    <property name="title">
+     <string>Data</string>
+    </property>
+    <addaction name="act_mb_protocol"/>
+    <addaction name="act_mb_library"/>
+    <addaction name="act_mb_dataset"/>
+    <addaction name="act_mb_sample"/>
+   </widget>
+   <addaction name="menuFile"/>
+   <addaction name="menuData"/>
   </widget>
   <action name="act_new">
    <property name="text">
@@ -471,6 +473,39 @@
    </property>
    <property name="toolTip">
     <string>Open samples</string>
+   </property>
+  </action>
+  <action name="act_save">
+   <property name="text">
+    <string>Save</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+S</string>
+   </property>
+  </action>
+  <action name="act_mb_protocol">
+   <property name="text">
+    <string>Protocol</string>
+   </property>
+  </action>
+  <action name="act_mb_library">
+   <property name="text">
+    <string>Library</string>
+   </property>
+  </action>
+  <action name="act_mb_dataset">
+   <property name="text">
+    <string>Dataset</string>
+   </property>
+  </action>
+  <action name="act_mb_sample">
+   <property name="text">
+    <string>Sample</string>
+   </property>
+  </action>
+  <action name="act_about_qt">
+   <property name="text">
+    <string>About Qt</string>
    </property>
   </action>
  </widget>

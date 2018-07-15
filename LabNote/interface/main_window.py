@@ -141,9 +141,13 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         #self.lst_entry.itemSelectionChanged.connect(self.experiment_changed)
         self.act_project.triggered.connect(self.open_project)
         self.act_library.triggered.connect(self.open_library)
-        self.act_samples.triggered.connect(self.open_sample_number)
+        self.act_samples.triggered.connect(self.open_sample)
         self.act_dataset.triggered.connect(self.open_dataset)
         self.act_protocols.triggered.connect(self.open_protocol)
+        self.act_mb_protocol.triggered.connect(self.open_protocol)
+        self.act_mb_dataset.triggered.connect(self.open_dataset)
+        self.act_mb_library.triggered.connect(self.open_library)
+        self.act_mb_sample.triggered.connect(self.open_sample)
 
     """
     General functions
@@ -248,7 +252,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             message.exec()
 
     """
-    Toolbar functions
+    Toolbar and menu bar functions
     """
 
     def open_project(self):
@@ -261,7 +265,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         lib = library.Library(tag_list=self.tag_list, parent=self)
         lib.closed.connect(self.get_tag_list)
 
-    def open_sample_number(self):
+    def open_sample(self):
         """ Open the sample number dialog """
         sample.Sample(self)
 
@@ -351,6 +355,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         notebook.setParent(self, Qt.Sheet)
         notebook.show()
         notebook.accepted.connect(self.view_notebook.show_content)
+
+    """
+    Experiment functions
+    """
+
 
     # """
     # Experiment list functions
