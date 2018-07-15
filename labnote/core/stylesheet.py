@@ -1,4 +1,9 @@
+
+# PyQt import
 from PyQt5.QtCore import QFile, QTextStream
+
+# Project import
+from labnote.resources import resources
 
 
 def set_style_sheet(object, file):
