@@ -116,10 +116,13 @@ class Protocol(QDialog, Ui_Protocol):
             self.create_editor()
             self.editor.btn_save.setText("Create")
 
-    def create_editor(self):
+    def create_editor(self, prt_uuid=None):
         """ Add the editor widget to the layout """
         layout.empty_layout(self, self.layout_entry)
-        self.editor = ProtocolTextEditor(tag_list=self.tag_list, reference_list=self.reference_list)
+        self.editor = ProtocolTextEditor(editor_type=common.TYPE_PROTOCOL, tag_list=self.tag_list,
+                                         reference_list=self.reference_list)
+        if prt_uuid:
+            self.editor.txt_body.set_uuid(prt_uuid)
         self.editor.btn_save.clicked.connect(self.process_protocol)
         self.layout_entry.addWidget(self.editor)
 
@@ -138,7 +141,7 @@ class Protocol(QDialog, Ui_Protocol):
                 # Get the protocol content
                 name = data.prepare_string(self.editor.txt_title.toPlainText())
                 description = data.prepare_textedit(self.editor.txt_description)
-                body = self.editor.textedit.toHtml()
+                body = self.editor.txt_body.toHtml()
 
                 if self.creating_protocol:
                     prt_uuid = str(uuid.uuid4())
@@ -215,6 +218,10 @@ class Protocol(QDialog, Ui_Protocol):
         """ Active the interface element after the protocol is saved """
         self.category_frame.show_list()
 
+        if self.creating_protocol:
+            self.creating_protocol = False
+            self.editor.txt_body.set_uuid(prt_uuid)
+
         model = self.category_frame.view_tree.model()
         match = model.match(model.index(0, 0), Qt.UserRole, prt_uuid, 1, Qt.MatchRecursive)
         if match:
@@ -235,7 +242,7 @@ class Protocol(QDialog, Ui_Protocol):
             return
 
         # Show content
-        self.create_editor()
+        self.create_editor(prt_uuid)
         self.editor.txt_key.setText(protocol['key'])
 
         name = protocol['name']
@@ -253,6 +260,10 @@ class Protocol(QDialog, Ui_Protocol):
         updated_date = protocol['updated']
         if updated_date:
             self.editor.lbl_updated.setText(date.utc_to_local(updated_date))
+
+        body = protocol['body']
+        if body:
+            self.editor.txt_body.setHtml(body)
 
     def closeEvent(self, event):
         self.save_treeview_state()

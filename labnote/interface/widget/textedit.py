@@ -7,7 +7,7 @@ This module contains the textedit subclasses used in LabNote software
 # PyQt import
 from PyQt5.QtWidgets import QTextEdit, QCompleter, QPlainTextEdit
 from PyQt5.QtCore import Qt, QStringListModel, QUrl, QFileInfo
-from PyQt5.QtGui import QTextCursor, QTextCharFormat, QColor, QImage, QImageReader, QTextDocument
+from PyQt5.QtGui import QTextCursor, QTextCharFormat, QColor, QImage, QImageReader, QTextBlock
 
 # Project import
 from labnote.utils import files
@@ -383,7 +383,6 @@ class CompleterTextEdit(TextEdit):
             cursor.mergeCharFormat(fmt)
 
     def start_completer(self, completer_list, completer_type):
-        print(completer_list)
         completer = QCompleter()
         completer.setModel(QStringListModel(list(completer_list)))
         completer.setModelSorting(QCompleter.CaseInsensitivelySortedModel)
@@ -500,16 +499,38 @@ class ImageTextEdit(CompleterTextEdit):
     # Class variable definition
     accept_image = False
     uuid = None
-    editor_type = -1
+    deleted_image = set([])
 
     def __init__(self, editor_type, reference_list=None, dataset_list=None, protocol_list=None):
         super(ImageTextEdit, self).__init__(reference_list=reference_list,
                                             dataset_list=dataset_list, protocol_list=protocol_list)
         self.editor_type = editor_type
 
-    def set_uuid(self, value, uuid):
-        self.accept_image = value
+    def set_uuid(self, uuid):
+        self.accept_image = True
         self.uuid = uuid
+
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_Backspace:
+            cursor = self.textCursor()
+            if cursor.hasSelection():
+                start = cursor.selectionStart()
+                end = cursor.selectionEnd()
+
+                cursor.setPosition(start)
+                while cursor.movePosition(QTextCursor.NextCharacter) and cursor.position() <= end:
+                    if cursor.charFormat().isImageFormat():
+                        self.deleted_image.add(cursor.charFormat().toImageFormat().name())
+            else:
+                if cursor.charFormat().isImageFormat():
+                    self.deleted_image.add(cursor.charFormat().toImageFormat().name())
+
+        super(ImageTextEdit, self).keyPressEvent(event)
+
+    def is_image(self):
+        if self.textCursor().charFormat().isImageFormat():
+            return True
+        return False
 
     def canInsertFromMimeData(self, source):
         """ Reimplanted QTextBrowser function
@@ -555,5 +576,13 @@ class ImageTextEdit(CompleterTextEdit):
         if path:
             image = QImage(path)
             if image:
-                self.document().addResource(QTextDocument.ImageResource, url, image)
-                self.textCursor().insertImage(str(url.toLocalFile()))
+                self.textCursor().insertImage(path)
+
+                cursor = self.textCursor()
+                cursor.setPosition(self.textCursor().position()-1)
+                cursor.setPosition(self.textCursor().position(), QTextCursor.KeepAnchor)
+                fmt = cursor.charFormat().toImageFormat()
+                fmt.setWidth(image.width())
+                fmt.setHeight(image.height())
+                cursor.setCharFormat(fmt)
+                self.setTextCursor(cursor)

@@ -6,10 +6,10 @@ import math
 
 # PyQt import
 from PyQt5.QtWidgets import QWidget, QLabel, QVBoxLayout, QFrame, QHBoxLayout, QPushButton, QAction, QMenu, \
-    QMessageBox, QAbstractItemView, QPlainTextEdit, QTextEdit
+    QMessageBox, QAbstractItemView, QPlainTextEdit
 from PyQt5.QtGui import QPixmap, QFont, QStandardItem, QColor, QTextCharFormat, QBrush, QPainter, QPen, QIcon, \
-    QTextListFormat, QFontMetrics, QPainterPath, QTextDocument
-from PyQt5.QtCore import Qt, pyqtSignal, QModelIndex, QRectF, QEvent
+    QTextListFormat, QPainterPath, QTextDocument, QRegExpValidator, QTextCursor
+from PyQt5.QtCore import Qt, pyqtSignal, QModelIndex, QRectF, QEvent, QRegExp
 
 # Project import
 from labnote.core import stylesheet
@@ -619,17 +619,17 @@ class CategoryFrame(QWidget):
 class TextEditor(QWidget, Ui_TextEditor):
     """ Complex text editor """
 
-    # Signal definition
-    delete_tag = pyqtSignal(list)
-    create_tag = pyqtSignal(str)
-    
-    def __init__(self, tag_list=None, reference_list=None, dataset_list=None, protocol_list=None):
+    # Class variable definition
+    width_height_ratio = 1
+
+    def __init__(self, editor_type, tag_list=None, reference_list=None, dataset_list=None, protocol_list=None):
         super(TextEditor, self).__init__()
         # Set class variable
         self.tag_list = tag_list
         self.reference_list = reference_list
         self.dataset_list = dataset_list
         self.protocol_list = protocol_list
+        self.editor_type = editor_type
 
         self.setupUi(self)
         self.init_ui()
@@ -661,10 +661,10 @@ class TextEditor(QWidget, Ui_TextEditor):
         self.layout().insertWidget(3, self.txt_description)
 
         # Insert textedit in layout
-        self.textedit = ImageTextEdit(editor_type=common.TYPE_PROTOCOL, reference_list=self.reference_list,
+        self.txt_body = ImageTextEdit(editor_type=self.editor_type, reference_list=self.reference_list,
                                       dataset_list=self.dataset_list, protocol_list=self.protocol_list)
-        self.textedit.setStyleSheet("border-top: 0.5px solid rgb(212, 212, 212)")
-        self.layout().insertWidget(4, self.textedit, 10)
+        self.txt_body.setStyleSheet("border-top: 0.5px solid rgb(212, 212, 212)")
+        self.layout().insertWidget(4, self.txt_body, 10)
 
         # Set button groups
         self.btn_bold.setProperty("Menu", False)
@@ -679,6 +679,11 @@ class TextEditor(QWidget, Ui_TextEditor):
         self.btn_list.setProperty("Menu", True)
         self.btn_color.setProperty("IconOnly", True)
         self.btn_highlight.setProperty("IconOnly", True)
+
+        # Image size line edit
+        validator = QRegExpValidator(QRegExp("^[0-9]{0,4}$"))
+        self.txt_width.setValidator(validator)
+        self.txt_height.setValidator(validator)
 
         # Style menu
         self.act_part = QAction("Part", self)
@@ -853,7 +858,7 @@ class TextEditor(QWidget, Ui_TextEditor):
         self.icon_frame.setVisible(False)
         self.txt_title.setMouseTracking(True)
         self.txt_title.installEventFilter(self)
-        self.textedit.installEventFilter(self)
+        self.txt_body.installEventFilter(self)
         self.txt_description.setVisible(False)
 
     def init_connection(self):
@@ -870,19 +875,43 @@ class TextEditor(QWidget, Ui_TextEditor):
         self.color_menu.triggered.connect(self.format_text_color)
         self.highlight_menu.triggered.connect(self.format_highlight)
         self.style_menu.triggered.connect(self.format_style)
-        self.textedit.cursorPositionChanged.connect(self.update_button)
+        self.txt_body.cursorPositionChanged.connect(self.update_button)
+        self.txt_width.textEdited.connect(self.update_height)
+        self.txt_height.textEdited.connect(self.update_width)
+        self.txt_width.editingFinished.connect(self.update_image_size)
 
-    def emit_delete_tag(self, tag_list):
-        self.delete_tag.emit(tag_list)
+    def update_height(self):
+        """ Update height value when the width is changed """
+        if self.txt_width.text():
+            self.txt_height.setText("{:.0f}".format(int(self.txt_width.text()) * 1/self.width_height_ratio))
+        else:
+            self.txt_height.setText("0")
 
-    def emit_create_tag(self, tag):
-        self.create_tag.emit(tag)
+    def update_width(self):
+        """ Update width value when the height is changed """
+        if self.txt_height.text():
+            self.txt_width.setText("{:.0f}".format(int(self.txt_height.text()) * self.width_height_ratio))
+        else:
+            self.txt_width.setText("0")
+
+    def update_image_size(self):
+        cursor = self.txt_body.textCursor()
+
+        if not cursor.hasSelection():
+            cursor.setPosition(self.txt_body.textCursor().position() - 1)
+            cursor.setPosition(self.txt_body.textCursor().position(), QTextCursor.KeepAnchor)
+
+        fmt = cursor.charFormat().toImageFormat()
+        fmt.setWidth(int(self.txt_width.text()))
+        fmt.setHeight(int(self.txt_height.text()))
+        cursor.setCharFormat(fmt)
+        self.txt_body.setTextCursor(cursor)
 
     def eventFilter(self, object, event):
         if event.type() == QEvent.FocusIn:
             if object == self.txt_title:
                 self.edit_title()
-            if object == self.textedit:
+            if object == self.txt_body:
                 self.edit_body()
         return QWidget().eventFilter(object, event)
 
@@ -1068,9 +1097,9 @@ class TextEditor(QWidget, Ui_TextEditor):
         The font is changed for the selection or from the cursor position.
         :param fmt: Text format
         """
-        cursor = self.textedit.textCursor()
+        cursor = self.txt_body.textCursor()
         cursor.mergeCharFormat(fmt)
-        self.textedit.mergeCurrentCharFormat(fmt)
+        self.txt_body.mergeCurrentCharFormat(fmt)
 
     def format_bold(self):
         """ Set text format to bold. """
@@ -1149,12 +1178,12 @@ class TextEditor(QWidget, Ui_TextEditor):
                 fmt.setStyle(QTextListFormat.ListLowerAlpha)
 
             # Add the list to the the text edit
-            cursor = self.textedit.textCursor()
+            cursor = self.txt_body.textCursor()
             cursor.createList(fmt)
         # Delete an existing list
         elif action == self.act_no_list:
             # Get the current list
-            cursor = self.textedit.textCursor()
+            cursor = self.txt_body.textCursor()
             current_list = cursor.currentList()
             current_block = cursor.block()
 
@@ -1167,7 +1196,7 @@ class TextEditor(QWidget, Ui_TextEditor):
             cursor.setBlockFormat(fmt)
         # Change the indent
         else:
-            cursor = self.textedit.textCursor()
+            cursor = self.txt_body.textCursor()
             current_format = cursor.currentList().format()
             current_indent = current_format.indent()
 
@@ -1284,7 +1313,7 @@ class TextEditor(QWidget, Ui_TextEditor):
         """ Set the button states to match the selected text format """
 
         # Get text format
-        cfmt = self.textedit.textCursor().charFormat()
+        cfmt = self.txt_body.textCursor().charFormat()
 
         # Bold button
         if cfmt.fontWeight() == 75:
@@ -1365,15 +1394,26 @@ class TextEditor(QWidget, Ui_TextEditor):
             self.change_text_color_button_icon(self.act_black_text)
 
         # Get list format
-        if self.textedit.textCursor().currentList():
+        if self.txt_body.textCursor().currentList():
             self.btn_list.setChecked(True)
         else:
             self.btn_list.setChecked(False)
 
+        if self.txt_body.is_image():
+            fmt = self.txt_body.textCursor().charFormat().toImageFormat()
+            self.txt_height.setText("{:d}".format(int(fmt.height())))
+            self.txt_width.setText("{:d}".format(int(fmt.width())))
+            self.width_height_ratio = fmt.width() / fmt.height()
+            self.txt_width.setEnabled(True)
+            self.txt_height.setEnabled(True)
+        else:
+            self.txt_width.setEnabled(False)
+            self.txt_height.setEnabled(False)
+
 
 class ProtocolTextEditor(TextEditor):
-    def __init__(self, tag_list, reference_list):
-        super(ProtocolTextEditor, self).__init__(tag_list=tag_list, reference_list=reference_list)
+    def __init__(self, editor_type, tag_list, reference_list):
+        super(ProtocolTextEditor, self).__init__(editor_type=editor_type, tag_list=tag_list, reference_list=reference_list)
         self.txt_key.setPlaceholderText("Protocol key")
         self.txt_description.setPlaceholderText("Description of the protocol")
         self.txt_title.setPlaceholderText("Untitled protocol")
