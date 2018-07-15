@@ -88,6 +88,10 @@ QT_LevelRole = Qt.UserRole+1
 QT_StateRole = QT_LevelRole+1
 
 # Level type
+
 LEVEL_CATEGORY = 101
 LEVEL_SUBCATEGORY = 102
 LEVEL_ENTRY = 103
+LEVEL_PROJECT = 104
+LEVEL_NOTEBOOK = 105
+
