@@ -6,7 +6,7 @@ import math
 
 # PyQt import
 from PyQt5.QtWidgets import QWidget, QLabel, QVBoxLayout, QFrame, QHBoxLayout, QPushButton, QAction, QMenu, \
-    QMessageBox, QAbstractItemView, QPlainTextEdit
+    QMessageBox, QAbstractItemView, QPlainTextEdit, QCompleter
 from PyQt5.QtGui import QPixmap, QFont, QStandardItem, QColor, QTextCharFormat, QBrush, QPainter, QPen, QIcon, \
     QTextListFormat, QPainterPath, QTextDocument, QRegExpValidator, QTextCursor
 from PyQt5.QtCore import Qt, pyqtSignal, QModelIndex, QRectF, QEvent, QRegExp, QItemSelectionModel
@@ -1419,3 +1419,12 @@ class ProtocolTextEditor(TextEditor):
         self.txt_key.setPlaceholderText("Protocol key")
         self.txt_description.setPlaceholderText("Description of the protocol")
         self.txt_title.setPlaceholderText("Untitled protocol")
+
+
+class ExperimentTextEditor(TextEditor):
+    def __init__(self, tag_list, reference_list, dataset_list, protocol_list, key_list):
+        super(ExperimentTextEditor, self).__init__(common.TYPE_EXPERIMENT, tag_list=tag_list,
+                                                   reference_list=reference_list,
+                                                   dataset_list=dataset_list, protocol_list=protocol_list)
+        self.txt_key.setCompleter(QCompleter(key_list))
+
