@@ -34,6 +34,18 @@ def copy_file_to_data(nb_uuid, exp_uuid, path):
         return exception
 
 
+def add_image_protocol(prt_uuid, path, extention):
+    """ Add an image to a protocol resources
+
+    :param prt_uuid: Protocol uuid
+    :type prt_uuid: str
+    :return str: Path of the inserted image
+    """
+    image_path = directory.protocol_image_path(prt_uuid, extention)
+    shutil.copy2(path, image_path)
+    return image_path
+
+
 def copy_dataset(dt_uuid, nb_uuid, path):
     """ Copy a dataset """
     file_name = dataset_excel_file(dt_uuid=dt_uuid, nb_uuid=nb_uuid)

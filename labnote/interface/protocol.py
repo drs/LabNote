@@ -20,16 +20,16 @@ class Protocol(QDialog, Ui_Protocol):
     """ Class responsible of managing the protocol window interface """
 
     # Class variable definition
-    tag_list = []
     creating_protocol = False
 
     # Signals
     closed = pyqtSignal()
 
-    def __init__(self, tag_list, parent=None):
+    def __init__(self, tag_list, reference_list, parent=None):
         super(Protocol, self).__init__(parent=parent)
         # Initialize global variable
         self.tag_list = tag_list
+        self.reference_list = reference_list
 
         # Initialize the GUI
         self.setupUi(self)
@@ -119,7 +119,7 @@ class Protocol(QDialog, Ui_Protocol):
     def create_editor(self):
         """ Add the editor widget to the layout """
         layout.empty_layout(self, self.layout_entry)
-        self.editor = ProtocolTextEditor(self.tag_list)
+        self.editor = ProtocolTextEditor(tag_list=self.tag_list, reference_list=self.reference_list)
         self.editor.btn_save.clicked.connect(self.process_protocol)
         self.layout_entry.addWidget(self.editor)
 
@@ -145,7 +145,7 @@ class Protocol(QDialog, Ui_Protocol):
 
                     try:
                         fsentry.create_protocol(prt_uuid=prt_uuid, prt_key=key, category_id=category_id,
-                                                name=name, subcategory_id=subcategory_id)
+                                                name=name, subcategory_id=subcategory_id, body=body)
                     except (sqlite3.Error, OSError) as exception:
                         error_code = sqlite_error.sqlite_err_handler(str(exception))
 
