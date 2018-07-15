@@ -1457,6 +1457,16 @@ def select_protocol_key():
     return protocol_list
 
 
+def update_protocol_category(ref_uuid, category_id, subcategory_id=None):
+    """ Update protocol category and subcategory
+
+    This function is used when the protocol is moved by drag and drop in the treeview
+    """
+    execute_query(UPDATE_PROTOCOL_CATEGORY, category_id=category_id, subcategory_id=subcategory_id,
+                  ref_uuid=data.uuid_bytes(ref_uuid))
+
+
+
 """
 Experiment query
 """

@@ -68,6 +68,25 @@ class Protocol(QDialog, Ui_Protocol):
         self.category_frame.btn_add.clicked.connect(self.start_creating_protocol)
         self.category_frame.selection_changed.connect(self.clear_form)
         self.category_frame.delete.connect(self.delete_protocol)
+        self.category_frame.view_tree.drop_finished.connect(self.drop_finished)
+
+    def drop_finished(self, index):
+        """ Update an item information after a drag and drop mouvement """
+        category = self.category_frame.get_category(index)
+        subcategory = self.category_frame.get_subcategory(index)
+
+        try:
+            database.update_protocol_category(self.category_frame.view_tree.selectedIndexes()[0].data(Qt.UserRole),
+                                               category, subcategory)
+        except sqlite3.Error as exception:
+            message = QMessageBox(QMessageBox.Warning, "Error while saving data",
+                                  "An error occurred while updating the protocol category.", QMessageBox.Ok)
+            message.setWindowTitle("LabNote")
+            message.setDetailedText(str(exception))
+            message.exec()
+            return
+
+        self.category_frame.show_list()
 
     def show_reference(self, ref_key):
         try:
