@@ -9,7 +9,7 @@ import subprocess
 # PyQt import
 from PyQt5.QtWidgets import QDialog, QMessageBox, QMenu, QAction, QFileDialog, QTabWidget, QTableWidget, \
     QTableWidgetItem, QAbstractItemView
-from PyQt5.QtCore import QSize, Qt, QSettings, QDir, pyqtSignal
+from PyQt5.QtCore import QSize, Qt, QSettings, QDir, pyqtSignal, QItemSelectionModel
 from PyQt5.QtGui import QIcon, QStandardItem, QFont
 
 # Project import
@@ -41,7 +41,7 @@ class Dataset(QDialog, Ui_Dataset):
     # Signals
     closed = pyqtSignal()
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, dt_uuid=None):
         super(Dataset, self).__init__(parent)
 
         # Class variable
@@ -51,6 +51,9 @@ class Dataset(QDialog, Ui_Dataset):
         self.setupUi(self)
         self.init_ui()
         self.init_connection()
+
+        if dt_uuid:
+            self.show_dataset(dt_uuid)
 
         # Show the dialog
         self.show()
@@ -137,6 +140,18 @@ class Dataset(QDialog, Ui_Dataset):
         self.view_dataset.expanded.connect(self.save_treeview_state)
         self.btn_import.clicked.connect(self.import_dataset)
         self.btn_open.clicked.connect(self.open_dataset)
+
+    def show_dataset(self, dt_uuid):
+        """ Show the dataset with the given uuid
+
+        :param dt_uuid: Dataset uuid
+        :type dt_uuid: str
+        """
+        model = self.view_dataset.model()
+        match = model.match(model.index(0, 0), Qt.UserRole, dt_uuid, 1, Qt.MatchRecursive)
+        if match:
+            self.view_dataset.selectionModel().setCurrentIndex(match[0], QItemSelectionModel.Select)
+            self.view_dataset.repaint()
 
     def create_dataset(self):
         """ Create a new dataset """
