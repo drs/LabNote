@@ -6,14 +6,14 @@ This module contain the classes responsible for launching and managing the LabNo
 import sqlite3
 
 # PyQt import
-from PyQt5.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QMessageBox, QLabel, QAction, QSizePolicy, QMenu
-from PyQt5.QtGui import QPixmap, QIcon, QFont, QStandardItem
-from PyQt5.QtCore import Qt, QSettings, QByteArray, pyqtSignal
+from PyQt5.QtWidgets import QMainWindow, QWidget, QMessageBox, QAction, QSizePolicy, QMenu
+from PyQt5.QtGui import QIcon, QFont, QStandardItem
+from PyQt5.QtCore import Qt, QSettings, QByteArray, pyqtSignal, QItemSelectionModel
 
 # Project import
 from labnote.ui.ui_mainwindow import Ui_MainWindow
 from labnote.core import stylesheet
-from labnote.utils import database, directory, fsentry
+from labnote.utils import database, fsentry
 from labnote.interface import project, library, sample, dataset, protocol
 from labnote.interface.dialog.notebook import Notebook
 from labnote.interface.widget.lineedit import TagSearchLineEdit
@@ -569,6 +569,7 @@ class ProjectNotebookTreeView(TreeView):
                         project_item.appendRow(notebook_item)
 
         self.setModel(model)
+        self.selectionModel().setCurrentIndex(self.model().index(0, 0), QItemSelectionModel.Select)
         self.selectionModel().currentChanged.connect(self.selection_change)
         self.restore_state()
 
@@ -624,7 +625,7 @@ class ProjectNotebookTreeView(TreeView):
 
         # Save list
         settings = QSettings("Samuel Drouin", "LabNote")
-        settings.beginGroup("NotebookProjectTreeView")
+        settings.beginGroup("MainWindow")
         settings.setValue("ExpandedItem", expanded_item)
         settings.endGroup()
 
@@ -633,7 +634,7 @@ class ProjectNotebookTreeView(TreeView):
 
         # Get list
         settings = QSettings("Samuel Drouin", "LabNote")
-        settings.beginGroup("NotebookProjectTreeView")
+        settings.beginGroup("MainWindow")
         expanded_item = settings.value("ExpandedItem")
         selected_item = settings.value("SelectedItem")
         settings.endGroup()

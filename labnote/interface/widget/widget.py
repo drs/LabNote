@@ -9,7 +9,7 @@ from PyQt5.QtWidgets import QWidget, QLabel, QVBoxLayout, QFrame, QHBoxLayout, Q
     QMessageBox, QAbstractItemView, QPlainTextEdit
 from PyQt5.QtGui import QPixmap, QFont, QStandardItem, QColor, QTextCharFormat, QBrush, QPainter, QPen, QIcon, \
     QTextListFormat, QPainterPath, QTextDocument, QRegExpValidator, QTextCursor
-from PyQt5.QtCore import Qt, pyqtSignal, QModelIndex, QRectF, QEvent, QRegExp
+from PyQt5.QtCore import Qt, pyqtSignal, QModelIndex, QRectF, QEvent, QRegExp, QItemSelectionModel
 
 # Project import
 from labnote.core import stylesheet
@@ -464,6 +464,7 @@ class CategoryFrame(QWidget):
                         category_item.appendRow(reference_item)
 
         self.view_tree.setModel(model)
+        self.view_tree.selectionModel().setCurrentIndex(self.view_tree.model().index(0, 0), QItemSelectionModel.Select)
         self.view_tree.selectionModel().currentChanged.connect(self.selection_change)
         self.list_displayed.emit()
 
