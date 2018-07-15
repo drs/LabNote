@@ -26,7 +26,7 @@ class Protocol(QDialog, Ui_Protocol):
     # Signals
     closed = pyqtSignal()
 
-    def __init__(self, tag_list, reference_list, parent=None):
+    def __init__(self, tag_list, reference_list, parent=None, prt_uuid=None):
         super(Protocol, self).__init__(parent=parent)
         # Initialize global variable
         self.tag_list = tag_list
@@ -37,6 +37,9 @@ class Protocol(QDialog, Ui_Protocol):
         self.init_ui()
         self.init_connection()
         self.category_frame.show_list()
+
+        if prt_uuid:
+            self.show_protocol(prt_uuid)
 
         self.show()
 
@@ -69,6 +72,18 @@ class Protocol(QDialog, Ui_Protocol):
         self.category_frame.selection_changed.connect(self.clear_form)
         self.category_frame.delete.connect(self.delete_protocol)
         self.category_frame.view_tree.drop_finished.connect(self.drop_finished)
+
+    def show_protocol(self, prt_uuid):
+        """ Show the protocol with the given uuid
+
+        :param prt_uuid: Protocol uuid
+        :type prt_uuid: str
+        """
+        model = self.category_frame.view_tree.model()
+        match = model.match(model.index(0, 0), Qt.UserRole, prt_uuid, 1, Qt.MatchRecursive)
+        if match:
+            self.category_frame.view_tree.selectionModel().setCurrentIndex(match[0], QItemSelectionModel.Select)
+            self.category_frame.view_tree.repaint()
 
     def drop_finished(self, index):
         """ Update an item information after a drag and drop mouvement """
