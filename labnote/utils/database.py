@@ -681,6 +681,13 @@ SELECT_EXPERIMENT_TAG = """
 SELECT tag_id FROM experiment_tag WHERE exp_uuid=:exp_uuid
 """
 
+SELECT_DATASET_UUID_KEY = """
+SELECT dt_uuid FROM dataset WHERE dt_key=:dt_key
+"""
+
+SELECT_PROTOCOL_UUID_KEY = """
+SELECT prt_uuid FROM protocol WHERE prt_key=:prt_key
+"""
 
 
 """
@@ -1663,3 +1670,25 @@ def get_experiment_list_notebook(nb_uuid):
         experiment_list.append({'exp_uuid': experiment[0], 'name': experiment[1], 'key': experiment[2]})
 
     return experiment_list
+
+
+def select_dataset_uuid_key(dt_key):
+    """ Get the dataset uuid from the key
+
+    :param dt_uuid: Dataset key
+    :type dt_uuid: str
+    """
+    buffer = execute_query(SELECT_DATASET_UUID_KEY, dt_uuid=dt_key)
+
+    return buffer[0][0]
+
+
+def select_protocol_uuid_key(prt_key):
+    """ Get the protocol uuid from the key
+
+    :param prt_uuid: Protocol key
+    :type prt_uuid: str
+    """
+    buffer = execute_query(SELECT_PROTOCOL_UUID_KEY, prt_uuid=prt_key)
+
+    return buffer[0][0]
