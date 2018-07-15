@@ -698,7 +698,8 @@ class ProjectNotebookTreeView(TreeView):
                         project_item.appendRow(notebook_item)
 
         self.setModel(model)
-        self.selectionModel().setCurrentIndex(self.model().index(0, 0), QItemSelectionModel.Select)
+        self.selectionModel().setCurrentIndex(self.model().index(0, 0),
+                                              QItemSelectionModel.ClearAndSelect)
         self.selectionModel().currentChanged.connect(self.selection_change)
         self.restore_state()
 

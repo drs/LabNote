@@ -243,6 +243,8 @@ class CategoryFrame(QWidget):
 
         # Edit and selections properties
         self.view_tree.header().hide()
+        self.view_tree.setSelectionMode(QAbstractItemView.SingleSelection)
+        self.view_tree.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.view_tree.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.view_tree.setDragDropMode(QAbstractItemView.InternalMove)
 
@@ -464,7 +466,8 @@ class CategoryFrame(QWidget):
                         category_item.appendRow(reference_item)
 
         self.view_tree.setModel(model)
-        self.view_tree.selectionModel().setCurrentIndex(self.view_tree.model().index(0, 0), QItemSelectionModel.Select)
+        self.view_tree.selectionModel().setCurrentIndex(self.view_tree.model().index(0, 0),
+                                                        QItemSelectionModel.ClearAndSelect)
         self.view_tree.selectionModel().currentChanged.connect(self.selection_change)
         self.list_displayed.emit()
 

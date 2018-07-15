@@ -148,7 +148,8 @@ class Library(QDialog, Ui_Library):
         model = self.category_frame.view_tree.model()
         match = model.match(model.index(0, 0), Qt.UserRole, ref_uuid, 1, Qt.MatchRecursive)
         if match:
-            self.category_frame.view_tree.selectionModel().setCurrentIndex(match[0], QItemSelectionModel.Select)
+            self.category_frame.view_tree.selectionModel().setCurrentIndex(match[0],
+                                                                           QItemSelectionModel.ClearAndSelect)
             self.category_frame.view_tree.repaint()
 
     def get_tag_list(self):
@@ -499,7 +500,8 @@ class Library(QDialog, Ui_Library):
         model = self.category_frame.view_tree.model()
         match = model.match(model.index(0, 0), Qt.UserRole, ref_uuid, 1, Qt.MatchRecursive)
         if match:
-            self.category_frame.view_tree.selectionModel().setCurrentIndex(match[0], QItemSelectionModel.Select)
+            self.category_frame.view_tree.selectionModel().setCurrentIndex(match[0],
+                                                                           QItemSelectionModel.ClearAndSelect)
             self.category_frame.view_tree.repaint()
         self.get_tag_list()
         self.setWindowModified(False)

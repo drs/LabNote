@@ -150,7 +150,8 @@ class Dataset(QDialog, Ui_Dataset):
         model = self.view_dataset.model()
         match = model.match(model.index(0, 0), Qt.UserRole, dt_uuid, 1, Qt.MatchRecursive)
         if match:
-            self.view_dataset.selectionModel().setCurrentIndex(match[0], QItemSelectionModel.Select)
+            self.view_dataset.selectionModel().setCurrentIndex(match[0],
+                                                               QItemSelectionModel.ClearAndSelect)
             self.view_dataset.repaint()
 
     def create_dataset(self):

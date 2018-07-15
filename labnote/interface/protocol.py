@@ -82,7 +82,8 @@ class Protocol(QDialog, Ui_Protocol):
         model = self.category_frame.view_tree.model()
         match = model.match(model.index(0, 0), Qt.UserRole, prt_uuid, 1, Qt.MatchRecursive)
         if match:
-            self.category_frame.view_tree.selectionModel().setCurrentIndex(match[0], QItemSelectionModel.Select)
+            self.category_frame.view_tree.selectionModel().setCurrentIndex(match[0],
+                                                                           QItemSelectionModel.ClearAndSelect)
             self.category_frame.view_tree.repaint()
 
     def drop_finished(self, index):
@@ -281,7 +282,8 @@ class Protocol(QDialog, Ui_Protocol):
         model = self.category_frame.view_tree.model()
         match = model.match(model.index(0, 0), Qt.UserRole, prt_uuid, 1, Qt.MatchRecursive)
         if match:
-            self.category_frame.view_tree.selectionModel().setCurrentIndex(match[0], QItemSelectionModel.Select)
+            self.category_frame.view_tree.selectionModel().setCurrentIndex(match[0],
+                                                                           QItemSelectionModel.ClearAndSelect)
             self.category_frame.view_tree.repaint()
 
         # Reset the deleted images value
