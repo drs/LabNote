@@ -253,17 +253,26 @@ class Protocol(QDialog, Ui_Protocol):
 
     def done_modifing_protocol(self, prt_uuid):
         """ Active the interface element after the protocol is saved """
+
+        # Show the protocol list
         self.category_frame.show_list()
 
+        # End the creating protocol state
         if self.creating_protocol:
             self.creating_protocol = False
             self.editor.txt_body.set_uuid(prt_uuid)
 
+        # Reselect the current item in the treeview
         model = self.category_frame.view_tree.model()
         match = model.match(model.index(0, 0), Qt.UserRole, prt_uuid, 1, Qt.MatchRecursive)
         if match:
             self.category_frame.view_tree.selectionModel().setCurrentIndex(match[0], QItemSelectionModel.Select)
             self.category_frame.view_tree.repaint()
+
+        # Reset the deleted images value
+        self.editor.txt_body.deleted_image = set([])
+
+        # Update the tag list
         self.get_tag_list()
 
     def show_protocol_details(self, prt_uuid):
