@@ -53,7 +53,7 @@ class Dataset(QDialog, Ui_Dataset):
         self.init_connection()
 
         if dt_uuid:
-            self.show_dataset(dt_uuid)
+            self.show_selected_dataset(dt_uuid)
 
         # Show the dialog
         self.show()
@@ -141,7 +141,7 @@ class Dataset(QDialog, Ui_Dataset):
         self.btn_import.clicked.connect(self.import_dataset)
         self.btn_open.clicked.connect(self.open_dataset)
 
-    def show_dataset(self, dt_uuid):
+    def show_selected_dataset(self, dt_uuid):
         """ Show the dataset with the given uuid
 
         :param dt_uuid: Dataset uuid

@@ -171,7 +171,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         reference_list = []
 
         try:
-            reference_list = database.select_reference_key()
+            reference_list = database.select_reference_completer_list()
         except sqlite3.Error as exception:
             message = QMessageBox(QMessageBox.Warning, "Unable to get reference list",
                                   "An error occurred while getting the reference list.", QMessageBox.Ok)
@@ -187,7 +187,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         protocol_list = []
 
         try:
-            protocol_list = database.select_protocol_key()
+            protocol_list = database.select_protocol_completer_list()
         except sqlite3.Error as exception:
             message = QMessageBox(QMessageBox.Warning, "Unable to get tag list",
                                   "An error occurred while getting the tag list.", QMessageBox.Ok)
@@ -203,7 +203,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         dataset_list = []
 
         try:
-            dataset_list = database.select_dataset_key()
+            dataset_list = database.select_dataset_completer_list()
         except sqlite3.Error as exception:
             message = QMessageBox(QMessageBox.Warning, "Unable to get tag list",
                                   "An error occurred while getting the tag list.", QMessageBox.Ok)
@@ -406,32 +406,18 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.editor.txt_body.protocol_pressed.connect(self.show_protocol)
         self.layout_experiment.addWidget(self.editor)
 
-    def show_reference(self, ref_key):
-        try:
-            ref_uuid = database.select_reference_uuid_key(ref_key)
-        except sqlite3.Error:
-            return
-
+    def show_reference(self, ref_uuid):
         if ref_uuid:
-            library.Library(self.tag_list, ref_uuid=data.uuid_string(ref_uuid), parent=self)
+            library.Library(self.tag_list, ref_uuid=ref_uuid, parent=self)
 
-    def show_dataset(self, dt_key):
-        try:
-            dt_uuid = database.select_dataset_uuid_key(dt_key)
-        except sqlite3.Error:
-            return
-
+    def show_dataset(self, dt_uuid):
         if dt_uuid:
-            dataset.Dataset(self.tag_list, dt_uuid=data.uuid_string(dt_uuid), parent=self)
+            dataset.Dataset(dt_uuid=dt_uuid, parent=self)
 
-    def show_protocol(self, prt_key):
-        try:
-            prt_uuid = database.select_protocol_uuid_key(prt_key)
-        except sqlite3.Error:
-            return
-
+    def show_protocol(self, prt_uuid):
         if prt_uuid:
-            protocol.Protocol(self.tag_list, dt_uuid=data.uuid_string(prt_uuid), parent=self)
+            protocol.Protocol(tag_list=self.tag_list, reference_list=self.reference_list,
+                              prt_uuid=prt_uuid, parent=self)
 
     def process_experiment(self):
         """ Process the experiment in the database and the file system """
@@ -589,9 +575,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 # Set the current item
                 if current_item:
                     if data.uuid_string(experiment['exp_uuid']) == current_item:
-                        print(current_item)
                         to_be_current_item = list_widget_item
-                        print(to_be_current_item)
 
             if to_be_current_item:
                 self.lst_entry.setCurrentItem(to_be_current_item)

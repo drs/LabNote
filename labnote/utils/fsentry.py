@@ -356,7 +356,8 @@ def create_protocol(prt_uuid, prt_key, category_id, body, tag_list, reference_li
 
         if reference_list:
             for reference in reference_list:
-                cursor.execute(database.INSERT_REF_PROTOCOL, {'prot_uuid': data.uuid_bytes(prt_uuid), 'ref_key': reference})
+                cursor.execute(database.INSERT_REF_PROTOCOL, {'prot_uuid': data.uuid_bytes(prt_uuid),
+                                                              'ref_uuid': data.uuid_bytes(reference)})
 
         # Create the file directory
         protocol_path = directory.protocol_path(prt_uuid=prt_uuid)
@@ -406,83 +407,20 @@ def save_protocol(prt_uuid, prt_key, name, description, body, tag_list, referenc
                                                   'name': name,
                                                   'description': description})
 
+        uuid_dict = {'prot_uuid': data.uuid_bytes(prt_uuid)}
+
         # Handle the tags
-        cursor.execute(database.SELECT_PROTOCOL_TAG_NAME, {'prot_uuid': data.uuid_bytes(prt_uuid)})
+        cursor.execute(database.SELECT_PROTOCOL_TAG_NAME, uuid_dict)
         current_tag_list = cursor.fetchall()
-        cursor.execute(database.SELECT_PROTOCOL_REFERENCE_KEY, {'prot_uuid': data.uuid_bytes(prt_uuid)})
+        cursor.execute(database.SELECT_PROTOCOL_REFERENCE_UUID, uuid_dict)
         current_reference_list = cursor.fetchall()
 
-        if tag_list:
-            # Create missing tags
-            for tag in tag_list:
-                if current_tag_list:
-                    if tag not in current_tag_list[0]:
-                        cursor.execute(database.INSERT_TAG, {'name': tag})
-                        cursor.execute(database.INSERT_TAG_PROTOCOL,
-                                       {'prot_uuid': data.uuid_bytes(prt_uuid), 'name': tag})
-                else:
-                    cursor.execute(database.INSERT_TAG, {'name': tag})
-                    cursor.execute(database.INSERT_TAG_PROTOCOL,
-                                   {'prot_uuid': data.uuid_bytes(prt_uuid), 'name': tag})
-            # Remove removed tags
-            if current_tag_list:
-                for tag in current_tag_list[0]:
-                    if tag not in tag_list:
-                        cursor.execute(database.DELETE_TAG_PROTOCOL,
-                                       {'name': tag, 'prot_uuid': data.uuid_bytes(prt_uuid)})
-
-                        # Ignore foreign key exception
-                        # They are expected to occur if the tag is used elsewhere
-                        try:
-                            cursor.execute(database.DELETE_TAG, {'name': tag})
-                        except sqlite3.Error as expt:
-                            error_code = sqlite_error.sqlite_err_handler(str(expt))
-                            if error_code == sqlite_error.FOREIGN_KEY_CODE:
-                                pass
-                            else:
-                                raise
-        else:
-            # Remove removed tags
-            if current_tag_list:
-                for tag in current_tag_list[0]:
-                    if tag not in tag_list:
-                        cursor.execute(database.DELETE_TAG_PROTOCOL,
-                                       {'name': tag, 'prot_uuid': data.uuid_bytes(prt_uuid)})
-
-                        # Ignore foreign key exception
-                        # They are expected to occur if the tag is used elsewhere
-                        try:
-                            cursor.execute(database.DELETE_TAG, {'name': tag})
-                        except sqlite3.Error as expt:
-                            error_code = sqlite_error.sqlite_err_handler(str(expt))
-                            if error_code == sqlite_error.FOREIGN_KEY_CODE:
-                                pass
-                            else:
-                                raise
-
-        if reference_list:
-            # Create missing reference
-            for reference in reference_list:
-                if current_reference_list:
-                    if reference not in current_reference_list[0]:
-                        cursor.execute(database.INSERT_REF_PROTOCOL,
-                                       {'prot_uuid': data.uuid_bytes(prt_uuid), 'ref_key': reference})
-                else:
-                    cursor.execute(database.INSERT_REF_PROTOCOL,
-                                   {'prot_uuid': data.uuid_bytes(prt_uuid), 'ref_key': reference})
-            # Remove removed reference
-            if current_reference_list:
-                for reference in current_reference_list[0]:
-                    if reference not in reference_list:
-                        cursor.execute(database.DELETE_REFERENCE_PROTOCOL,
-                                       {'ref_key': reference, 'prot_uuid': data.uuid_bytes(prt_uuid)})
-        else:
-            # Remove removed reference
-            if current_reference_list:
-                for reference in current_reference_list[0]:
-                    if reference not in reference_list:
-                        cursor.execute(database.DELETE_REFERENCE_PROTOCOL,
-                                       {'ref_key': reference, 'prot_uuid': data.uuid_bytes(prt_uuid)})
+        database.process_tag(cursor=cursor, insert_list=tag_list, current_list=current_tag_list,
+                             insert=database.INSERT_TAG_PROTOCOL, delete=database.DELETE_TAG_PROTOCOL,
+                             value=uuid_dict)
+        database.process_key(cursor=cursor, insert_list=reference_list, current_list=current_reference_list,
+                             insert=database.INSERT_REF_PROTOCOL, delete=database.DELETE_REF_PROTOCOL,
+                             value=uuid_dict, key='ref_uuid')
 
         # Save the text file
         file = open(files.protocol_file(prt_uuid), 'wb')
@@ -630,17 +568,17 @@ def create_experiment(exp_uuid, nb_uuid, name, exp_key=None, description=None, b
         if reference_list:
             for reference in reference_list:
                 cursor.execute(database.INSERT_REF_EXPERIMENT, {'exp_uuid': data.uuid_bytes(exp_uuid),
-                                                                'ref_key': reference})
+                                                                'ref_uuid': data.uuid_bytes(reference)})
 
         if dataset_list:
             for dataset in dataset_list:
                 cursor.execute(database.INSERT_DATASET_EXPERIMENT, {'exp_uuid': data.uuid_bytes(exp_uuid),
-                                                                    'dt_key': dataset})
+                                                                    'dt_uuid': data.uuid_bytes(dataset)})
 
         if protocol_list:
             for protocol in protocol_list:
                 cursor.execute(database.INSERT_PROTOCOL_EXPERIMENT, {'exp_uuid': data.uuid_bytes(exp_uuid),
-                                                                     'prt_key': protocol})
+                                                                     'prt_uuid': data.uuid_bytes(protocol)})
 
 
         # Create the file directory
@@ -698,11 +636,11 @@ def save_experiment(exp_uuid, nb_uuid, name, exp_key, description, body, tag_lis
         # Handle the tags
         cursor.execute(database.SELECT_EXPERIMENT_TAG_NAME, uuid_dict)
         current_tag_list = cursor.fetchall()
-        cursor.execute(database.SELECT_EXPERIMENT_REFERENCE_KEY, uuid_dict)
+        cursor.execute(database.SELECT_EXPERIMENT_REFERENCE_UUID, uuid_dict)
         current_reference_list = cursor.fetchall()
-        cursor.execute(database.SELECT_EXPERIMENT_DATASET_KEY, uuid_dict)
+        cursor.execute(database.SELECT_EXPERIMENT_DATASET_UUID, uuid_dict)
         current_dataset_list = cursor.fetchall()
-        cursor.execute(database.SELECT_EXPERIMENT_PROTOCOL_KEY,  uuid_dict)
+        cursor.execute(database.SELECT_EXPERIMENT_PROTOCOL_UUID,  uuid_dict)
         current_protocol_list = cursor.fetchall()
 
         database.process_tag(cursor=cursor, insert_list=tag_list, current_list=current_tag_list,
@@ -710,13 +648,13 @@ def save_experiment(exp_uuid, nb_uuid, name, exp_key, description, body, tag_lis
                              value=uuid_dict)
         database.process_key(cursor=cursor, insert_list=reference_list, current_list=current_reference_list,
                              insert=database.INSERT_REF_EXPERIMENT, delete=database.DELETE_REF_EXPERIMENT,
-                             value=uuid_dict, key='ref_key')
+                             value=uuid_dict, key='ref_uuid')
         database.process_key(cursor=cursor, insert_list=dataset_list, current_list=current_dataset_list,
                              insert=database.INSERT_DATASET_EXPERIMENT, delete=database.DELETE_DATASET_EXPERIMENT,
-                             value=uuid_dict, key='dt_key')
+                             value=uuid_dict, key='dt_uuid')
         database.process_key(cursor=cursor, insert_list=protocol_list, current_list=current_protocol_list,
                              insert=database.INSERT_PROTOCOL_EXPERIMENT, delete=database.DELETE_PROTOCOL_EXPERIMENT,
-                             value=uuid_dict, key='prt_key')
+                             value=uuid_dict, key='prt_uuid')
 
         # Create the protocol body file
         file = open(files.experiment_file(nb_uuid, exp_uuid), 'wb')

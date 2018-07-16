@@ -66,15 +66,18 @@ class CompleterTextEdit(TextEdit):
             self.accept_tag = True
 
         if reference_list is not None:
-            self.reference_list = set(reference_list)
+            self.reference_list = reference_list
+            self.reference_key_list = [reference['key'] for reference in reference_list]
             self.accept_reference = True
 
         if dataset_list is not None:
-            self.dataset_list = set(dataset_list)
+            self.dataset_list = dataset_list
+            self.dataset_key_list = [dataset['key'] for dataset in dataset_list]
             self.accept_dataset = True
 
         if protocol_list is not None:
-            self.protocol_list = set(protocol_list)
+            self.protocol_list = protocol_list
+            self.protocol_key_list = [protocol['key'] for protocol in protocol_list]
             self.accept_protocol = True
 
     def setHtml(self, html):
@@ -110,33 +113,26 @@ class CompleterTextEdit(TextEdit):
 
         # Start the tag completer when the shortcut is pressed
         if self.accept_tag and is_tag:
-            if not self.completer_status and self.textCursor().hasSelection():
-                selection = self.textCursor().selection().toPlainText()
-                if not self.has_space(selection) and not self.has_word_separator(selection):
-                    self.format_completion(self.textCursor().selectionStart(),
-                                           self.textCursor().selectionEnd(),
-                                           TAG_COMPLETER)
-                    return
-            elif not self.completer_status:
+            if not self.completer_status:
                 self.start_completer(self.tag_list, TAG_COMPLETER)
             else:
                 return
 
         if self.accept_reference and is_reference:
             if not self.completer_status:
-                self.start_completer(self.reference_list, REFERENCE_COMPLETER)
+                self.start_completer(self.reference_key_list, REFERENCE_COMPLETER)
             else:
                 return
 
         if self.accept_dataset and is_dataset:
             if not self.completer_status:
-                self.start_completer(self.dataset_list, DATASET_COMPLETER)
+                self.start_completer(self.dataset_key_list, DATASET_COMPLETER)
             else:
                 return
 
         if self.accept_protocol and is_protocol:
             if not self.completer_status:
-                self.start_completer(self.protocol_list, PROTOCOL_COMPLETER)
+                self.start_completer(self.protocol_key_list, PROTOCOL_COMPLETER)
             else:
                 return
 
@@ -279,6 +275,7 @@ class CompleterTextEdit(TextEdit):
                 elif prefix == 'reference':
                     reference_list.add(value)
                 elif prefix == 'dataset':
+                    print(value)
                     dataset_list.add(value)
                 elif prefix == 'protocol':
                     protocol_list.add(value)
@@ -304,6 +301,7 @@ class CompleterTextEdit(TextEdit):
         # Set format in text
         cursor = self.textCursor()
         if len(args) == 0:
+
             # Replace current text
             current_position = cursor.position()
             cursor.setPosition(self.start_position)
@@ -311,9 +309,32 @@ class CompleterTextEdit(TextEdit):
             old_text = cursor.selection().toPlainText()
             cursor.removeSelectedText()
 
-            new_text = old_text.replace('_', ' ')
-            self.textCursor().insertText(new_text)
-            self.textCursor().insertText(" ")
+            uuid = None
+
+            if self.completer_type == TAG_COMPLETER:
+                new_text = old_text.replace('_', ' ')
+                self.textCursor().insertText(new_text)
+            elif self.completer_type == REFERENCE_COMPLETER:
+                for reference in self.reference_list:
+                    if reference['key'] == old_text:
+                        uuid = reference['uuid']
+                        name = reference['name']
+                        current_position = self.start_position + len(name)
+                        cursor.insertText("{} ".format(name))
+            elif self.completer_type == DATASET_COMPLETER:
+                for dataset in self.dataset_list:
+                    if dataset['key'] == old_text:
+                        uuid = dataset['uuid']
+                        name = dataset['name']
+                        current_position = self.start_position + len(name)
+                        cursor.insertText("{} ".format(name))
+            elif self.completer_type == PROTOCOL_COMPLETER:
+                for protocol in self.protocol_list:
+                    if protocol['key'] == old_text:
+                        uuid = protocol['uuid']
+                        name = protocol['name']
+                        current_position = self.start_position + len(name)
+                        cursor.insertText("{} ".format(name))
 
             cursor.setPosition(self.start_position)
             cursor.setPosition(current_position, QTextCursor.KeepAnchor)
@@ -329,41 +350,14 @@ class CompleterTextEdit(TextEdit):
             if self.completer_type == TAG_COMPLETER:
                 fmt.setAnchorHref("tag/{}".format(old_text))
             elif self.completer_type == REFERENCE_COMPLETER:
-                fmt.setAnchorHref("reference/{}".format(old_text))
+                fmt.setAnchorHref("reference/{}".format(uuid))
             elif self.completer_type == DATASET_COMPLETER:
-                fmt.setAnchorHref("dataset/{}".format(old_text))
+                fmt.setAnchorHref("dataset/{}".format(uuid))
             elif self.completer_type == PROTOCOL_COMPLETER:
-                fmt.setAnchorHref("protocol/{}".format(old_text))
+                fmt.setAnchorHref("protocol/{}".format(uuid))
+
             cursor.mergeCharFormat(fmt)
             self.stop_completer()
-        elif len(args) == 3 and \
-                isinstance(args[0], int) and \
-                isinstance(args[1], int) and \
-                isinstance(args[2], int):
-            cursor.setPosition(args[0])
-            cursor.setPosition(args[1], QTextCursor.KeepAnchor)
-            old_text = cursor.selection().toPlainText()
-            cursor.removeSelectedText()
-
-            new_text = old_text.replace('_', ' ')
-            self.textCursor().insertText(new_text)
-            self.textCursor().insertText(" ")
-
-            cursor.setPosition(args[0])
-            cursor.setPosition(args[1], QTextCursor.KeepAnchor)
-
-            # Set the format
-            fmt = cursor.charFormat()
-            fmt.setAnchor(True)
-
-            if self.completer_type == TAG_COMPLETER:
-                fmt.setFontUnderline(False)
-                fmt.setBackground(QColor(182, 211, 230, 150))
-                fmt.setForeground(Qt.black)
-
-            if args[2] == TAG_COMPLETER:
-                fmt.setAnchorHref("tag/{}".format(old_text))
-            cursor.mergeCharFormat(fmt)
 
     def start_completer(self, completer_list, completer_type):
         completer = QCompleter()
@@ -495,9 +489,7 @@ class ImageTextEdit(CompleterTextEdit):
         super(ImageTextEdit, self).__init__(reference_list=reference_list,
                                             dataset_list=dataset_list, protocol_list=protocol_list)
         self.editor_type = editor_type
-        self.setMouseTracking(True)
         self.viewport().setMouseTracking(True)
-        self.installEventFilter(self)
         self.viewport().installEventFilter(self)
 
     def eventFilter(self, object, event):

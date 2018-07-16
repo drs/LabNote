@@ -546,16 +546,16 @@ SELECT_PROTOCOL = """
 SELECT prt_key, name, description, date_created, date_updated FROM protocol WHERE prt_uuid=:prt_uuid
 """
 
-SELECT_REFERENCE_KEY = """
-SELECT ref_key FROM refs
+SELECT_REFERENCE_COMPLETER_LIST = """
+SELECT ref_uuid, ref_key, author, year, title FROM refs
 """
 
-SELECT_PROTOCOL_KEY = """
-SELECT prt_key FROM protocol
+SELECT_PROTOCOL_COMPLETER_LIST = """
+SELECT prt_uuid, prt_key, name FROM protocol
 """
 
-SELECT_DATASET_KEY = """
-SELECT dt_key FROM dataset
+SELECT_DATASET_COMPLETER_LIST = """
+SELECT dt_uuid, dt_key, name FROM dataset
 """
 
 INSERT_TAG_PROTOCOL = """
@@ -564,32 +564,27 @@ VALUES (:prot_uuid, (SELECT tag_id FROM tags WHERE name = :name))
 """
 
 INSERT_REF_PROTOCOL = """
-INSERT OR IGNORE INTO protocol_references (prot_uuid, ref_uuid) VALUES 
-(:prot_uuid, (SELECT ref_uuid FROM refs WHERE ref_key = :ref_key))
+INSERT OR IGNORE INTO protocol_references (prot_uuid, ref_uuid) VALUES (:prot_uuid, :ref_uuid)
 """
 
 SELECT_PROTOCOL_TAG_NAME = """
 SELECT name FROM tags WHERE tag_id = (SELECT tag_id FROM protocol_tag WHERE prot_uuid=:prot_uuid)
 """
 
-SELECT_PROTOCOL_REFERENCE_KEY = """
-SELECT ref_key FROM refs WHERE ref_uuid = (SELECT ref_uuid FROM protocol_references WHERE prot_uuid=:prot_uuid)
+SELECT_PROTOCOL_REFERENCE_UUID = """
+SELECT ref_uuid FROM protocol_references WHERE prot_uuid=:prot_uuid
 """
 
 DELETE_TAG_PROTOCOL = """
 DELETE FROM protocol_tag WHERE tag_id = (SELECT tag_id FROM tags WHERE name=:name) AND prot_uuid=:prot_uuid
 """
 
-DELETE_REFERENCE_PROTOCOL = """
-DELETE FROM protocol_references WHERE ref_uuid = (SELECT ref_uuid FROM refs WHERE ref_key = :ref_key) AND prot_uuid=:prot_uuid
+DELETE_REF_PROTOCOL = """
+DELETE FROM protocol_references WHERE ref_uuid=:ref_uuid AND prot_uuid=:prot_uuid
 """
 
 SELECT_PROTOCOL_TAG = """
 SELECT tag_id FROM protocol_tag WHERE prot_uuid=:prot_uuid
-"""
-
-SELECT_REFERENCE_UUID_KEY = """
-SELECT ref_uuid FROM refs WHERE ref_key=:ref_key
 """
 
 SELECT_EXPERIMENT_KEY_NOTEBOOK = """
@@ -632,61 +627,47 @@ DELETE FROM experiment_tag WHERE tag_id = (SELECT tag_id FROM tags WHERE name=:n
 
 
 INSERT_REF_EXPERIMENT = """
-INSERT OR IGNORE INTO experiment_references (exp_uuid, ref_uuid) VALUES 
-(:exp_uuid, (SELECT ref_uuid FROM refs WHERE ref_key=:ref_key))
+INSERT OR IGNORE INTO experiment_references (exp_uuid, ref_uuid) VALUES (:exp_uuid, :ref_uuid)
 """
 
 DELETE_REF_EXPERIMENT = """
-DELETE FROM experiment_references WHERE ref_uuid = (SELECT ref_uuid FROM refs WHERE ref_key=:ref_key) 
-AND exp_uuid=:exp_uuid
+DELETE FROM experiment_references WHERE ref_uuid=:ref_uuid AND exp_uuid=:exp_uuid
 """
 
 INSERT_DATASET_EXPERIMENT = """
-INSERT OR IGNORE INTO experiment_dataset (exp_uuid, dt_uuid) VALUES 
-(:exp_uuid, (SELECT dt_uuid FROM dataset WHERE dt_key=:dt_key))
+INSERT OR IGNORE INTO experiment_dataset (exp_uuid, dt_uuid) VALUES (:exp_uuid, :dt_uuid)
 """
 
 DELETE_DATASET_EXPERIMENT = """
-DELETE FROM experiment_dataset WHERE dt_uuid = (SELECT dt_uuid FROM dataset WHERE dt_key=:dt_key) 
-AND exp_uuid=:exp_uuid
+DELETE FROM experiment_dataset WHERE dt_uuid =:dt_uuid AND exp_uuid=:exp_uuid
 """
 
 INSERT_PROTOCOL_EXPERIMENT = """
-INSERT OR IGNORE INTO experiment_protocol (exp_uuid, prt_uuid) VALUES 
-(:exp_uuid, (SELECT prt_uuid FROM protocol WHERE prt_key=:prt_key))
+INSERT OR IGNORE INTO experiment_protocol (exp_uuid, prt_uuid) VALUES (:exp_uuid, :prt_uuid)
 """
 
 DELETE_PROTOCOL_EXPERIMENT = """
-DELETE FROM experiment_protocol WHERE prt_uuid = (SELECT prt_uuid FROM protocol WHERE prt_key=:prt_key) 
-AND exp_uuid=:exp_uuid
+DELETE FROM experiment_protocol WHERE prt_uuid=:prt_uuid AND exp_uuid=:exp_uuid
 """
 
 SELECT_EXPERIMENT_TAG_NAME = """
 SELECT name FROM tags WHERE tag_id = (SELECT tag_id FROM experiment_tag WHERE exp_uuid=:exp_uuid)
 """
 
-SELECT_EXPERIMENT_REFERENCE_KEY = """
-SELECT ref_key FROM refs WHERE ref_uuid = (SELECT ref_uuid FROM experiment_references WHERE exp_uuid=:exp_uuid)
+SELECT_EXPERIMENT_REFERENCE_UUID = """
+SELECT ref_uuid FROM experiment_references WHERE exp_uuid=:exp_uuid
 """
 
-SELECT_EXPERIMENT_DATASET_KEY = """
-SELECT dt_key FROM dataset WHERE dt_uuid = (SELECT dt_uuid FROM experiment_dataset WHERE exp_uuid=:exp_uuid)
+SELECT_EXPERIMENT_DATASET_UUID = """
+SELECT dt_uuid FROM experiment_dataset WHERE exp_uuid=:exp_uuid
 """
 
-SELECT_EXPERIMENT_PROTOCOL_KEY = """
-SELECT prt_key FROM protocol WHERE prt_uuid = (SELECT prt_uuid FROM experiment_protocol WHERE exp_uuid=:exp_uuid)
+SELECT_EXPERIMENT_PROTOCOL_UUID = """
+SELECT prt_uuid FROM experiment_protocol WHERE exp_uuid=:exp_uuid
 """
 
 SELECT_EXPERIMENT_TAG = """
 SELECT tag_id FROM experiment_tag WHERE exp_uuid=:exp_uuid
-"""
-
-SELECT_DATASET_UUID_KEY = """
-SELECT dt_uuid FROM dataset WHERE dt_key=:dt_key
-"""
-
-SELECT_PROTOCOL_UUID_KEY = """
-SELECT prt_uuid FROM protocol WHERE prt_key=:prt_key
 """
 
 
@@ -832,23 +813,23 @@ def process_key(cursor, insert_list, current_list, insert, delete, value, key):
         # Create missing key
         for reference in insert_list:
             if current_list:
-                if reference not in current_list[0]:
-                    value[key] = reference
+                if data.uuid_bytes(reference) not in current_list[0]:
+                    value[key] = data.uuid_bytes(reference)
                     cursor.execute(insert, value)
             else:
-                value[key] = reference
+                value[key] = data.uuid_bytes(reference)
                 cursor.execute(insert, value)
         # Remove removed key
         if current_list:
             for reference in current_list[0]:
-                if reference not in insert_list:
+                if data.uuid_string(reference) not in insert_list:
                     value[key] = reference
                     cursor.execute(delete, value)
     else:
         # Remove removed reference
         if current_list:
             for reference in current_list[0]:
-                if reference not in insert_list:
+                if data.uuid_string(reference) not in insert_list:
                     value[key] = reference
                     cursor.execute(delete, value)
 
@@ -1324,29 +1305,39 @@ def select_reference_tag_name(ref_uuid):
     return tag_list
 
 
-def select_reference_key():
+def select_reference_completer_list():
     """ Get all the dataset key from the database """
 
     # Execute the query
-    buffer = execute_query(SELECT_REFERENCE_KEY)
+    buffer = execute_query(SELECT_REFERENCE_COMPLETER_LIST)
 
     # Return the tag list
     reference_list = []
 
     for reference in buffer:
-        reference_list.append(reference[0])
+        # Prepare the name
+        author = None
+        label = ""
+        if reference[2]:
+            author_list = reference[2].split(',')[0]
+            if len(author_list) < 2:
+                label = "{} & {}".format(author_list[0], author_list[1])
+            else:
+                label = "{} et al.".format(reference[2].split()[0])
+        if reference[3]:
+            if label != "":
+                label = "{} ({})".format(label, reference[3])
+            else:
+                label = "({})".format(reference[3])
+        if reference[4]:
+            if label != "":
+                label = "{}, {}".format(label, reference[4])
+            else:
+                label = "{}".format(reference[4])
+
+        # Create the list
+        reference_list.append({'uuid': data.uuid_string(reference[0]), 'key': reference[1], 'name': label})
     return reference_list
-
-
-def select_reference_uuid_key(ref_key):
-    """ Get the reference uuid from the key
-
-    :param ref_key: Reference key
-    :type ref_key: str
-    """
-    buffer = execute_query(SELECT_REFERENCE_UUID_KEY, ref_key=ref_key)
-
-    return buffer[0][0]
 
 
 """
@@ -1535,17 +1526,17 @@ def select_dataset():
     return project_list
 
 
-def select_dataset_key():
+def select_dataset_completer_list():
     """ Get all the dataset key from the database """
 
     # Execute the query
-    buffer = execute_query(SELECT_DATASET_KEY)
+    buffer = execute_query(SELECT_DATASET_COMPLETER_LIST)
 
     # Return the tag list
     dataset_list = []
 
     for dataset in buffer:
-        dataset_list.append(dataset[0])
+        dataset_list.append({'uuid': data.uuid_string(dataset[0]), 'key': dataset[1], 'name': dataset[2]})
 
     return dataset_list
 
@@ -1613,17 +1604,17 @@ def select_protocol_category():
     return category_list
 
 
-def select_protocol_key():
+def select_protocol_completer_list():
     """ Get all the dataset key from the database """
 
     # Execute the query
-    buffer = execute_query(SELECT_PROTOCOL_KEY)
+    buffer = execute_query(SELECT_PROTOCOL_COMPLETER_LIST)
 
     # Return the tag list
     protocol_list = []
 
     for protocol in buffer:
-        protocol_list.append(protocol[0])
+        protocol_list.append({'uuid': data.uuid_string(protocol[0]), 'key': protocol[1], 'name': protocol[2]})
 
     return protocol_list
 
@@ -1670,25 +1661,3 @@ def get_experiment_list_notebook(nb_uuid):
         experiment_list.append({'exp_uuid': experiment[0], 'name': experiment[1], 'key': experiment[2]})
 
     return experiment_list
-
-
-def select_dataset_uuid_key(dt_key):
-    """ Get the dataset uuid from the key
-
-    :param dt_uuid: Dataset key
-    :type dt_uuid: str
-    """
-    buffer = execute_query(SELECT_DATASET_UUID_KEY, dt_uuid=dt_key)
-
-    return buffer[0][0]
-
-
-def select_protocol_uuid_key(prt_key):
-    """ Get the protocol uuid from the key
-
-    :param prt_uuid: Protocol key
-    :type prt_uuid: str
-    """
-    buffer = execute_query(SELECT_PROTOCOL_UUID_KEY, prt_uuid=prt_key)
-
-    return buffer[0][0]
