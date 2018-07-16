@@ -529,9 +529,9 @@ class Library(QDialog, Ui_Library):
                             elif ref_type == "Thesis":
                                 database.update_ref(ref_uuid=ref_uuid, ref_key=key, author=author, title=title, year=year,
                                                     address=place, description=description, abstract=abstract,
-                                                    school=school, ref_type=TYPE_CHAPTER, tag_list=anchor['tag'])
+                                                    school=school, ref_type=TYPE_THESIS, tag_list=anchor['tag'])
 
-                            self.done_modifing_reference(ref_uuid=ref_uuid)
+                            self.done_modifing_reference(ref_uuid=data.uuid_string(ref_uuid))
                         except sqlite3.Error as exception:
                             error_code = sqlite_error.sqlite_err_handler(str(exception))
 
@@ -566,7 +566,7 @@ class Library(QDialog, Ui_Library):
         self.category_frame.show_list()
 
         model = self.category_frame.view_tree.model()
-        match = model.match(model.index(0, 0), Qt.UserRole, data.uuid_string(ref_uuid), 1, Qt.MatchRecursive)
+        match = model.match(model.index(0, 0), Qt.UserRole, ref_uuid, 1, Qt.MatchRecursive)
         if match:
             self.category_frame.view_tree.selectionModel().setCurrentIndex(match[0],
                                                                            QItemSelectionModel.ClearAndSelect)
