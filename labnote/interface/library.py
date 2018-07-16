@@ -8,7 +8,7 @@ import uuid
 import os
 
 # PyQt import
-from PyQt5.QtWidgets import QDialog, QLabel, QMessageBox, QWidget, QVBoxLayout
+from PyQt5.QtWidgets import QDialog, QLabel, QMessageBox, QWidget, QVBoxLayout, QLineEdit
 from PyQt5.QtCore import Qt, QSettings, pyqtSignal, QFileInfo, QItemSelectionModel
 from PyQt5.QtGui import QColor, QPixmap, QPainter, QPen, QBrush
 
@@ -54,6 +54,10 @@ class Library(QDialog, Ui_Library):
     grid_layout = None
     creating_reference = False  # True when a new reference is created
     tag_list = []
+
+    current_category = None  # Current category id
+    current_subcategory = None  # Current subcategory id
+    current_reference = None  # Current reference uuid
 
     # Signals definition
     pdf_added = pyqtSignal(str)
@@ -163,7 +167,14 @@ class Library(QDialog, Ui_Library):
         self.txt_abstract = PlainTextEdit()
         self.layout_form.addRow(self.lbl_abstract, self.txt_abstract)
 
+        self.layout_form.setLabelAlignment(Qt.AlignLeft)
+        self.main_frame.setStyleSheet(" QLineEdit { margin-bottom: 4px; } "
+                                      " QTextEdit { margin-bottom: 4px; }")
+
+        self.txt_key.setStyleSheet("QLineEdit { margin-bottom: 0px;}")
+
         self.enable_all(False)
+        self.article_field()
 
         # Set style sheet
         stylesheet.set_style_sheet(self, ":/StyleSheet/style-sheet/library.qss")
@@ -195,9 +206,22 @@ class Library(QDialog, Ui_Library):
         self.pdf_deleted.connect(self.pdf_widget.remove_pdf)
         self.category_frame.delete.connect(self.delete_reference)
         self.category_frame.list_displayed.connect(self.restore_treeview_state)
-        self.category_frame.entry_selected.connect(self.show_reference_details)
-        self.category_frame.selection_changed.connect(self.clear_form)
-    
+        self.category_frame.selection_changed.connect(self.selection_change)
+
+    def selection_change(self, index):
+        """ Set the current category, subcategory and reference value """
+        self.creating_reference = False
+        self.current_category = self.category_frame.get_category(index)
+        self.current_subcategory = self.category_frame.get_subcategory(index)
+
+        self.clear_form()
+        self.enable_all(False)
+        if self.category_frame.is_entry(index):
+            self.current_reference = index.data(Qt.UserRole)
+            self.show_reference_details()
+        else:
+            self.current_reference = None
+
     def show_reference(self, ref_uuid):
         """ Show the reference with the given uuid
 
@@ -280,10 +304,10 @@ class Library(QDialog, Ui_Library):
 
         self.category_frame.show_list()
 
-    def show_reference_details(self, ref_uuid):
+    def show_reference_details(self):
         """ Show a reference details when it is selected """
         try:
-            reference = database.select_reference(ref_uuid)
+            reference = database.select_reference(self.current_reference)
         except sqlite3.Error as exception:
             message = QMessageBox(QMessageBox.Warning, "Error while loading data",
                                   "An error occurred while loading the reference data.", QMessageBox.Ok)
@@ -340,10 +364,12 @@ class Library(QDialog, Ui_Library):
 
     def clear_form(self):
         """ Clear all data in the form """
-        self.creating_reference = False
         self.txt_key.clear()
-        self.article_field()
-        self.enable_all(False)
+        self.comboBox.setCurrentText("Article")
+        for position in range(0, self.layout_form.count()-1):
+            item = self.layout_form.itemAt(position)
+            widget = item.widget()
+            if type(widget) == LineEdit or type(widget) == NumberLineEdit or type(widget) == YearLineEdit:                widget.clear()
         self.pdf_widget.clear_form()
 
     def delete_reference(self, ref_uuid):
@@ -358,7 +384,6 @@ class Library(QDialog, Ui_Library):
             message.exec()
             return
         self.category_frame.show_list()
-        self.clear_form()
 
     def enable_all(self, enable):
         """ Disable all items in the layout

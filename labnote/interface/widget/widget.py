@@ -73,7 +73,7 @@ class CategoryFrame(QWidget):
     # Signal definition
     delete = pyqtSignal(str)  # Delete the entry
     entry_selected = pyqtSignal(str)  # A reference is selected in the treeview
-    selection_changed = pyqtSignal()  # Everything except a reference is selected in the treeview
+    selection_changed = pyqtSignal(QModelIndex)  # Everything except a reference is selected in the treeview
     list_displayed = pyqtSignal()  # The list showed in the treeview
 
     def __init__(self, title, frame_type):
@@ -476,7 +476,7 @@ class CategoryFrame(QWidget):
         index = self.view_tree.selectionModel().currentIndex()
         hierarchy_level = self.get_hierarchy_level(index)
 
-        self.selection_changed.emit()
+        self.selection_changed.emit(index)
 
         if hierarchy_level == 1:
             self.act_update_subcategory.setEnabled(False)

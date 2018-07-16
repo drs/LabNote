@@ -127,20 +127,29 @@
         </property>
         <item>
          <layout class="QFormLayout" name="layout_form">
+          <property name="fieldGrowthPolicy">
+           <enum>QFormLayout::ExpandingFieldsGrow</enum>
+          </property>
+          <property name="labelAlignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
           <property name="verticalSpacing">
            <number>0</number>
+          </property>
+          <property name="rightMargin">
+           <number>7</number>
           </property>
           <item row="0" column="0">
            <widget class="QLabel" name="lbl_key">
             <property name="minimumSize">
              <size>
-              <width>0</width>
+              <width>120</width>
               <height>0</height>
              </size>
             </property>
             <property name="maximumSize">
              <size>
-              <width>16777215</width>
+              <width>120</width>
               <height>16777215</height>
              </size>
             </property>
@@ -152,6 +161,9 @@
             </property>
             <property name="text">
              <string>Key </string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
             </property>
            </widget>
           </item>
@@ -166,6 +178,9 @@
             <property name="rightMargin">
              <number>12</number>
             </property>
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
             <item>
              <widget class="QLineEdit" name="txt_key">
               <property name="placeholderText">
@@ -175,6 +190,18 @@
             </item>
             <item>
              <widget class="QComboBox" name="comboBox">
+              <property name="minimumSize">
+               <size>
+                <width>150</width>
+                <height>0</height>
+               </size>
+              </property>
+              <property name="maximumSize">
+               <size>
+                <width>150</width>
+                <height>16777215</height>
+               </size>
+              </property>
               <item>
                <property name="text">
                 <string>Article</string>
@@ -207,7 +234,7 @@
            <number>0</number>
           </property>
           <property name="rightMargin">
-           <number>11</number>
+           <number>0</number>
           </property>
           <item>
            <spacer name="horizontalSpacer_2">
