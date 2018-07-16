@@ -697,11 +697,11 @@ class TextEditor(QWidget, Ui_TextEditor):
         self.act_subsection = QAction("Subsection", self)
         self.act_subsection.setFont(QFont(self.font().family(), 14, 75))
         self.act_subsubsection = QAction("Subsubsection", self)
-        self.act_subsubsection.setFont(QFont(self.font().family(), 12, 75))
+        self.act_subsubsection.setFont(QFont(self.font().family(), 13, 75))
         self.act_body = QAction("Body", self)
-        self.act_body.setFont(QFont(self.font().family(), 12, 50))
+        self.act_body.setFont(QFont(self.font().family(), 13, 50))
         self.act_note = QAction("Note", self)
-        self.act_note.setFont(QFont(self.font().family(), 10, 50))
+        self.act_note.setFont(QFont(self.font().family(), 11, 50))
 
         self.style_menu = QMenu(self)
         self.style_menu.addAction(self.act_part)
@@ -1296,10 +1296,10 @@ class TextEditor(QWidget, Ui_TextEditor):
             fmt.setFontPointSize(14)
         elif action == self.act_subsubsection:
             fmt.setFontWeight(75)
-            fmt.setFontPointSize(12)
+            fmt.setFontPointSize(13)
         elif action == self.act_body:
             fmt.setFontWeight(50)
-            fmt.setFontPointSize(12)
+            fmt.setFontPointSize(13)
         elif action == self.act_note:
             fmt.setFontWeight(50)
             fmt.setFontPointSize(10)

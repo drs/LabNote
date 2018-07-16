@@ -93,3 +93,26 @@ def experiment_file(nb_uuid, exp_uuid):
     """
     return os.path.join(directory.experiment_path(nb_uuid, exp_uuid) + "/{}.labnp".format(exp_uuid))
 
+
+def experiment_image_path(nb_uuid, exp_uuid, extension):
+    """ Return the protocol image path
+
+    :param prt_uuid: Protocol uuid
+    :type prt_uuid: str
+    :return str: Protocol image path
+    """
+    return os.path.join(directory.experiment_resource_path(nb_uuid=nb_uuid, exp_uuid=exp_uuid) +
+                        "/{}.{}".format(str(uuid.uuid4()), extension))
+
+
+def add_image_experiment(nb_uuid, exp_uuid, path, extention):
+    """ Add an image to a protocol resources
+
+    :param prt_uuid: Protocol uuid
+    :type prt_uuid: str
+    :return str: Path of the inserted image
+    """
+    image_path = experiment_image_path(nb_uuid=nb_uuid, exp_uuid=exp_uuid, extension=extention)
+    shutil.copy2(path, image_path)
+    return image_path
+

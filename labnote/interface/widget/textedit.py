@@ -592,7 +592,10 @@ class ImageTextEdit(CompleterTextEdit):
         if url:
             if self.editor_type == common.TYPE_PROTOCOL:
                 path = files.add_image_protocol(self.uuid, url.toLocalFile(), QFileInfo(url.toLocalFile()).suffix())
-
+            elif self.editor_type == common.TYPE_EXPERIMENT:
+                path = files.add_image_experiment(nb_uuid=self.parent_uuid, exp_uuid=self.uuid,
+                                                  path=url.toLocalFile(),
+                                                  extention=QFileInfo(url.toLocalFile()).suffix())
         if path:
             image = QImage(path)
             if image:
