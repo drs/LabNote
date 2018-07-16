@@ -677,6 +677,10 @@ class TextEditor(QWidget, Ui_TextEditor):
         self.btn_strikethrough.setProperty("Menu", False)
         self.btn_superscript.setProperty("Menu", False)
         self.btn_subscript.setProperty("Menu", False)
+        self.btn_center.setProperty("Menu", False)
+        self.btn_left.setProperty("Menu", False)
+        self.btn_right.setProperty("Menu", False)
+        self.btn_justify.setProperty("Menu", False)
         self.btn_style.setProperty("Menu", True)
         self.btn_color.setProperty("Menu", True)
         self.btn_highlight.setProperty("Menu", True)
@@ -830,6 +834,12 @@ class TextEditor(QWidget, Ui_TextEditor):
 
         self.btn_list.setMenu(self.list_menu)
 
+        # Align button
+        self.btn_left.setIcon(self.draw_left())
+        self.btn_center.setIcon(self.draw_center())
+        self.btn_right.setIcon(self.draw_right())
+        self.btn_justify.setIcon(self.draw_justify())
+
         # Set style sheet
         stylesheet.set_style_sheet(self, ":/StyleSheet/Widget/style-sheet/widget/widget/text_editor.qss")
         stylesheet.set_style_sheet(self.icon_frame,
@@ -882,6 +892,10 @@ class TextEditor(QWidget, Ui_TextEditor):
         self.txt_width.textEdited.connect(self.update_height)
         self.txt_height.textEdited.connect(self.update_width)
         self.txt_width.editingFinished.connect(self.update_image_size)
+        self.btn_left.clicked.connect(self.format_align_left)
+        self.btn_right.clicked.connect(self.format_align_right)
+        self.btn_center.clicked.connect(self.format_align_center)
+        self.btn_justify.clicked.connect(self.format_align_justify)
 
     def update_height(self):
         """ Update height value when the width is changed """
@@ -985,6 +999,82 @@ class TextEditor(QWidget, Ui_TextEditor):
         painter.drawText(0, 5, 32, 22, Qt.AlignLeft, separator_list[1])
         painter.drawLine(7, 13, 15, 13)
         painter.drawText(0, 10, 32, 22, Qt.AlignLeft, separator_list[2])
+        painter.end()
+
+        return QIcon(pixmap)
+
+    def draw_left(self):
+        """ Draw the icon for the align left button """
+        dpr = self.devicePixelRatioF()
+        pixmap = QPixmap(16 * dpr, 16 * dpr)
+        pixmap.setDevicePixelRatio(dpr)
+        pixmap.fill(Qt.transparent)  # Required to create a transparent background
+
+        # Paint the elements of the icon
+        painter = QPainter(pixmap)
+        pen = QPen(QColor(72, 72, 72), 1)
+        painter.setPen(pen)
+        painter.drawLine(2, 3, 15, 3)
+        painter.drawLine(2, 6, 11, 6)
+        painter.drawLine(2, 9, 15, 9)
+        painter.drawLine(2, 12, 13, 12)
+        painter.end()
+
+        return QIcon(pixmap)
+
+    def draw_center(self):
+        """ Draw the icon for the align left button """
+        dpr = self.devicePixelRatioF()
+        pixmap = QPixmap(16 * dpr, 16 * dpr)
+        pixmap.setDevicePixelRatio(dpr)
+        pixmap.fill(Qt.transparent)  # Required to create a transparent background
+
+        # Paint the elements of the icon
+        painter = QPainter(pixmap)
+        pen = QPen(QColor(72, 72, 72), 1)
+        painter.setPen(pen)
+        painter.drawLine(2, 3, 15, 3)
+        painter.drawLine(5, 6, 11, 6)
+        painter.drawLine(2, 9, 15, 9)
+        painter.drawLine(4, 12, 13, 12)
+        painter.end()
+
+        return QIcon(pixmap)
+
+    def draw_right(self):
+        """ Draw the icon for the align left button """
+        dpr = self.devicePixelRatioF()
+        pixmap = QPixmap(16 * dpr, 16 * dpr)
+        pixmap.setDevicePixelRatio(dpr)
+        pixmap.fill(Qt.transparent)  # Required to create a transparent background
+
+        # Paint the elements of the icon
+        painter = QPainter(pixmap)
+        pen = QPen(QColor(72, 72, 72), 1)
+        painter.setPen(pen)
+        painter.drawLine(3, 3, 15, 3)
+        painter.drawLine(6, 6, 15, 6)
+        painter.drawLine(2, 9, 15, 9)
+        painter.drawLine(4, 12, 15, 12)
+        painter.end()
+
+        return QIcon(pixmap)
+
+    def draw_justify(self):
+        """ Draw the icon for the align left button """
+        dpr = self.devicePixelRatioF()
+        pixmap = QPixmap(16 * dpr, 16 * dpr)
+        pixmap.setDevicePixelRatio(dpr)
+        pixmap.fill(Qt.transparent)  # Required to create a transparent background
+
+        # Paint the elements of the icon
+        painter = QPainter(pixmap)
+        pen = QPen(QColor(72, 72, 72), 1)
+        painter.setPen(pen)
+        painter.drawLine(2, 3, 15, 3)
+        painter.drawLine(2, 6, 15, 6)
+        painter.drawLine(2, 9, 15, 9)
+        painter.drawLine(2, 12, 15, 12)
         painter.end()
 
         return QIcon(pixmap)
@@ -1159,6 +1249,38 @@ class TextEditor(QWidget, Ui_TextEditor):
         else:
             fmt.setVerticalAlignment(QTextCharFormat.AlignNormal)
         self.merge_format_on_word_or_selection(fmt=fmt)
+
+    def format_align_left(self):
+        """ Set text format to bold. """
+        if self.btn_left.isChecked():
+            self.txt_body.setAlignment(Qt.AlignLeft)
+        else:
+            self.txt_body.setAlignment(Qt.AlignLeft)
+        self.update_button()
+
+    def format_align_right(self):
+        """ Set text format to bold. """
+        if self.btn_left.isChecked():
+            self.txt_body.setAlignment(Qt.AlignRight)
+        else:
+            self.txt_body.setAlignment(Qt.AlignLeft)
+        self.update_button()
+
+    def format_align_center(self):
+        """ Set text format to bold. """
+        if self.btn_left.isChecked():
+            self.txt_body.setAlignment(Qt.AlignCenter)
+        else:
+            self.txt_body.setAlignment(Qt.AlignLeft)
+        self.update_button()
+
+    def format_align_justify(self):
+        """ Set text format to bold. """
+        if self.btn_left.isChecked():
+            self.txt_body.setAlignment(Qt.AlignJustify)
+        else:
+            self.txt_body.setAlignment(Qt.AlignLeft)
+        self.update_button()
 
     def format_list(self, action):
         """ set list format according to selected format
@@ -1414,6 +1536,27 @@ class TextEditor(QWidget, Ui_TextEditor):
         else:
             self.txt_width.setEnabled(False)
             self.txt_height.setEnabled(False)
+
+        # Get align format
+        if self.txt_body.alignment() == Qt.AlignLeft:
+            self.btn_left.setChecked(True)
+        else:
+            self.btn_left.setChecked(False)
+
+        if self.txt_body.alignment() == Qt.AlignCenter:
+            self.btn_center.setChecked(True)
+        else:
+            self.btn_center.setChecked(False)
+
+        if self.txt_body.alignment() == Qt.AlignRight:
+            self.btn_right.setChecked(True)
+        else:
+            self.btn_right.setChecked(False)
+
+        if self.txt_body.alignment() == Qt.AlignJustify:
+            self.btn_justify.setChecked(True)
+        else:
+            self.btn_justify.setChecked(False)
 
 
 class ProtocolTextEditor(TextEditor):
