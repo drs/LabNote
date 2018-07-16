@@ -1319,11 +1319,14 @@ def select_reference_completer_list():
         author = None
         label = ""
         if reference[2]:
-            author_list = reference[2].split(',')[0]
-            if len(author_list) < 2:
-                label = "{} & {}".format(author_list[0], author_list[1])
+            author_list = reference[2].split(',')
+            if len(author_list) == 1:
+                label = "{}".format(author_list[0].split()[len(author_list[0].split())-1])
+            elif len(author_list) == 2:
+                label = "{} & {}".format(author_list[0].split()[len(author_list[0].split())-1],
+                                         author_list[1].split()[len(author_list[1].split())-1])
             else:
-                label = "{} et al.".format(reference[2].split()[0])
+                label = "{} et al.".format(author_list[0].split()[len(author_list[0].split())-1])
         if reference[3]:
             if label != "":
                 label = "{} ({})".format(label, reference[3])

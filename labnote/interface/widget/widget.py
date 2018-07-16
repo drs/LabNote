@@ -425,8 +425,8 @@ class CategoryFrame(QWidget):
                                 author = None
                                 label = ""
                                 if entry.author:
-                                    author = entry.author.split()[0]
-                                    label = "{}".format(author)
+                                    author_list = entry.author.split(',')
+                                    label = "{}".format(author_list[0].split()[len(author_list[0].split()) - 1])
                                 if entry.year:
                                     if label != "":
                                         label = "{} ({})".format(label, entry.year)
