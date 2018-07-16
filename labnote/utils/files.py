@@ -34,6 +34,16 @@ def copy_file_to_data(nb_uuid, exp_uuid, path):
         return exception
 
 
+def protocol_image_path(prt_uuid, extension):
+    """ Return the protocol image path
+
+    :param prt_uuid: Protocol uuid
+    :type prt_uuid: str
+    :return str: Protocol image path
+    """
+    return os.path.join(directory.protocol_resource_path(prt_uuid=prt_uuid) + "/{}.{}".format(str(uuid.uuid4()), extension))
+
+
 def add_image_protocol(prt_uuid, path, extention):
     """ Add an image to a protocol resources
 
@@ -41,7 +51,7 @@ def add_image_protocol(prt_uuid, path, extention):
     :type prt_uuid: str
     :return str: Path of the inserted image
     """
-    image_path = directory.protocol_image_path(prt_uuid, extention)
+    image_path = protocol_image_path(prt_uuid, extention)
     shutil.copy2(path, image_path)
     return image_path
 

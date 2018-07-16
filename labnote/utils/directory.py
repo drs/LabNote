@@ -60,16 +60,6 @@ def protocol_resource_path(prt_uuid):
     return os.path.join(protocol_path(prt_uuid) + "/resources")
 
 
-def protocol_image_path(prt_uuid, extension):
-    """ Return the protocol image path
-
-    :param prt_uuid: Protocol uuid
-    :type prt_uuid: str
-    :return str: Protocol image path
-    """
-    return os.path.join(protocol_resource_path(prt_uuid=prt_uuid) + "/{}.{}".format(str(uuid.uuid4()), extension))
-
-
 def experiment_path(nb_uuid, exp_uuid):
     """ Return the experiment path
 
