@@ -151,6 +151,7 @@ CREATE TABLE refs (
     chapter        VARCHAR (255),
     pages          VARCHAR (16),
     issue          INTEGER,
+    school         VARCHAR (255),
     description    TEXT,
     abstract       TEXT,
     subcategory_id INTEGER       REFERENCES subcategory (subcategory_id) ON DELETE RESTRICT,
@@ -337,15 +338,15 @@ subcategory_id ASC
 
 INSERT_REF = """
 INSERT INTO refs (ref_uuid, ref_key, ref_type, file_attached, title, publisher, year, author, editor, volume, address, 
-edition, journal, chapter, pages, issue, description, abstract, subcategory_id, category_id) 
+edition, journal, chapter, pages, issue, description, abstract, subcategory_id, category_id, school) 
 VALUES 
 (:ref_uuid, :ref_key, :ref_type, :file_attached, :title, :publisher, :year, :author, :editor, :volume, :address, 
-:edition, :journal, :chapter, :pages, :issue, :description, :abstract, :subcategory_id, :category_id)
+:edition, :journal, :chapter, :pages, :issue, :description, :abstract, :subcategory_id, :category_id, :school)
 """
 
 SELECT_REF = """
 SELECT ref_uuid, ref_key, ref_type, file_attached, title, publisher, year, author, editor, volume, address, 
-edition, journal, chapter, pages, issue, description, abstract FROM refs
+edition, journal, chapter, pages, issue, school, description, abstract FROM refs
 WHERE ref_uuid = :ref_uuid
 """
 
@@ -365,6 +366,7 @@ UPDATE refs SET
   chapter = :chapter,
   pages = :pages,
   issue = :issue,
+  school = :school,
   description = :description,
   abstract = :abstract
 WHERE ref_uuid = :ref_uuid
@@ -1138,7 +1140,8 @@ def select_reference_category():
 
 def insert_ref(ref_uuid, ref_key, ref_type, category_id, subcategory_id=None, file_attached=False, title=None,
                publisher=None, year=None, author=None, editor=None, volume=None, address=None, edition=None,
-               journal=None, chapter=None, pages=None, issue=None, description=None, abstract=None, tag_list=None):
+               journal=None, chapter=None, pages=None, issue=None, description=None, abstract=None, tag_list=None,
+               school=None):
     """ Insert a reference """
 
     # Execute the query
@@ -1169,7 +1172,8 @@ def insert_ref(ref_uuid, ref_key, ref_type, category_id, subcategory_id=None, fi
                                         'description': description,
                                         'abstract': abstract,
                                         'subcategory_id': subcategory_id,
-                                        'category_id': category_id})
+                                        'category_id': category_id,
+                                        'school': school})
 
         # Add the tags
 
@@ -1183,7 +1187,7 @@ def insert_ref(ref_uuid, ref_key, ref_type, category_id, subcategory_id=None, fi
 
 def update_ref(ref_uuid, ref_key, ref_type, title=None, publisher=None, year=None, author=None, editor=None,
                volume=None, address=None, edition=None, journal=None, chapter=None, pages=None, issue=None,
-               description=None, abstract=None, tag_list=None):
+               description=None, abstract=None, tag_list=None, school=None):
     """ Update a reference """
 
     # Execute the query
@@ -1210,54 +1214,17 @@ def update_ref(ref_uuid, ref_key, ref_type, title=None, publisher=None, year=Non
                                     'chapter': chapter,
                                     'pages': pages,
                                     'issue': issue,
+                                    'school': school,
                                     'description': description,
                                     'abstract': abstract})
 
         # Handle the tags
-        cursor.execute(SELECT_REFERENCE_TAG_NAME, {'ref_uuid': ref_uuid})
+        uuid_dict = {'ref_uuid': ref_uuid}
+        cursor.execute(SELECT_REFERENCE_TAG_NAME, uuid_dict)
         current_tag_list = cursor.fetchall()
 
-        if tag_list:
-            # Create missing tags
-            for tag in tag_list:
-                if current_tag_list:
-                    if tag not in current_tag_list[0]:
-                        cursor.execute(INSERT_TAG, {'name': tag})
-                        cursor.execute(INSERT_TAG_REF, {'ref_uuid': ref_uuid, 'name': tag})
-                else:
-                    cursor.execute(INSERT_TAG, {'name': tag})
-                    cursor.execute(INSERT_TAG_REF, {'ref_uuid': ref_uuid, 'name': tag})
-            # Remove removed tags
-            if current_tag_list:
-                for tag in current_tag_list[0]:
-                    if tag not in tag_list:
-                        cursor.execute(DELETE_TAG_REF, {'name': tag, 'ref_uuid': ref_uuid})
-
-                        # Ignore foreign key exception
-                        # They are expected to occur if the tag is used elsewhere
-                        try:
-                            cursor.execute(DELETE_TAG, {'name': tag})
-                        except sqlite3.Error as exception:
-                            error_code = sqlite_error.sqlite_err_handler(str(exception))
-                            if error_code == sqlite_error.FOREIGN_KEY_CODE:
-                                pass
-                            else:
-                                raise
-        else:
-            if current_tag_list:
-                for tag in current_tag_list[0]:
-                    cursor.execute(DELETE_TAG_REF, {'name': tag, 'ref_uuid': ref_uuid})
-
-                    # Ignore foreign key exception
-                    # They are expected to occur if the tag is used elsewhere
-                    try:
-                        cursor.execute(DELETE_TAG, {'name': tag})
-                    except sqlite3.Error as exception:
-                        error_code = sqlite_error.sqlite_err_handler(str(exception))
-                        if error_code == sqlite_error.FOREIGN_KEY_CODE:
-                            pass
-                        else:
-                            raise
+        process_tag(cursor=cursor, insert_list=tag_list, current_list=current_tag_list,
+                    insert=INSERT_TAG_REF, delete=DELETE_TAG_REF, value=uuid_dict)
 
         cursor.execute("COMMIT")
 
@@ -1277,7 +1244,7 @@ def select_reference(ref_uuid):
             'title': buffer[0][4], 'publisher': buffer[0][5], 'year': buffer[0][6], 'author': buffer[0][7],
             'editor': buffer[0][8], 'volume': buffer[0][9], 'place': buffer[0][10], 'edition': buffer[0][11],
             'journal': buffer[0][12], 'chapter': buffer[0][13], 'pages': buffer[0][14], 'issue': buffer[0][15],
-            'description': buffer[0][16], 'abstract': buffer[0][17]}
+            'school': buffer[0][16], 'description': buffer[0][17], 'abstract': buffer[0][18]}
 
 
 def update_reference_category(ref_uuid, category_id, subcategory_id=None):

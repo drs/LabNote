@@ -85,12 +85,3 @@ class NumberLineEdit(LineEdit):
 
         validator = QRegExpValidator(QRegExp("^[0-9]{5}$"))
         self.setValidator(validator)
-
-
-class PagesLineEdit(LineEdit):
-    """ Lineedit used for the pages """
-    def __init__(self):
-        super(PagesLineEdit, self).__init__()
-
-        validator = QRegExpValidator(QRegExp("^[0-9]{0,5}( - |-)[0-9]{0,5}"))
-        self.setValidator(validator)

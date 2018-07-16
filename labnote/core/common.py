@@ -73,6 +73,7 @@ Type value
 TYPE_ARTICLE = 0
 TYPE_BOOK = 1
 TYPE_CHAPTER = 2
+TYPE_THESIS = 3
 
 # Content type
 TYPE_LIBRARY = 48

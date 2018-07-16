@@ -3,22 +3,21 @@ This module contain the classes responsible for launching and managing the libra
 """
 
 # Python import
-import sip
 import sqlite3
 import uuid
 import os
 
 # PyQt import
-from PyQt5.QtWidgets import QDialog, QGridLayout, QLabel, QMessageBox, QWidget, QVBoxLayout
+from PyQt5.QtWidgets import QDialog, QLabel, QMessageBox, QWidget, QVBoxLayout
 from PyQt5.QtCore import Qt, QSettings, pyqtSignal, QFileInfo, QItemSelectionModel
-from PyQt5.QtGui import QFont, QColor, QPixmap, QPainter, QPen, QBrush
+from PyQt5.QtGui import QColor, QPixmap, QPainter, QPen, QBrush
 
 # Project import
 from labnote.ui.ui_library import Ui_Library
 from labnote.core import stylesheet, sqlite_error, data, common
 from labnote.interface.widget.textedit import CompleterTextEdit, PlainTextEdit
-from labnote.utils import database, fsentry, directory
-from labnote.interface.widget.lineedit import LineEdit, NumberLineEdit, YearLineEdit, PagesLineEdit, SearchLineEdit
+from labnote.utils import database, fsentry, directory, layout
+from labnote.interface.widget.lineedit import LineEdit, NumberLineEdit, YearLineEdit, SearchLineEdit
 from labnote.interface.widget.widget import CategoryFrame
 from labnote.interface.widget import widget
 from labnote.interface.widget.object import KeyValidator
@@ -30,6 +29,7 @@ from labnote.interface.widget.object import KeyValidator
 TYPE_ARTICLE = common.TYPE_ARTICLE
 TYPE_BOOK = common.TYPE_BOOK
 TYPE_CHAPTER = common.TYPE_CHAPTER
+TYPE_THESIS = common.TYPE_THESIS
 
 # Category frame content type
 TYPE_LIBRARY = common.TYPE_LIBRARY
@@ -102,6 +102,69 @@ class Library(QDialog, Ui_Library):
         self.pdf_box.setFixedWidth(180)
         self.main_frame.layout().addWidget(self.pdf_box)
 
+        # Setup the form layout
+        self.lbl_author = QLabel("Author")
+        self.txt_author = LineEdit()
+        self.layout_form.addRow(self.lbl_author, self.txt_author)
+
+        self.lbl_title = QLabel("Title")
+        self.txt_title = LineEdit()
+        self.layout_form.addRow(self.lbl_title, self.txt_title)
+
+        self.lbl_year = QLabel("Year")
+        self.txt_year = YearLineEdit()
+        self.layout_form.addRow(self.lbl_year, self.txt_year)
+
+        self.lbl_chapter = QLabel("Chapter")
+        self.txt_chapter = LineEdit()
+        self.layout_form.addRow(self.lbl_chapter, self.txt_chapter)
+
+        self.lbl_school = QLabel("School")
+        self.txt_school = LineEdit()
+        self.layout_form.addRow(self.lbl_school, self.txt_school)
+
+        self.lbl_journal = QLabel("Journal")
+        self.txt_journal = LineEdit()
+        self.layout_form.addRow(self.lbl_journal, self.txt_journal)
+
+        self.lbl_editor = QLabel("Editor")
+        self.txt_editor = LineEdit()
+        self.layout_form.addRow(self.lbl_editor, self.txt_editor)
+
+        self.lbl_publisher = QLabel("Publisher")
+        self.txt_publisher = LineEdit()
+        self.layout_form.addRow(self.lbl_publisher, self.txt_publisher)
+
+        self.lbl_place_published = QLabel("Place published")
+        self.txt_place_published = LineEdit()
+        self.layout_form.addRow(self.lbl_place_published, self.txt_place_published)
+
+        self.lbl_volume = QLabel("Volume")
+        self.txt_volume = NumberLineEdit()
+        self.layout_form.addRow(self.lbl_volume, self.txt_volume)
+
+        self.lbl_issue = QLabel("Issue")
+        self.txt_issue = NumberLineEdit()
+        self.layout_form.addRow(self.lbl_issue, self.txt_issue)
+
+        self.lbl_pages = QLabel("Pages")
+        self.txt_pages = LineEdit()
+        self.layout_form.addRow(self.lbl_pages, self.txt_pages)
+
+        self.lbl_edition = QLabel("Edition")
+        self.txt_edition = LineEdit()
+        self.layout_form.addRow(self.lbl_edition, self.txt_edition)
+
+        self.lbl_description = QLabel("Description")
+        self.txt_description = CompleterTextEdit(self.tag_list)
+        self.layout_form.addRow(self.lbl_description, self.txt_description)
+
+        self.lbl_abstract = QLabel("Abstract")
+        self.txt_abstract = PlainTextEdit()
+        self.layout_form.addRow(self.lbl_abstract, self.txt_abstract)
+
+        self.enable_all(False)
+
         # Set style sheet
         stylesheet.set_style_sheet(self, ":/StyleSheet/style-sheet/library.qss")
 
@@ -110,9 +173,6 @@ class Library(QDialog, Ui_Library):
 
         # Key size
         self.lbl_key.setFixedSize(102, 21)
-
-        # Clear the form
-        self.clear_form()
 
         # Key validator
         self.txt_key.setValidator(KeyValidator())
@@ -137,7 +197,7 @@ class Library(QDialog, Ui_Library):
         self.category_frame.list_displayed.connect(self.restore_treeview_state)
         self.category_frame.entry_selected.connect(self.show_reference_details)
         self.category_frame.selection_changed.connect(self.clear_form)
-
+    
     def show_reference(self, ref_uuid):
         """ Show the reference with the given uuid
 
@@ -234,44 +294,33 @@ class Library(QDialog, Ui_Library):
 
         self.enable_all(True)
 
-        # Show the fields
+        # Set text
+        self.txt_key.setText(data.receive_string(reference['key']))
+        self.txt_author.setText(data.receive_string(reference['author']))
+        self.txt_title.setText(data.receive_string(reference['title']))
+        self.txt_year.setText(data.receive_string(reference['year']))
+        self.txt_chapter.setText(data.receive_string(reference['chapter']))
+        self.txt_chapter.setText(data.receive_string(reference['school']))
+        self.txt_journal.setText(data.receive_string(reference['journal']))
+        self.txt_editor.setText(data.receive_string(reference['editor']))
+        self.txt_publisher.setText(data.receive_string(reference['publisher']))
+        self.txt_place_published.setText(data.receive_string(reference['place']))
+        self.txt_volume.setText(data.receive_string(reference['volume']))
+        self.txt_issue.setText(data.receive_string(reference['issue']))
+        self.txt_pages.setText(data.receive_string(reference['pages']))
+        self.txt_edition.setText(data.receive_string(reference['edition']))
+        self.txt_description.setHtml(data.receive_string(reference['description']))
+        self.txt_abstract.setPlainText(data.receive_string(reference['abstract']))
+
+        # Set current item in the combobox
         if reference['type'] == TYPE_ARTICLE:
-            self.txt_key.setText(data.receive_string(reference['key']))
-            self.txt_author.setText(data.receive_string(reference['author']))
-            self.txt_title.setText(data.receive_string(reference['title']))
-            self.txt_journal.setText(data.receive_string(reference['journal']))
-            self.txt_year.setText(data.receive_string(reference['year']))
-            self.txt_volume.setText(data.receive_string(reference['volume']))
-            self.txt_issue.setText(data.receive_string(reference['issue']))
-            self.txt_pages.setText(data.receive_string(reference['pages']))
-            self.txt_description.setHtml(data.receive_string(reference['description']))
-            self.txt_abstract.setPlainText(data.receive_string(reference['abstract']))
+            self.comboBox.setCurrentText('Article')
         elif reference['type'] == TYPE_BOOK:
-            self.txt_key.setText(data.receive_string(reference['key']))
-            self.txt_author.setText(data.receive_string(reference['author']))
-            self.txt_title.setText(data.receive_string(reference['title']))
-            self.txt_year.setText(data.receive_string(reference['year']))
-            self.txt_publisher.setText(data.receive_string(reference['publisher']))
-            self.txt_place_published.settext(data.receive_string(reference['place']))
-            self.txt_volume.setText(data.receive_string(reference['volume']))
-            self.txt_pages.setText(data.receive_string(reference['pages']))
-            self.txt_edition.settext(data.receive_string(reference['edition']))
-            self.txt_description.setHtml(data.receive_string(reference['description']))
-            self.txt_abstract.setPlainText(data.receive_string(reference['abstract']))
+            self.comboBox.setCurrentText('Book')
         elif reference['type'] == TYPE_CHAPTER:
-            self.txt_key.setText(data.receive_string(reference['key']))
-            self.txt_chapter.setText(data.receive_string(reference['chapter']))
-            self.txt_author.setText(data.receive_string(reference['author']))
-            self.txt_title.setText(data.receive_string(reference['title']))
-            self.txt_year.setText(data.receive_string(reference['year']))
-            self.txt_editor.setText(data.receive_string(reference['editor']))
-            self.txt_publisher.setText(data.receive_string(reference['publisher']))
-            self.txt_place_published.settext(data.receive_string(reference['place']))
-            self.txt_volume.setText(data.receive_string(reference['volume']))
-            self.txt_pages.setText(data.receive_string(reference['pages']))
-            self.txt_edition.settext(data.receive_string(reference['edition']))
-            self.txt_description.setHtml(data.receive_string(reference['description']))
-            self.txt_abstract.setPlainText(data.receive_string(reference['abstract']))
+            self.comboBox.setCurrentText('Chapter')
+        elif reference['type'] == TYPE_THESIS:
+            self.comboBox.setCurrentText('Thesis')
 
         # Show the PDF file
         if reference['file']:
@@ -311,36 +360,14 @@ class Library(QDialog, Ui_Library):
         self.category_frame.show_list()
         self.clear_form()
 
-    def delete_layout(self, layout):
-        """ Delete any layout """
-        if layout is not None:
-            while layout.count():
-                item = layout.takeAt(0)
-                widget = item.widget()
-                if widget is not None:
-                    widget.deleteLater()
-                else:
-                    self.delete_layout(item.layout())
-            sip.delete(layout)
-
     def enable_all(self, enable):
         """ Disable all items in the layout
 
         :param enable: Enable state
         :type enable: bool
         """
-        self.lbl_key.setEnabled(enable)
-        self.txt_key.setEnabled(enable)
-        self.comboBox.setEnabled(enable)
-        self.btn_save.setEnabled(enable)
+        layout.disable_layout(self.layout_form, enable)
         self.pdf_widget.setEnabled(enable)
-
-        if self.grid_layout is not None:
-            for position in range(0, self.grid_layout.count()):
-                item = self.grid_layout.itemAt(position)
-                widget = item.widget()
-                if widget is not None:
-                    widget.setEnabled(enable)
 
     def process_reference(self):
         """ Create the reference in the database """
@@ -357,40 +384,21 @@ class Library(QDialog, Ui_Library):
                 ref_type = self.comboBox.currentText()
                 anchor = self.txt_description.anchors()
 
-                if ref_type == "Article":
-                    author = data.prepare_string(self.txt_author.text())
-                    title = data.prepare_string(self.txt_title.text())
-                    journal = data.prepare_string(self.txt_journal.text())
-                    year = data.prepare_string_number(self.txt_year.text())
-                    volume = data.prepare_string_number(self.txt_volume.text())
-                    issue = data.prepare_string_number(self.txt_issue.text())
-                    pages = data.prepare_string(self.txt_pages.text())
-                    description = data.prepare_textedit(self.txt_description)
-                    abstract = data.prepare_string(self.txt_abstract.toPlainText())
-                elif ref_type == "Book":
-                    author = data.prepare_string(self.txt_author.text())
-                    title = data.prepare_string(self.txt_title.text())
-                    year = data.prepare_string_number(self.txt_year.text())
-                    publisher = data.prepare_string(self.txt_publisher.text())
-                    place = data.prepare_string(self.txt_place_published.text())
-                    volume = data.prepare_string_number(self.txt_volume.text())
-                    pages = data.prepare_string(self.txt_pages.text())
-                    edition = data.prepare_string_number(self.txt_edition.text())
-                    description = data.prepare_textedit(self.txt_description)
-                    abstract = data.prepare_string(self.txt_abstract.toPlainText())
-                elif ref_type == "Chapter":
-                    author = data.prepare_string(self.txt_author.text())
-                    chapter = data.prepare_string(self.txt_chapter.text())
-                    title = data.prepare_string(self.txt_title.text())
-                    year = data.prepare_string_number(self.txt_year.text())
-                    editor = data.prepare_string(self.txt_editor.text())
-                    publisher = data.prepare_string(self.txt_publisher.text())
-                    place = data.prepare_string(self.txt_place_published.text())
-                    volume = data.prepare_string_number(self.txt_volume.text())
-                    pages = data.prepare_string(self.txt_pages.text())
-                    edition = data.prepare_string_number(self.txt_edition.text())
-                    description = data.prepare_textedit(self.txt_description)
-                    abstract = data.prepare_string(self.txt_abstract.toPlainText())
+                author = data.prepare_string(self.txt_author.text())
+                title = data.prepare_string(self.txt_title.text())
+                year = data.prepare_string_number(self.txt_year.text())
+                chapter = data.prepare_string(self.txt_chapter.text())
+                school = data.prepare_string(self.txt_school.text())
+                journal = data.prepare_string(self.txt_journal.text())
+                editor = data.prepare_string(self.txt_editor.text())
+                publisher = data.prepare_string(self.txt_publisher.text())
+                place = data.prepare_string(self.txt_place_published.text())
+                volume = data.prepare_string_number(self.txt_volume.text())
+                issue = data.prepare_string_number(self.txt_issue.text())
+                pages = data.prepare_string(self.txt_pages.text())
+                edition = data.prepare_string_number(self.txt_edition.text())
+                description = data.prepare_textedit(self.txt_description)
+                abstract = data.prepare_string(self.txt_abstract.toPlainText())
 
                 if self.creating_reference:
                     ref_uuid = data.uuid_bytes(uuid.uuid4())
@@ -414,6 +422,12 @@ class Library(QDialog, Ui_Library):
                                                 edition=edition, description=description, abstract=abstract,
                                                 chapter=chapter, editor=editor, ref_type=TYPE_CHAPTER,
                                                 tag_list=anchor['tag'])
+                        elif ref_type == "Thesis":
+                            database.insert_ref(ref_uuid=ref_uuid, ref_key=key, category_id=category_id,
+                                                subcategory_id=subcategory_id, author=author, title=title, year=year,
+                                                address=place, description=description,
+                                                abstract=abstract, school=school,
+                                                ref_type=TYPE_THESIS, tag_list=anchor['tag'])
                         self.done_modifing_reference(ref_uuid=data.uuid_string(ref_uuid))
                     except sqlite3.Error as exception:
                         error_code = sqlite_error.sqlite_err_handler(str(exception))
@@ -462,6 +476,11 @@ class Library(QDialog, Ui_Library):
                                                 edition=edition, description=description, abstract=abstract,
                                                 chapter=chapter, editor=editor, ref_type=TYPE_CHAPTER,
                                                 tag_list=anchor['tag'])
+                        elif ref_type == "Thesis":
+                            database.update_ref(ref_uuid=ref_uuid, ref_key=key, author=author, title=title, year=year,
+                                                address=place, description=description, abstract=abstract,
+                                                school=school, ref_type=TYPE_CHAPTER, tag_list=anchor['tag'])
+
                         self.done_modifing_reference(ref_uuid=ref_uuid)
                     except sqlite3.Error as exception:
                         error_code = sqlite_error.sqlite_err_handler(str(exception))
@@ -504,371 +523,155 @@ class Library(QDialog, Ui_Library):
             self.category_frame.view_tree.repaint()
         self.get_tag_list()
 
-    def reset_fields(self):
-        self.txt_key.clear()
-        self.article_field()
-        self.enable_all(False)
-
     def show_field(self, text):
         """ Show the field related to a specific type of literature """
 
-        fields = self.save_fields()
-
         # Show appropriate fields
         if text == "Article":
-            self.article_field(fields=fields)
+            self.article_field()
         elif text == "Book":
-            self.book_field(fields=fields)
+            self.book_field()
+        elif text == "Chapter":
+            self.chapter_field()
+        elif text == "Thesis":
+            self.thesis_field()
+
+    def set_visible(self, visible):
+        """ Set the interface visible value
+
+        :param visible:
+        :type {}: Name and bool visible value
+        """
+
+        for key, value in visible.items():
+            if key == 'author':
+                self.set_field_visible(self.lbl_author, self.txt_author, value)
+            elif key == 'title':
+                self.set_field_visible(self.lbl_title, self.txt_title, value)
+            elif key == 'year':
+                self.set_field_visible(self.lbl_year, self.txt_year, value)
+            elif key == 'chapter':
+                self.set_field_visible(self.lbl_chapter, self.txt_chapter, value)
+            elif key == 'school':
+                self.set_field_visible(self.lbl_school, self.txt_school, value)
+            elif key == 'journal':
+                self.set_field_visible(self.lbl_journal, self.txt_journal, value)
+            elif key == 'editor':
+                self.set_field_visible(self.lbl_editor, self.txt_editor, value)
+            elif key == 'publisher':
+                self.set_field_visible(self.lbl_publisher, self.txt_publisher, value)
+            elif key == 'place':
+                self.set_field_visible(self.lbl_place_published, self.txt_place_published, value)
+            elif key == 'volume':
+                self.set_field_visible(self.lbl_volume, self.txt_volume, value)
+            elif key == 'issue':
+                self.set_field_visible(self.lbl_issue, self.txt_issue, value)
+            elif key == 'pages':
+                self.set_field_visible(self.lbl_pages, self.txt_pages, value)
+            elif key == 'edition':
+                self.set_field_visible(self.lbl_edition, self.txt_edition, value)
+            elif key == 'description':
+                self.set_field_visible(self.lbl_description, self.txt_description, value)
+            elif key == 'abstract':
+                self.set_field_visible(self.lbl_abstract, self.txt_abstract, value)
+
+    def set_field_visible(self, label, txt, visible):
+        """ Set a specific field visible
+
+        :param label: Field label
+        :type label: QLabel
+        :param txt: Field lineedit
+        :type txt: QLineEdit or QTextEdit subclass
+        :param visible: Visible or not value
+        :type visible: bool
+        """
+        if visible:
+            label.setVisible(True)
+            txt.setVisible(True)
         else:
-            self.chapter_field(fields=fields)
+            label.setVisible(False)
+            txt.setVisible(False)
+            txt.clear()
 
-    def create_grid(self):
-        """ Create the grid layout
-
-        :return QGridLayout: Grid Layout
-        """
-        self.grid_layout = QGridLayout()
-        self.grid_layout.setColumnMinimumWidth(0, 110)
-        self.grid_layout.setSpacing(2)
-        self.grid_layout.setContentsMargins(0, 0, 12, 0)
-
-    def prepare_grid(self):
-        """ Delete the grid layout """
-        self.delete_layout(self.grid_layout)
-        self.create_grid()
-
-    def save_fields(self):
-        """ Save all the article fields
-
-        :return dict: Dictionary with the article fields
-        """
-        try:
-            title = self.txt_title.text()
-        except (AttributeError, RuntimeError):
-            title = ""
-
-        try:
-            publisher = self.txt_publisher.text()
-        except (AttributeError, RuntimeError):
-            publisher = ""
-
-        try:
-            author = self.txt_author.text()
-        except (AttributeError, RuntimeError):
-            author = ""
-
-        try:
-            year = self.txt_year.text()
-        except (AttributeError, RuntimeError):
-            year = ""
-
-        try:
-            editor = self.txt_editor.text()
-        except (AttributeError, RuntimeError):
-            editor = ""
-
-        try:
-            volume = self.txt_volume.text()
-        except (AttributeError, RuntimeError):
-            volume = ""
-
-        try:
-            place = self.txt_place_published.text()
-        except (AttributeError, RuntimeError):
-            place = ""
-
-        try:
-            edition = self.txt_edition.text()
-        except (AttributeError, RuntimeError):
-            edition = ""
-
-        try:
-            if self.txt_journal:
-                journal = self.txt_journal.text()
-        except (AttributeError, RuntimeError):
-            journal = ""
-
-        try:
-            chapter = self.txt_chapter.text()
-        except (AttributeError, RuntimeError):
-            chapter = ""
-
-        try:
-            pages = self.txt_pages.text()
-        except (AttributeError, RuntimeError):
-            pages = ""
-
-        try:
-            issue = self.txt_issue.text()
-        except (AttributeError, RuntimeError):
-            issue = ""
-
-        try:
-            if self.txt_description.toPlainText() != "":
-                description = self.txt_description.toHtml()
-            else:
-                description = None
-        except (AttributeError, RuntimeError):
-            description = None
-
-        try:
-            if self.txt_abstract.toPlainText() != "":
-                abstract = self.txt_abstract.toHtml()
-            else:
-                abstract = None
-        except (AttributeError, RuntimeError):
-            abstract = None
-
-        return {'title': title,
-                'publisher': publisher,
-                'year': year,
-                'author': author,
-                'editor': editor,
-                'volume': volume,
-                'place': place,
-                'edition': edition,
-                'journal': journal,
-                'chapter': chapter,
-                'pages': pages,
-                'issue': issue,
-                'description': description,
-                'abstract': abstract}
-
-    def article_field(self, fields=None):
+    def article_field(self):
         """ Show all the article related fields in the layout """
-        self.prepare_grid()
 
-        self.lbl_author = QLabel("Author")
-        self.lbl_author.setFont(QFont(self.font().family(), weight=QFont.Bold))
-        self.grid_layout.addWidget(self.lbl_author, 0, 0)
-        self.txt_author = LineEdit()
-        self.grid_layout.addWidget(self.txt_author, 0, 1)
+        visible = {'author': True,
+                   'title': True,
+                   'year': True,
+                   'chapter': False,
+                   'school': False,
+                   'journal': True,
+                   'editor': False,
+                   'publisher': False,
+                   'place': False,
+                   'volume': True,
+                   'issue': True,
+                   'pages': True,
+                   'edition': False,
+                   'description': True,
+                   'abstract': True}
+        self.set_visible(visible)
 
-        self.lbl_title = QLabel("Title")
-        self.lbl_title.setFont(QFont(self.font().family(), weight=QFont.Bold))
-        self.grid_layout.addWidget(self.lbl_title, 1, 0)
-        self.txt_title = LineEdit()
-        self.grid_layout.addWidget(self.txt_title, 1, 1)
-
-        self.lbl_journal = QLabel("Journal")
-        self.lbl_journal.setFont(QFont(self.font().family(), weight=QFont.Bold))
-        self.grid_layout.addWidget(self.lbl_journal, 2, 0)
-        self.txt_journal = LineEdit()
-        self.grid_layout.addWidget(self.txt_journal, 2, 1)
-
-        self.lbl_year = QLabel("Year")
-        self.lbl_year.setFont(QFont(self.font().family(), weight=QFont.Bold))
-        self.grid_layout.addWidget(self.lbl_year, 3, 0)
-        self.txt_year = YearLineEdit()
-        self.grid_layout.addWidget(self.txt_year, 3, 1)
-
-        self.lbl_volume = QLabel("Volume")
-        self.grid_layout.addWidget(self.lbl_volume, 4, 0)
-        self.txt_volume = NumberLineEdit()
-        self.grid_layout.addWidget(self.txt_volume, 4, 1)
-
-        self.lbl_issue = QLabel("Issue")
-        self.grid_layout.addWidget(self.lbl_issue, 5, 0)
-        self.txt_issue = NumberLineEdit()
-        self.grid_layout.addWidget(self.txt_issue, 5, 1)
-
-        self.lbl_pages = QLabel("Pages")
-        self.grid_layout.addWidget(self.lbl_pages, 6, 0)
-        self.txt_pages = PagesLineEdit()
-        self.grid_layout.addWidget(self.txt_pages, 6, 1)
-
-        self.lbl_description = QLabel("Description")
-        self.lbl_description.setAlignment(Qt.AlignTop | Qt.AlignLeft)
-        self.grid_layout.addWidget(self.lbl_description, 7, 0)
-        self.txt_description = CompleterTextEdit(self.tag_list)
-        self.grid_layout.addWidget(self.txt_description, 7, 1)
-
-        self.lbl_abstract = QLabel("Abstract")
-        self.lbl_abstract.setAlignment(Qt.AlignTop | Qt.AlignLeft)
-        self.grid_layout.addWidget(self.lbl_abstract, 8, 0)
-        self.txt_abstract = PlainTextEdit()
-        self.grid_layout.addWidget(self.txt_abstract, 8, 1)
-
-        if fields:
-            self.txt_author.setText(fields['author'])
-            self.txt_title.setText(fields['title'])
-            self.txt_journal.setText(fields['journal'])
-            self.txt_year.setText(fields['year'])
-            self.txt_volume.setText(fields['volume'])
-            self.txt_issue.setText(fields['issue'])
-            self.txt_pages.setText(fields['pages'])
-
-            if fields['description']:
-                self.txt_description.setHtml(fields['description'])
-
-            if fields['abstract']:
-                self.txt_abstract.setHtml(fields['abstract'])
-
-        self.detail_layout.insertLayout(1, self.grid_layout)
-
-    def book_field(self, fields=None):
+    def book_field(self):
         """ Show all the book related fields in the layout """
-        self.prepare_grid()
 
-        self.lbl_author = QLabel("Author")
-        self.lbl_author.setFont(QFont(self.font().family(), weight=QFont.Bold))
-        self.grid_layout.addWidget(self.lbl_author, 0, 0)
-        self.txt_author = LineEdit()
-        self.grid_layout.addWidget(self.txt_author, 0, 1)
+        visible = {'author': True,
+                   'title': True,
+                   'year': True,
+                   'chapter': False,
+                   'school': False,
+                   'journal': False,
+                   'editor': False,
+                   'publisher': True,
+                   'place': True,
+                   'volume': True,
+                   'issue': False,
+                   'pages': True,
+                   'edition': True,
+                   'description': True,
+                   'abstract': True}
+        self.set_visible(visible)
 
-        self.lbl_title = QLabel("Title")
-        self.lbl_title.setFont(QFont(self.font().family(), weight=QFont.Bold))
-        self.grid_layout.addWidget(self.lbl_title, 1, 0)
-        self.txt_title = LineEdit()
-        self.grid_layout.addWidget(self.txt_title, 1, 1)
-
-        self.lbl_year = QLabel("Year")
-        self.lbl_year.setFont(QFont(self.font().family(), weight=QFont.Bold))
-        self.grid_layout.addWidget(self.lbl_year, 2, 0)
-        self.txt_year = YearLineEdit()
-        self.grid_layout.addWidget(self.txt_year, 2, 1)
-
-        self.lbl_publisher = QLabel("Publisher")
-        self.lbl_publisher.setFont(QFont(self.font().family(), weight=QFont.Bold))
-        self.grid_layout.addWidget(self.lbl_publisher, 3, 0)
-        self.txt_publisher = LineEdit()
-        self.grid_layout.addWidget(self.txt_publisher, 3, 1)
-
-        self.lbl_place_published = QLabel("Place published")
-        self.grid_layout.addWidget(self.lbl_place_published, 4, 0)
-        self.txt_place_published = LineEdit()
-        self.grid_layout.addWidget(self.txt_place_published, 4, 1)
-
-        self.lbl_volume = QLabel("Volume")
-        self.grid_layout.addWidget(self.lbl_volume, 5, 0)
-        self.txt_volume = NumberLineEdit()
-        self.grid_layout.addWidget(self.txt_volume, 5, 1)
-
-        self.lbl_pages = QLabel("Pages")
-        self.grid_layout.addWidget(self.lbl_pages, 6, 0)
-        self.txt_pages = PagesLineEdit()
-        self.grid_layout.addWidget(self.txt_pages, 6, 1)
-
-        self.lbl_edition = QLabel("Edition")
-        self.grid_layout.addWidget(self.lbl_edition, 7, 0)
-        self.txt_edition = LineEdit()
-        self.grid_layout.addWidget(self.txt_edition, 7, 1)
-
-        self.lbl_description = QLabel("Description")
-        self.grid_layout.addWidget(self.lbl_description, 8, 0)
-        self.txt_description = CompleterTextEdit(self.tag_list)
-        self.grid_layout.addWidget(self.txt_description, 8, 1)
-
-        self.lbl_abstract = QLabel("Abstract")
-        self.grid_layout.addWidget(self.lbl_abstract, 9, 0)
-        self.txt_abstract = PlainTextEdit()
-        self.grid_layout.addWidget(self.txt_abstract, 9, 1)
-
-        if fields:
-            self.txt_author.setText(fields['author'])
-            self.txt_title.setText(fields['title'])
-            self.txt_year.setText(fields['year'])
-            self.txt_publisher.setText(fields['publisher'])
-            self.txt_place_published.setText(fields['place'])
-            self.txt_volume.setText(fields['volume'])
-            self.txt_pages.setText(fields['pages'])
-            self.txt_edition.setText(fields['edition'])
-
-            if fields['description']:
-                self.txt_description.setHtml(fields['description'])
-
-            if fields['abstract']:
-                self.txt_abstract.setHtml(fields['abstract'])
-
-        self.detail_layout.insertLayout(1, self.grid_layout)
-
-    def chapter_field(self, fields=None):
+    def chapter_field(self):
         """ Show all the chapter related fields in the layout """
-        self.prepare_grid()
 
-        self.lbl_author = QLabel("Author")
-        self.lbl_author.setFont(QFont(self.font().family(), weight=QFont.Bold))
-        self.grid_layout.addWidget(self.lbl_author, 0, 0)
-        self.txt_author = LineEdit()
-        self.grid_layout.addWidget(self.txt_author, 0, 1)
+        visible = {'author': True,
+                   'title': True,
+                   'year': True,
+                   'chapter': True,
+                   'school': False,
+                   'journal': False,
+                   'editor': True,
+                   'publisher': True,
+                   'place': True,
+                   'volume': True,
+                   'issue': False,
+                   'pages': True,
+                   'edition': True,
+                   'description': True,
+                   'abstract': True}
+        self.set_visible(visible)
 
-        self.lbl_chapter = QLabel("Chapter")
-        self.lbl_chapter.setFont(QFont(self.font().family(), weight=QFont.Bold))
-        self.grid_layout.addWidget(self.lbl_chapter, 1, 0)
-        self.txt_chapter = LineEdit()
-        self.grid_layout.addWidget(self.txt_chapter, 1, 1)
+    def thesis_field(self):
+        """ Show all the chapter related fields in the layout """
 
-        self.lbl_title = QLabel("Book title")
-        self.lbl_title.setFont(QFont(self.font().family(), weight=QFont.Bold))
-        self.grid_layout.addWidget(self.lbl_title, 2, 0)
-        self.txt_title = LineEdit()
-        self.grid_layout.addWidget(self.txt_title, 2, 1)
-
-        self.lbl_year = QLabel("Year")
-        self.lbl_year.setFont(QFont(self.font().family(), weight=QFont.Bold))
-        self.grid_layout.addWidget(self.lbl_year, 3, 0)
-        self.txt_year = YearLineEdit()
-        self.grid_layout.addWidget(self.txt_year, 3, 1)
-
-        self.lbl_editor = QLabel("Editor")
-        self.grid_layout.addWidget(self.lbl_editor, 4, 0)
-        self.txt_editor = LineEdit()
-        self.grid_layout.addWidget(self.txt_editor, 4, 1)
-
-        self.lbl_publisher = QLabel("Publisher")
-        self.grid_layout.addWidget(self.lbl_publisher, 5, 0)
-        self.txt_publisher = LineEdit()
-        self.grid_layout.addWidget(self.txt_publisher, 5, 1)
-
-        self.lbl_place_published = QLabel("Place published")
-        self.grid_layout.addWidget(self.lbl_place_published, 6, 0)
-        self.txt_place_published = LineEdit()
-        self.grid_layout.addWidget(self.txt_place_published, 6, 1)
-
-        self.lbl_volume = QLabel("Volume")
-        self.grid_layout.addWidget(self.lbl_volume, 7, 0)
-        self.txt_volume = NumberLineEdit()
-        self.grid_layout.addWidget(self.txt_volume, 7, 1)
-
-        self.lbl_pages = QLabel("Pages")
-        self.grid_layout.addWidget(self.lbl_pages, 8, 0)
-        self.txt_pages = PagesLineEdit()
-        self.grid_layout.addWidget(self.txt_pages, 8, 1)
-
-        self.lbl_edition = QLabel("Edition")
-        self.grid_layout.addWidget(self.lbl_edition, 9, 0)
-        self.txt_edition = NumberLineEdit()
-        self.grid_layout.addWidget(self.txt_edition, 9, 1)
-
-        self.lbl_description = QLabel("Description")
-        self.grid_layout.addWidget(self.lbl_description, 10, 0)
-        self.txt_description = CompleterTextEdit(self.tag_list)
-        self.grid_layout.addWidget(self.txt_description, 10, 1)
-
-        self.lbl_abstract = QLabel("Abstract")
-        self.grid_layout.addWidget(self.lbl_abstract, 11, 0)
-        self.txt_abstract = PlainTextEdit()
-        self.grid_layout.addWidget(self.txt_abstract, 11, 1)
-
-        if fields:
-            self.txt_author.setText(fields['author'])
-            self.txt_chapter.setText(fields['chapter'])
-            self.txt_title.setText(fields['title'])
-            self.txt_year.setText(fields['year'])
-            self.txt_editor.setText(fields['editor'])
-            self.txt_publisher.setText(fields['publisher'])
-            self.txt_place_published.setText(fields['place'])
-            self.txt_volume.setText(fields['volume'])
-            self.txt_pages.setText(fields['pages'])
-            self.txt_edition.setText(fields['edition'])
-
-            if fields['description']:
-                self.txt_description.setHtml(fields['description'])
-
-            if fields['abstract']:
-                self.txt_abstract.setHtml(fields['abstract'])
-
-        self.detail_layout.insertLayout(1, self.grid_layout)
+        visible = {'author': True,
+                   'title': True,
+                   'year': True,
+                   'chapter': False,
+                   'school': True,
+                   'journal': False,
+                   'editor': False,
+                   'publisher': False,
+                   'place': True,
+                   'volume': False,
+                   'issue': False,
+                   'pages': False,
+                   'edition': False,
+                   'description': True,
+                   'abstract': True}
+        self.set_visible(visible)
 
     def closeEvent(self, event):
         self.save_treeview_state()
