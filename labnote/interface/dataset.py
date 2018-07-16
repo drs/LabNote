@@ -398,8 +398,16 @@ class Dataset(QDialog, Ui_Dataset):
             self.layout_entry.addWidget(NoEntryWidget(), Qt.AlignHCenter, Qt.AlignCenter)
             self.contains_file = False
         elif hierarchy_level == 3:
+            dt_uuid = index.data(Qt.UserRole)
+            nb_uuid = self.get_notebook(index)
+
             self.act_delete_dataset.setEnabled(True)
             self.act_update_dataset.setEnabled(True)
+            self.btn_python.setEnabled(True)
+            if os.path.isfile(files.dataset_python_file(nb_uuid=nb_uuid, dt_uuid=dt_uuid)):
+                self.btn_python_run.setEnabled(True)
+            else:
+                self.btn_python_run.setEnabled(False)
             self.show_dataset(index)
             if not self.contains_file:
                 self.btn_import.setEnabled(True)
@@ -407,16 +415,15 @@ class Dataset(QDialog, Ui_Dataset):
                 self.btn_r.setEnabled(False)
                 self.btn_r_run.setEnabled(False)
                 self.btn_rmd.setEnabled(False)
-                self.btn_python.setEnabled(False)
-                self.btn_python_run.setEnabled(False)
             else:
                 self.btn_import.setEnabled(False)
                 self.btn_open.setEnabled(True)
                 self.btn_r.setEnabled(True)
-                self.btn_r_run.setEnabled(True)
+                if os.path.isfile(files.dataset_r_file(nb_uuid=nb_uuid, dt_uuid=dt_uuid)):
+                    self.btn_r_run.setEnabled(True)
+                else:
+                    self.btn_r_run.setEnabled(False)
                 self.btn_rmd.setEnabled(True)
-                self.btn_python.setEnabled(True)
-                self.btn_python_run.setEnabled(True)
 
     def show_dataset(self, index):
         """ Show the dataset content """

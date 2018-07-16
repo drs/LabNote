@@ -387,7 +387,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         except sqlite3.Error as exception:
             message = QMessageBox()
             message.setWindowTitle("LabNote")
-            message.setText("Unable to select expriment key")
+            message.setText("Unable to select experiment key")
             message.setInformativeText("An unhandeled error occured while selecting the experiment key for the current "
                                        "notebook.")
             message.setDetailedText(str(exception))
