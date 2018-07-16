@@ -693,7 +693,7 @@ def save_experiment(exp_uuid, nb_uuid, name, exp_key, description, body, tag_lis
                                                     'description': description,
                                                     'exp_uuid': data.uuid_bytes(exp_uuid)})
 
-        uuid_dict =  {'exp_uuid': data.uuid_bytes(exp_uuid)}
+        uuid_dict = {'exp_uuid': data.uuid_bytes(exp_uuid)}
 
         # Handle the tags
         cursor.execute(database.SELECT_EXPERIMENT_TAG_NAME, uuid_dict)
@@ -710,13 +710,13 @@ def save_experiment(exp_uuid, nb_uuid, name, exp_key, description, body, tag_lis
                              value=uuid_dict)
         database.process_key(cursor=cursor, insert_list=reference_list, current_list=current_reference_list,
                              insert=database.INSERT_REF_EXPERIMENT, delete=database.DELETE_REF_EXPERIMENT,
-                             uuid=uuid_dict, key='ref_key')
+                             value=uuid_dict, key='ref_key')
         database.process_key(cursor=cursor, insert_list=dataset_list, current_list=current_dataset_list,
                              insert=database.INSERT_DATASET_EXPERIMENT, delete=database.DELETE_DATASET_EXPERIMENT,
-                             uuid=uuid_dict, key='dt_key')
+                             value=uuid_dict, key='dt_key')
         database.process_key(cursor=cursor, insert_list=protocol_list, current_list=current_protocol_list,
                              insert=database.INSERT_PROTOCOL_EXPERIMENT, delete=database.DELETE_PROTOCOL_EXPERIMENT,
-                             uuid=uuid_dict, key='prt_key')
+                             value=uuid_dict, key='prt_key')
 
         # Create the protocol body file
         file = open(files.experiment_file(nb_uuid, exp_uuid), 'wb')

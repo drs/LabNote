@@ -827,29 +827,29 @@ def process_tag(cursor, insert_list, current_list, insert, delete, value):
                             raise
 
 
-def process_key(cursor, insert_list, current_list, insert, delete, uuid, key):
+def process_key(cursor, insert_list, current_list, insert, delete, value, key):
     if insert_list:
         # Create missing key
         for reference in insert_list:
             if current_list:
                 if reference not in current_list[0]:
-                    value = uuid[key] = reference
+                    value[key] = reference
                     cursor.execute(insert, value)
             else:
-                value = uuid[key] = reference
+                value[key] = reference
                 cursor.execute(insert, value)
         # Remove removed key
         if current_list:
             for reference in current_list[0]:
                 if reference not in insert_list:
-                    value = uuid[key] = reference
+                    value[key] = reference
                     cursor.execute(delete, value)
     else:
         # Remove removed reference
         if current_list:
             for reference in current_list[0]:
                 if reference not in insert_list:
-                    value = uuid[key] = reference
+                    value[key] = reference
                     cursor.execute(delete, value)
 
 
