@@ -275,7 +275,7 @@ class Library(QDialog, Ui_Library):
 
         # Show the PDF file
         if reference['file']:
-            file = os.path.join(directory.REFERENCES_DIRECTORY_PATH + "/{}".format(uuid))
+            file = os.path.join(directory.REFERENCES_DIRECTORY_PATH + "/{}.pdf".format(reference['uuid']))
             self.pdf_widget.show_pdf(file=file)
 
     def start_creating_reference(self):
@@ -1003,18 +1003,20 @@ class PDFWidget(QWidget):
 
     def show_pdf(self, file):
         """ Show a PDF image """
+        self.contains_file = True
         self.file = file
         self.lbl_no_pdf.set_icon()
 
     def remove_pdf(self):
         """ Remove the PDF """
+        self.contains_file = False
         self.file = None
         self.lbl_no_pdf.set_text()
 
     def clear_form(self):
         """ Clear all the widget element """
-        self.lbl_no_pdf.set_text()
         self.contains_file = False
+        self.lbl_no_pdf.set_text()
 
 
 class PDFLabel(QLabel):
