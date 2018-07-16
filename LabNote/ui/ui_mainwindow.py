@@ -149,6 +149,9 @@ class Ui_MainWindow(object):
         self.act_about_qt.setObjectName("act_about_qt")
         self.act_mb_new = QtWidgets.QAction(MainWindow)
         self.act_mb_new.setObjectName("act_mb_new")
+        self.act_delete_experiment = QtWidgets.QAction(MainWindow)
+        self.act_delete_experiment.setEnabled(False)
+        self.act_delete_experiment.setObjectName("act_delete_experiment")
         self.experiment_toolbar.addAction(self.act_project)
         self.experiment_toolbar.addAction(self.act_new)
         self.experiment_toolbar.addAction(self.act_duplicate)
@@ -158,6 +161,7 @@ class Ui_MainWindow(object):
         self.data_toolbar.addAction(self.act_dataset)
         self.search_toolbar.addAction(self.act_samples)
         self.menuFile.addAction(self.act_mb_new)
+        self.menuFile.addAction(self.act_delete_experiment)
         self.menuFile.addSeparator()
         self.menuFile.addAction(self.act_save)
         self.menuData.addAction(self.act_mb_protocol)
@@ -206,4 +210,5 @@ class Ui_MainWindow(object):
         self.act_about_qt.setText(_translate("MainWindow", "About Qt"))
         self.act_mb_new.setText(_translate("MainWindow", "New experiment"))
         self.act_mb_new.setShortcut(_translate("MainWindow", "Ctrl+N"))
+        self.act_delete_experiment.setText(_translate("MainWindow", "Delete experiment"))
 

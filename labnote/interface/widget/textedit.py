@@ -275,7 +275,6 @@ class CompleterTextEdit(TextEdit):
                 elif prefix == 'reference':
                     reference_list.add(value)
                 elif prefix == 'dataset':
-                    print(value)
                     dataset_list.add(value)
                 elif prefix == 'protocol':
                     protocol_list.add(value)

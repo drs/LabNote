@@ -706,7 +706,7 @@ def delete_experiment(nb_uuid, exp_uuid):
         cursor.execute(database.SELECT_EXPERIMENT_TAG, {'exp_uuid': data.uuid_bytes(exp_uuid)})
         tag_ids = cursor.fetchall()
 
-        cursor.execute(database.DELETE_EXPERIMENT, {'prt_uuid': data.uuid_bytes(exp_uuid)})
+        cursor.execute(database.DELETE_EXPERIMENT, {'exp_uuid': data.uuid_bytes(exp_uuid)})
 
         if tag_ids:
             try:

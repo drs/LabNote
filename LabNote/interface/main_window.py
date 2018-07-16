@@ -10,7 +10,7 @@ import uuid
 from PyQt5.QtWidgets import QMainWindow, QWidget, QMessageBox, QAction, QSizePolicy, QMenu, QLabel, QVBoxLayout, \
     QListWidgetItem
 from PyQt5.QtGui import QIcon, QFont, QStandardItem
-from PyQt5.QtCore import Qt, QSettings, QByteArray, pyqtSignal, QItemSelectionModel
+from PyQt5.QtCore import Qt, QSettings, QByteArray, pyqtSignal, QItemSelectionModel, QEvent
 
 # Project import
 from labnote.ui.ui_mainwindow import Ui_MainWindow
@@ -131,8 +131,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.btn_add_notebook.clicked.connect(self.create_notebook)
         self.view_notebook.selection_changed.connect(self.notebook_selection_change)
         self.act_save.triggered.connect(self.process_experiment)
-        #self.act_new.triggered.connect(self.create_experiment)
-        #self.act_new_experiment.triggered.connect(self.create_experiment)
         self.act_project.triggered.connect(self.open_project)
         self.act_library.triggered.connect(self.open_library)
         self.act_samples.triggered.connect(self.open_sample)
@@ -145,6 +143,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.act_new.triggered.connect(self.start_creating_experiment)
         self.act_mb_new.triggered.connect(self.start_creating_experiment)
         self.lst_entry.itemSelectionChanged.connect(self.experiment_selection_change)
+        self.act_delete_experiment.triggered.connect(self.delete_experiment)
 
     """
     General functions
@@ -296,6 +295,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         It activate the buttons depending on the active item or show the experiment.
         """
 
+        self.act_delete_experiment.setEnabled(False)
         self.creating_experiment = False
         self.current_notebook = None
         self.current_experiment = None
@@ -519,6 +519,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
     def experiment_selection_change(self):
         if self.lst_entry.currentItem().data(Qt.UserRole):
             self.current_experiment = self.lst_entry.currentItem().data(Qt.UserRole)
+            self.act_delete_experiment.setEnabled(True)
             self.show_experiment_details()
 
     def done_modifing_protocol(self, exp_uuid):
@@ -618,6 +619,24 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         body = protocol['body']
         if body:
             self.editor.txt_body.setHtml(body)
+
+    def delete_experiment(self):
+        """ Delete an experiment """
+        try:
+            fsentry.delete_experiment(self.current_notebook, self.current_experiment)
+        except sqlite3.Error as exception:
+            message = QMessageBox(QMessageBox.Warning, "Unable to delete experiment",
+                                  "An error occurred while deleting the experiment.", QMessageBox.Ok)
+            message.setWindowTitle("LabNote")
+            message.setDetailedText(str(exception))
+            message.exec()
+            return
+
+        self.lst_entry.blockSignals(True)
+        self.current_experiment = None
+        self.clear_form()
+        self.show_experiment_list()
+        self.lst_entry.blockSignals(False)
 
 
 class ProjectNotebookTreeView(TreeView):

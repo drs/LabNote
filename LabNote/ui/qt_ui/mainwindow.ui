@@ -307,6 +307,7 @@
      <string>File</string>
     </property>
     <addaction name="act_mb_new"/>
+    <addaction name="act_delete_experiment"/>
     <addaction name="separator"/>
     <addaction name="act_save"/>
    </widget>
@@ -445,6 +446,14 @@
    </property>
    <property name="shortcut">
     <string>Ctrl+N</string>
+   </property>
+  </action>
+  <action name="act_delete_experiment">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Delete experiment</string>
    </property>
   </action>
  </widget>
