@@ -208,6 +208,23 @@ class Library(QDialog, Ui_Library):
         self.category_frame.list_displayed.connect(self.restore_treeview_state)
         self.category_frame.selection_changed.connect(self.selection_change)
 
+        self.txt_key.textChanged.connect(self.set_window_modified)
+        self.txt_author.textChanged.connect(self.set_window_modified)
+        self.txt_title.textChanged.connect(self.set_window_modified)
+        self.txt_year.textChanged.connect(self.set_window_modified)
+        self.txt_chapter.textChanged.connect(self.set_window_modified)
+        self.txt_school.textChanged.connect(self.set_window_modified)
+        self.txt_journal.textChanged.connect(self.set_window_modified)
+        self.txt_editor.textChanged.connect(self.set_window_modified)
+        self.txt_publisher.textChanged.connect(self.set_window_modified)
+        self.txt_place_published.textChanged.connect(self.set_window_modified)
+        self.txt_volume.textChanged.connect(self.set_window_modified)
+        self.txt_issue.textChanged.connect(self.set_window_modified)
+        self.txt_pages.textChanged.connect(self.set_window_modified)
+        self.txt_edition.textChanged.connect(self.set_window_modified)
+        self.txt_description.textChanged.connect(self.set_window_modified)
+        self.txt_abstract.textChanged.connect(self.set_window_modified)
+
     def selection_change(self, index):
         """ Set the current category, subcategory and reference value """
         self.creating_reference = False
@@ -215,6 +232,7 @@ class Library(QDialog, Ui_Library):
         self.current_subcategory = self.category_frame.get_subcategory(index)
 
         self.clear_form()
+        self.setWindowModified(False)
         self.enable_all(False)
         if self.category_frame.is_entry(index):
             self.current_reference = index.data(Qt.UserRole)
@@ -306,6 +324,7 @@ class Library(QDialog, Ui_Library):
 
     def show_reference_details(self):
         """ Show a reference details when it is selected """
+
         try:
             reference = database.select_reference(self.current_reference)
         except sqlite3.Error as exception:
@@ -324,7 +343,7 @@ class Library(QDialog, Ui_Library):
         self.txt_title.setText(data.receive_string(reference['title']))
         self.txt_year.setText(data.receive_string(reference['year']))
         self.txt_chapter.setText(data.receive_string(reference['chapter']))
-        self.txt_chapter.setText(data.receive_string(reference['school']))
+        self.txt_school.setText(data.receive_string(reference['school']))
         self.txt_journal.setText(data.receive_string(reference['journal']))
         self.txt_editor.setText(data.receive_string(reference['editor']))
         self.txt_publisher.setText(data.receive_string(reference['publisher']))
@@ -350,6 +369,8 @@ class Library(QDialog, Ui_Library):
         if reference['file']:
             file = os.path.join(directory.REFERENCES_DIRECTORY_PATH + "/{}.pdf".format(reference['uuid']))
             self.pdf_widget.show_pdf(file=file)
+
+        self.setWindowModified(False)
 
     def start_creating_reference(self):
         """ Enable new reference creation """
@@ -385,12 +406,16 @@ class Library(QDialog, Ui_Library):
             return
         self.category_frame.show_list()
 
+    def set_window_modified(self):
+        self.setWindowModified(True)
+
     def enable_all(self, enable):
         """ Disable all items in the layout
 
         :param enable: Enable state
         :type enable: bool
         """
+        self.btn_save.setEnabled(enable)
         layout.disable_layout(self.layout_form, enable)
         self.pdf_widget.setEnabled(enable)
 
@@ -400,12 +425,7 @@ class Library(QDialog, Ui_Library):
         key = self.txt_key.text()
 
         if key:
-            # Get the current item data
-            index = self.category_frame.view_tree.selectionModel().currentIndex()
-            category_id = self.category_frame.get_category(index)
-            subcategory_id = self.category_frame.get_subcategory(index)
-
-            if category_id:
+            if self.current_category:
                 ref_type = self.comboBox.currentText()
                 anchor = self.txt_description.anchors()
 
@@ -430,26 +450,30 @@ class Library(QDialog, Ui_Library):
                     try:
                         if ref_type == "Article":
                             database.insert_ref(ref_uuid=ref_uuid, ref_key=key, ref_type=TYPE_ARTICLE,
-                                                category_id=category_id, subcategory_id=subcategory_id, author=author,
+                                                category_id=self.current_category,
+                                                subcategory_id=self.current_subcategory, author=author,
                                                 title=title, journal=journal, year=year, volume=volume, issue=issue,
                                                 pages=pages, description=description, abstract=abstract,
                                                 tag_list=anchor['tag'])
                         elif ref_type == "Book":
-                            database.insert_ref(ref_uuid=ref_uuid, ref_key=key, category_id=category_id,
-                                                subcategory_id=subcategory_id, author=author, title=title, year=year,
+                            database.insert_ref(ref_uuid=ref_uuid, ref_key=key, category_id=self.current_category,
+                                                subcategory_id=self.current_subcategory,
+                                                author=author, title=title, year=year,
                                                 publisher=publisher, address=place, volume=volume, pages=pages,
                                                 edition=edition, description=description, abstract=abstract,
                                                 ref_type=TYPE_BOOK, tag_list=anchor['tag'])
                         elif ref_type == "Chapter":
-                            database.insert_ref(ref_uuid=ref_uuid, ref_key=key, category_id=category_id,
-                                                subcategory_id=subcategory_id, author=author, title=title, year=year,
+                            database.insert_ref(ref_uuid=ref_uuid, ref_key=key, category_id=self.current_category,
+                                                subcategory_id=self.current_subcategory,
+                                                author=author, title=title, year=year,
                                                 publisher=publisher, address=place, volume=volume, pages=pages,
                                                 edition=edition, description=description, abstract=abstract,
                                                 chapter=chapter, editor=editor, ref_type=TYPE_CHAPTER,
                                                 tag_list=anchor['tag'])
                         elif ref_type == "Thesis":
-                            database.insert_ref(ref_uuid=ref_uuid, ref_key=key, category_id=category_id,
-                                                subcategory_id=subcategory_id, author=author, title=title, year=year,
+                            database.insert_ref(ref_uuid=ref_uuid, ref_key=key, category_id=self.current_category,
+                                                subcategory_id=self.current_subcategory,
+                                                author=author, title=title, year=year,
                                                 address=place, description=description,
                                                 abstract=abstract, school=school,
                                                 ref_type=TYPE_THESIS, tag_list=anchor['tag'])
@@ -483,65 +507,66 @@ class Library(QDialog, Ui_Library):
                             message.exec()
                             return
                 else:
-                    ref_uuid = data.uuid_bytes(self.category_frame.get_user_data())
-                    try:
-                        if ref_type == "Article":
-                            database.update_ref(ref_uuid=ref_uuid, ref_key=key, ref_type=TYPE_ARTICLE, author=author,
-                                                title=title, journal=journal, year=year, volume=volume, issue=issue,
-                                                pages=pages, description=description, abstract=abstract,
-                                                tag_list=anchor['tag'])
-                        elif ref_type == "Book":
-                            database.update_ref(ref_uuid=ref_uuid, ref_key=key, author=author, title=title, year=year,
-                                                publisher=publisher, address=place, volume=volume, pages=pages,
-                                                edition=edition, description=description, abstract=abstract,
-                                                ref_type=TYPE_BOOK, tag_list=anchor['tag'])
-                        elif ref_type == "Chapter":
-                            database.update_ref(ref_uuid=ref_uuid, ref_key=key, author=author, title=title, year=year,
-                                                publisher=publisher, address=place, volume=volume, pages=pages,
-                                                edition=edition, description=description, abstract=abstract,
-                                                chapter=chapter, editor=editor, ref_type=TYPE_CHAPTER,
-                                                tag_list=anchor['tag'])
-                        elif ref_type == "Thesis":
-                            database.update_ref(ref_uuid=ref_uuid, ref_key=key, author=author, title=title, year=year,
-                                                address=place, description=description, abstract=abstract,
-                                                school=school, ref_type=TYPE_CHAPTER, tag_list=anchor['tag'])
+                    if self.current_reference:
+                        ref_uuid = data.uuid_bytes(self.current_reference)
+                        try:
+                            if ref_type == "Article":
+                                database.update_ref(ref_uuid=ref_uuid, ref_key=key, ref_type=TYPE_ARTICLE, author=author,
+                                                    title=title, journal=journal, year=year, volume=volume, issue=issue,
+                                                    pages=pages, description=description, abstract=abstract,
+                                                    tag_list=anchor['tag'])
+                            elif ref_type == "Book":
+                                database.update_ref(ref_uuid=ref_uuid, ref_key=key, author=author, title=title, year=year,
+                                                    publisher=publisher, address=place, volume=volume, pages=pages,
+                                                    edition=edition, description=description, abstract=abstract,
+                                                    ref_type=TYPE_BOOK, tag_list=anchor['tag'])
+                            elif ref_type == "Chapter":
+                                database.update_ref(ref_uuid=ref_uuid, ref_key=key, author=author, title=title, year=year,
+                                                    publisher=publisher, address=place, volume=volume, pages=pages,
+                                                    edition=edition, description=description, abstract=abstract,
+                                                    chapter=chapter, editor=editor, ref_type=TYPE_CHAPTER,
+                                                    tag_list=anchor['tag'])
+                            elif ref_type == "Thesis":
+                                database.update_ref(ref_uuid=ref_uuid, ref_key=key, author=author, title=title, year=year,
+                                                    address=place, description=description, abstract=abstract,
+                                                    school=school, ref_type=TYPE_CHAPTER, tag_list=anchor['tag'])
 
-                        self.done_modifing_reference(ref_uuid=ref_uuid)
-                    except sqlite3.Error as exception:
-                        error_code = sqlite_error.sqlite_err_handler(str(exception))
+                            self.done_modifing_reference(ref_uuid=ref_uuid)
+                        except sqlite3.Error as exception:
+                            error_code = sqlite_error.sqlite_err_handler(str(exception))
 
-                        if error_code == sqlite_error.NOT_NULL_CODE:
-                            message = QMessageBox()
-                            message.setWindowTitle("LabNote")
-                            message.setText("Unable to update reference")
-                            message.setInformativeText("The reference key must not be empty.")
-                            message.setIcon(QMessageBox.Information)
-                            message.setStandardButtons(QMessageBox.Ok)
-                            message.exec()
-                            return
-                        elif error_code == sqlite_error.UNIQUE_CODE:
-                            message = QMessageBox()
-                            message.setWindowTitle("LabNote")
-                            message.setText("Unable to update reference")
-                            message.setInformativeText("The reference key must be unique.")
-                            message.setIcon(QMessageBox.Information)
-                            message.setStandardButtons(QMessageBox.Ok)
-                            message.exec()
-                            return
-                        else:
-                            message = QMessageBox(QMessageBox.Warning, "Unable to update reference",
-                                                  "An error occurred while updating the reference.", QMessageBox.Ok)
-                            message.setWindowTitle("LabNote")
-                            message.setDetailedText(str(exception))
-                            message.exec()
-                            return
+                            if error_code == sqlite_error.NOT_NULL_CODE:
+                                message = QMessageBox()
+                                message.setWindowTitle("LabNote")
+                                message.setText("Unable to update reference")
+                                message.setInformativeText("The reference key must not be empty.")
+                                message.setIcon(QMessageBox.Information)
+                                message.setStandardButtons(QMessageBox.Ok)
+                                message.exec()
+                                return
+                            elif error_code == sqlite_error.UNIQUE_CODE:
+                                message = QMessageBox()
+                                message.setWindowTitle("LabNote")
+                                message.setText("Unable to update reference")
+                                message.setInformativeText("The reference key must be unique.")
+                                message.setIcon(QMessageBox.Information)
+                                message.setStandardButtons(QMessageBox.Ok)
+                                message.exec()
+                                return
+                            else:
+                                message = QMessageBox(QMessageBox.Warning, "Unable to update reference",
+                                                      "An error occurred while updating the reference.", QMessageBox.Ok)
+                                message.setWindowTitle("LabNote")
+                                message.setDetailedText(str(exception))
+                                message.exec()
+                                return
 
     def done_modifing_reference(self, ref_uuid):
         """ Active the interface element after the reference is saved """
         self.category_frame.show_list()
 
         model = self.category_frame.view_tree.model()
-        match = model.match(model.index(0, 0), Qt.UserRole, ref_uuid, 1, Qt.MatchRecursive)
+        match = model.match(model.index(0, 0), Qt.UserRole, data.uuid_string(ref_uuid), 1, Qt.MatchRecursive)
         if match:
             self.category_frame.view_tree.selectionModel().setCurrentIndex(match[0],
                                                                            QItemSelectionModel.ClearAndSelect)
