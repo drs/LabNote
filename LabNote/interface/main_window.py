@@ -383,7 +383,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         layout.empty_layout(self, self.layout_experiment)
 
         try:
-            key_list = database.select_experiment_key_notebook(self.view_notebook.get_user_data())
+            key_list = database.select_experiment_key_notebook(data.uuid_bytes(self.current_notebook))
         except sqlite3.Error as exception:
             message = QMessageBox()
             message.setWindowTitle("LabNote")

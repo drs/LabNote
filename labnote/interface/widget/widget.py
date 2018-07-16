@@ -1429,6 +1429,10 @@ class ExperimentTextEditor(TextEditor):
         super(ExperimentTextEditor, self).__init__(common.TYPE_EXPERIMENT, tag_list=tag_list,
                                                    reference_list=reference_list,
                                                    dataset_list=dataset_list, protocol_list=protocol_list)
-        self.txt_key.setCompleter(QCompleter(key_list))
+
+        completer = QCompleter(key_list)
+        self.txt_key.setCompleter(completer)
+
+        # Remove the save button
         self.btn_save.deleteLater()
         sip.delete(self.save_layout)
