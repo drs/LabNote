@@ -126,3 +126,33 @@ def add_image_experiment(nb_uuid, exp_uuid, path, extention):
     shutil.copy2(path, image_path)
     return image_path
 
+
+def dataset_r_file(nb_uuid, dt_uuid):
+    """ Return the dataset r file path
+
+    :param dt_uuid: Dataset uuid
+    :type dt_uuid: str
+    :return: Path r file
+    """
+    return os.path.join(directory.dataset_path(nb_uuid=nb_uuid, dt_uuid=dt_uuid) + "/{}.R".format(dt_uuid))
+
+
+def dataset_r_notebook_file(nb_uuid, dt_uuid):
+    """ Return the dataset r file path
+
+    :param dt_uuid: Dataset uuid
+    :type dt_uuid: str
+    :return: Path r file
+    """
+    return os.path.join(directory.dataset_path(nb_uuid=nb_uuid, dt_uuid=dt_uuid) + "/{}.Rmd".format(dt_uuid))
+
+
+def dataset_python_file(nb_uuid, dt_uuid):
+    """ Return the dataset python file path
+
+    :param dt_uuid: Dataset uuid
+    :type dt_uuid: str
+    :return: Path python file
+    """
+    return os.path.join(directory.dataset_path(nb_uuid=nb_uuid, dt_uuid=dt_uuid) + "/{}.py".format(dt_uuid))
+

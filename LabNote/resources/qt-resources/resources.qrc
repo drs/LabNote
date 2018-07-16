@@ -59,5 +59,6 @@
         <file>icons/dataset/r_run.png</file>
         <file>icons/dataset/r.png</file>
         <file>icons/dataset/excel.png</file>
+        <file>icons/dataset/rmd.png</file>
     </qresource>
 </RCC>

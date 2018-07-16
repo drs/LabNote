@@ -15,7 +15,7 @@ from PyQt5.QtGui import QIcon, QStandardItem, QFont
 # Project import
 from labnote.ui.ui_dataset import Ui_Dataset
 from labnote.core import stylesheet
-from labnote.utils import database, fsentry, files, layout
+from labnote.utils import database, fsentry, files, layout, directory
 from labnote.interface.widget.lineedit import SearchLineEdit
 from labnote.interface.dialog import dataset
 from labnote.interface.widget.model import StandardItemModel
@@ -106,6 +106,12 @@ class Dataset(QDialog, Ui_Dataset):
         self.btn_r_run.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
         self.btn_r_run.setEnabled(False)
 
+        # Setup rmd button
+        self.btn_rmd.setText("R Notebook")
+        self.btn_rmd.setIcon(QIcon(":/Icon/Dataset/icons/dataset/rmd.png"))
+        self.btn_rmd.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
+        self.btn_rmd.setEnabled(False)
+
         # Setup python button
         self.btn_python.setText("Python")
         self.btn_python.setIcon(QIcon(":/Icon/Dataset/icons/dataset/python.png"))
@@ -140,6 +146,107 @@ class Dataset(QDialog, Ui_Dataset):
         self.view_dataset.expanded.connect(self.save_treeview_state)
         self.btn_import.clicked.connect(self.import_dataset)
         self.btn_open.clicked.connect(self.open_dataset)
+        self.btn_r.clicked.connect(self.open_r_file)
+        self.btn_r_run.clicked.connect(self.run_r_file)
+        self.btn_rmd.clicked.connect(self.r_notebook)
+        self.btn_python.clicked.connect(self.open_python_file)
+        self.btn_python_run.clicked.connect(self.run_python_file)
+
+    def open_r_file(self):
+        """ Open R file """
+        index = self.view_dataset.selectionModel().currentIndex()
+        dt_uuid = index.data(Qt.UserRole)
+        nb_uuid = self.get_notebook(index)
+
+        if not os.path.isfile(files.dataset_r_file(nb_uuid=nb_uuid, dt_uuid=dt_uuid)):
+            try:
+                with open(files.dataset_r_file(nb_uuid=nb_uuid, dt_uuid=dt_uuid), 'w') as file:
+                    file.write("library(readxl)\n\n"
+                               "setwd(\"{}\")\n"
+                               "file <- \"{}.xlsx\"\n".format(directory.dataset_path(nb_uuid=nb_uuid, dt_uuid=dt_uuid),
+                                                          dt_uuid))
+            except OSError as exception:
+                message = QMessageBox(QMessageBox.Warning, "Error while creating R file",
+                                      "An unhandled error occurred while creating the R file.", QMessageBox.Ok)
+                message.setWindowTitle("LabNote")
+                message.setDetailedText(str(exception))
+                message.exec()
+                return
+
+        subprocess.check_call(['open', '-a', 'RStudio', files.dataset_r_file(nb_uuid=nb_uuid, dt_uuid=dt_uuid)])
+
+    def run_r_file(self):
+        """ Run R file """
+        index = self.view_dataset.selectionModel().currentIndex()
+        dt_uuid = index.data(Qt.UserRole)
+        nb_uuid = self.get_notebook(index)
+
+        if os.path.isfile(files.dataset_r_file(nb_uuid=nb_uuid, dt_uuid=dt_uuid)):
+            os.system("Rscript {}".format(files.dataset_r_file(nb_uuid=nb_uuid, dt_uuid=dt_uuid)))
+
+    def r_notebook(self):
+        """ Run R notebook """
+        index = self.view_dataset.selectionModel().currentIndex()
+        dt_uuid = index.data(Qt.UserRole)
+        nb_uuid = self.get_notebook(index)
+
+        if not os.path.isfile(files.dataset_r_notebook_file(nb_uuid=nb_uuid, dt_uuid=dt_uuid)):
+            try:
+                with open(files.dataset_r_notebook_file(nb_uuid=nb_uuid, dt_uuid=dt_uuid), 'w') as file:
+                    file.write(
+                        "---\n"
+                        "title: R Notebook\n"
+                        "output: html_notebook\n"
+                        "---\n"
+                        "\n"
+                        "\n"
+                        "```{{r, include=FALSE}}\n"
+                        "library(readxl)\n\n"
+                        "setwd(\"{}\")\n"
+                        "file <- \"{}.xlsx\"\n"
+                        "```\n".format(directory.dataset_path(nb_uuid=nb_uuid, dt_uuid=dt_uuid),
+                                       dt_uuid))
+            except OSError as exception:
+                message = QMessageBox(QMessageBox.Warning, "Error while creating R notebook file",
+                                      "An unhandled error occurred while creating the R notebook file.", QMessageBox.Ok)
+                message.setWindowTitle("LabNote")
+                message.setDetailedText(str(exception))
+                message.exec()
+                return
+
+        subprocess.check_call(['open', '-a', 'RStudio', files.dataset_r_notebook_file(nb_uuid=nb_uuid, dt_uuid=dt_uuid)])
+
+
+    def open_python_file(self):
+        """ Open python file """
+        index = self.view_dataset.selectionModel().currentIndex()
+        dt_uuid = index.data(Qt.UserRole)
+        nb_uuid = self.get_notebook(index)
+
+        if not os.path.isfile(files.dataset_python_file(nb_uuid=nb_uuid, dt_uuid=dt_uuid)):
+            try:
+                with open(files.dataset_python_file(nb_uuid=nb_uuid, dt_uuid=dt_uuid), 'w') as file:
+                    file.write("import xlrd\n\n"
+                               "book = xlrd.open_workbook('{}')"
+                               .format(files.dataset_excel_file(nb_uuid=nb_uuid, dt_uuid=dt_uuid)))
+            except OSError as exception:
+                message = QMessageBox(QMessageBox.Warning, "Error while creating Python file",
+                                      "An unhandled error occurred while creating the Python file.", QMessageBox.Ok)
+                message.setWindowTitle("LabNote")
+                message.setDetailedText(str(exception))
+                message.exec()
+                return
+
+        subprocess.check_call(['open', '-a', 'Aquamacs', files.dataset_python_file(nb_uuid=nb_uuid, dt_uuid=dt_uuid)])
+
+    def run_python_file(self):
+        """ Run R file """
+        index = self.view_dataset.selectionModel().currentIndex()
+        dt_uuid = index.data(Qt.UserRole)
+        nb_uuid = self.get_notebook(index)
+
+        if os.path.isfile(files.dataset_python_file(nb_uuid=nb_uuid, dt_uuid=dt_uuid)):
+            os.system("python3 {}".format(files.dataset_python_file(nb_uuid=nb_uuid, dt_uuid=dt_uuid)))
 
     def show_selected_dataset(self, dt_uuid):
         """ Show the dataset with the given uuid
@@ -285,6 +392,7 @@ class Dataset(QDialog, Ui_Dataset):
             self.btn_open.setEnabled(False)
             self.btn_r.setEnabled(False)
             self.btn_r_run.setEnabled(False)
+            self.btn_rmd.setEnabled(False)
             self.btn_python.setEnabled(False)
             self.btn_python_run.setEnabled(False)
             self.layout_entry.addWidget(NoEntryWidget(), Qt.AlignHCenter, Qt.AlignCenter)
@@ -298,6 +406,7 @@ class Dataset(QDialog, Ui_Dataset):
                 self.btn_open.setEnabled(False)
                 self.btn_r.setEnabled(False)
                 self.btn_r_run.setEnabled(False)
+                self.btn_rmd.setEnabled(False)
                 self.btn_python.setEnabled(False)
                 self.btn_python_run.setEnabled(False)
             else:
@@ -305,6 +414,7 @@ class Dataset(QDialog, Ui_Dataset):
                 self.btn_open.setEnabled(True)
                 self.btn_r.setEnabled(True)
                 self.btn_r_run.setEnabled(True)
+                self.btn_rmd.setEnabled(True)
                 self.btn_python.setEnabled(True)
                 self.btn_python_run.setEnabled(True)
 
