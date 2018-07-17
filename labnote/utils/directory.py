@@ -6,6 +6,9 @@ DEFAULT_MAIN_DIRECTORY_PATH = os.path.expanduser("~/Documents/LabNote")
 NOTEBOOK_DIRECTORY_PATH = os.path.join(DEFAULT_MAIN_DIRECTORY_PATH + "/Notebook")
 REFERENCES_DIRECTORY_PATH = os.path.join(DEFAULT_MAIN_DIRECTORY_PATH + "/References")
 PROTOCOL_DIRECTORY_PATH = os.path.join(DEFAULT_MAIN_DIRECTORY_PATH + "/Protocols")
+LIBRARY_DIRECTORY_PATH = os.path.join(DEFAULT_MAIN_DIRECTORY_PATH + "/Library")
+PYTHON_LIBRARY_DIRECTORY_PATH = os.path.join(LIBRARY_DIRECTORY_PATH + "/python")
+R_LIBRARY_DIRECTORY_PATH = os.path.join(LIBRARY_DIRECTORY_PATH + "/R")
 
 
 def notebook_path(nb_uuid):

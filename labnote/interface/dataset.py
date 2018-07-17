@@ -34,6 +34,33 @@ LEVEL_PROJECT = 101
 LEVEL_NOTEBOOK = 102
 LEVEL_DATASET = 103
 
+# File text
+R_TEXT = "library(readxl)\n\n"\
+         "# Comment out the following line to import LabNote R Library functions\n"\
+         "#.libPaths('{}')\n\n"\
+         "setwd(\"{}\")\n" \
+         "file <- \"{}.xlsx\"\n"
+
+R_NOTEBOOK_TEXT = "---\n"\
+                  "title: R Notebook\n"\
+                  "output: html_notebook\n"\
+                  "---\n"\
+                  "\n"\
+                  "\n"\
+                  "```{{r, include=FALSE}}\n"\
+                  "library(readxl)\n\n"\
+                  "# Comment out the following line to import LabNote R Library functions\n"\
+                  "#.libPaths('{}')\n\n"\
+                  "setwd(\"{}\")\n"\
+                  "file <- \"{}.xlsx\"\n"\
+                  "```\n"
+
+PYTHON_TEXT = "import xlrd\n"\
+              "import sys\n\n"\
+              "# Comment out the following line to import LabNote Python Library functions\n"\
+              "#sys.path.insert(0, {})\n\n"\
+              "book = xlrd.open_workbook('{}')"
+
 
 class Dataset(QDialog, Ui_Dataset):
     """ Class responsible of diplaying the dataset window interface """
@@ -176,10 +203,8 @@ class Dataset(QDialog, Ui_Dataset):
         if not os.path.isfile(files.dataset_r_file(nb_uuid=nb_uuid, dt_uuid=dt_uuid)):
             try:
                 with open(files.dataset_r_file(nb_uuid=nb_uuid, dt_uuid=dt_uuid), 'w') as file:
-                    file.write("library(readxl)\n\n"
-                               "setwd(\"{}\")\n"
-                               "file <- \"{}.xlsx\"\n".format(directory.dataset_path(nb_uuid=nb_uuid, dt_uuid=dt_uuid),
-                                                          dt_uuid))
+                    file.write(R_TEXT.format(directory.dataset_path(nb_uuid=nb_uuid, dt_uuid=dt_uuid),
+                                             dt_uuid, directory.R_LIBRARY_DIRECTORY_PATH))
             except OSError as exception:
                 message = QMessageBox(QMessageBox.Warning, "Error while creating R file",
                                       "An unhandled error occurred while creating the R file.", QMessageBox.Ok)
@@ -208,19 +233,8 @@ class Dataset(QDialog, Ui_Dataset):
         if not os.path.isfile(files.dataset_r_notebook_file(nb_uuid=nb_uuid, dt_uuid=dt_uuid)):
             try:
                 with open(files.dataset_r_notebook_file(nb_uuid=nb_uuid, dt_uuid=dt_uuid), 'w') as file:
-                    file.write(
-                        "---\n"
-                        "title: R Notebook\n"
-                        "output: html_notebook\n"
-                        "---\n"
-                        "\n"
-                        "\n"
-                        "```{{r, include=FALSE}}\n"
-                        "library(readxl)\n\n"
-                        "setwd(\"{}\")\n"
-                        "file <- \"{}.xlsx\"\n"
-                        "```\n".format(directory.dataset_path(nb_uuid=nb_uuid, dt_uuid=dt_uuid),
-                                       dt_uuid))
+                    file.write(R_NOTEBOOK_TEXT.format(directory.dataset_path(nb_uuid=nb_uuid, dt_uuid=dt_uuid),
+                                                 dt_uuid, directory.R_LIBRARY_DIRECTORY_PATH))
             except OSError as exception:
                 message = QMessageBox(QMessageBox.Warning, "Error while creating R notebook file",
                                       "An unhandled error occurred while creating the R notebook file.", QMessageBox.Ok)
@@ -241,9 +255,8 @@ class Dataset(QDialog, Ui_Dataset):
         if not os.path.isfile(files.dataset_python_file(nb_uuid=nb_uuid, dt_uuid=dt_uuid)):
             try:
                 with open(files.dataset_python_file(nb_uuid=nb_uuid, dt_uuid=dt_uuid), 'w') as file:
-                    file.write("import xlrd\n\n"
-                               "book = xlrd.open_workbook('{}')"
-                               .format(files.dataset_excel_file(nb_uuid=nb_uuid, dt_uuid=dt_uuid)))
+                    file.write(PYTHON_TEXT.format(files.dataset_excel_file(nb_uuid=nb_uuid, dt_uuid=dt_uuid),
+                                                  directory.PYTHON_LIBRARY_DIRECTORY_PATH))
             except OSError as exception:
                 message = QMessageBox(QMessageBox.Warning, "Error while creating Python file",
                                       "An unhandled error occurred while creating the Python file.", QMessageBox.Ok)
