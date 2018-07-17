@@ -32,7 +32,7 @@ class Category(QDialog, Ui_Category):
 
     def init_ui(self):
         # General properties
-        self.setFixedSize(400, 133)
+        self.setFixedSize(400, 140)
 
         # Set category name validator
         self.txt_name.setValidator(NameValidator())

@@ -206,7 +206,7 @@ class Library(QDialog, Ui_Library):
         self.pdf_deleted.connect(self.pdf_widget.remove_pdf)
         self.category_frame.delete.connect(self.delete_reference)
         self.category_frame.list_displayed.connect(self.restore_treeview_state)
-        self.category_frame.selection_changed.connect(self.selection_change)
+        self.category_frame.view_tree.activated.connect(self.selection_change)
 
         self.txt_key.textChanged.connect(self.set_window_modified)
         self.txt_author.textChanged.connect(self.set_window_modified)
@@ -234,6 +234,7 @@ class Library(QDialog, Ui_Library):
         self.clear_form()
         self.setWindowModified(False)
         self.enable_all(False)
+
         if self.category_frame.is_entry(index):
             self.current_reference = index.data(Qt.UserRole)
             self.show_reference_details()
@@ -320,7 +321,11 @@ class Library(QDialog, Ui_Library):
             message.exec()
             return
 
+        self.current_category = category
+        self.current_subcategory = subcategory
+
         self.category_frame.show_list()
+        self.done_modifing_reference(self.current_reference)
 
     def show_reference_details(self):
         """ Show a reference details when it is selected """

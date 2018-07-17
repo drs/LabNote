@@ -43,6 +43,9 @@ class TreeView(QTreeView):
 
 class DragDropTreeView(QTreeView):
     """ Tree view subclass that handle drag and drop """
+    def __init__(self):
+        super(DragDropTreeView, self).__init__()
+        self.setDragDropMode(QAbstractItemView.InternalMove)
 
     last_index_data = None
 

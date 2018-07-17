@@ -69,7 +69,7 @@ class Protocol(QDialog, Ui_Protocol):
         self.category_frame.list_displayed.connect(self.restore_treeview_state)
         self.category_frame.entry_selected.connect(self.show_protocol_details)
         self.category_frame.btn_add.clicked.connect(self.start_creating_protocol)
-        self.category_frame.selection_changed.connect(self.clear_form)
+        self.category_frame.view_tree.clicked.connect(self.clear_form)
         self.category_frame.delete.connect(self.delete_protocol)
         self.category_frame.view_tree.drop_finished.connect(self.drop_finished)
 
