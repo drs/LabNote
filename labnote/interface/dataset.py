@@ -94,6 +94,12 @@ class Dataset(QDialog, Ui_Dataset):
         self.btn_open.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
         self.btn_open.setEnabled(False)
 
+        # Setup open folder button
+        self.btn_folder.setText("Open folder")
+        self.btn_folder.setIcon(QIcon(":/Icon/Dataset/icons/dataset/folder.png"))
+        self.btn_folder.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
+        self.btn_folder.setEnabled(False)
+
         # Setup R button
         self.btn_r.setText("R Script")
         self.btn_r.setIcon(QIcon(":/Icon/Dataset/icons/dataset/r.png"))
@@ -126,7 +132,7 @@ class Dataset(QDialog, Ui_Dataset):
 
         # Search lineedit
         self.txt_search = SearchLineEdit()
-        self.layout_search.insertWidget(17, self.txt_search)
+        self.layout_search.insertWidget(19, self.txt_search)
 
         # Setup treeview
         self.view_dataset = TreeView()
@@ -151,6 +157,15 @@ class Dataset(QDialog, Ui_Dataset):
         self.btn_rmd.clicked.connect(self.r_notebook)
         self.btn_python.clicked.connect(self.open_python_file)
         self.btn_python_run.clicked.connect(self.run_python_file)
+        self.btn_folder.clicked.connect(self.open_folder)
+
+    def open_folder(self):
+        """ Open the dataset folder """
+        index = self.view_dataset.selectionModel().currentIndex()
+        dt_uuid = index.data(Qt.UserRole)
+        nb_uuid = self.get_notebook(index)
+
+        subprocess.call(["open", "-R", directory.dataset_path(nb_uuid, dt_uuid)])
 
     def open_r_file(self):
         """ Open R file """
@@ -395,6 +410,7 @@ class Dataset(QDialog, Ui_Dataset):
             self.btn_rmd.setEnabled(False)
             self.btn_python.setEnabled(False)
             self.btn_python_run.setEnabled(False)
+            self.btn_folder.setEnabled(False)
             self.layout_entry.addWidget(NoEntryWidget(), Qt.AlignHCenter, Qt.AlignCenter)
             self.contains_file = False
         elif hierarchy_level == 3:
@@ -404,6 +420,7 @@ class Dataset(QDialog, Ui_Dataset):
             self.act_delete_dataset.setEnabled(True)
             self.act_update_dataset.setEnabled(True)
             self.btn_python.setEnabled(True)
+            self.btn_folder.setEnabled(True)
             if os.path.isfile(files.dataset_python_file(nb_uuid=nb_uuid, dt_uuid=dt_uuid)):
                 self.btn_python_run.setEnabled(True)
             else:

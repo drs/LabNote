@@ -60,5 +60,6 @@
         <file>icons/dataset/r.png</file>
         <file>icons/dataset/excel.png</file>
         <file>icons/dataset/rmd.png</file>
+        <file>icons/dataset/folder.png</file>
     </qresource>
 </RCC>
