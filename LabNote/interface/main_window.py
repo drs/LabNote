@@ -610,11 +610,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         created_date = protocol['created']
         if created_date:
-            self.editor.lbl_created.setText(date.utc_to_local(created_date))
+            self.editor.lbl_created.setText("Original : {}".format(date.utc_to_local(created_date)))
 
         updated_date = protocol['updated']
         if updated_date:
-            self.editor.lbl_updated.setText(date.utc_to_local(updated_date))
+            self.editor.lbl_updated.setText("Last update : {}".format(date.utc_to_local(updated_date)))
 
         body = protocol['body']
         if body:

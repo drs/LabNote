@@ -23,4 +23,4 @@ def utc_to_local(date, format='%Y-%m-%d %H:%M:%S'):
 
     local = utc.astimezone(local_tz)
 
-    return datetime.strftime(local, '%Y-%m-%d %H:%M')
+    return datetime.strftime(local, '%e %B, %Y %H:%M')
