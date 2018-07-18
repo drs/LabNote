@@ -1339,7 +1339,7 @@ class TextEditor(QWidget, Ui_TextEditor):
         :type action: QAction
         """
         if action == self.act_gray_text:
-            text_color = QColor(196, 196, 196)
+            text_color = QColor(117, 117, 117)
         elif action == self.act_red_text:
             text_color = QColor(150, 16, 16)
         elif action == self.act_orange_text:
