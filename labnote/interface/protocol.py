@@ -3,17 +3,20 @@
 # Python import
 import sqlite3
 import uuid
+import os
 
 # PyQt import
-from PyQt5.QtWidgets import QDialog, QMessageBox
-from PyQt5.QtCore import QSettings, Qt, QItemSelectionModel, pyqtSignal
+from PyQt5.QtWidgets import QDialog, QMessageBox, QFileDialog
+from PyQt5.QtCore import QSettings, Qt, QItemSelectionModel, pyqtSignal, QDir
+from PyQt5.QtGui import QIcon, QTextDocument
+from PyQt5.QtPrintSupport import QPrinter
 
 # Project import
 from labnote.ui.ui_protocol import Ui_Protocol
 from labnote.interface.widget.lineedit import SearchLineEdit
 from labnote.interface.widget.widget import CategoryFrame, ProtocolTextEditor, NoEntryWidget
 from labnote.core import stylesheet, common, data, sqlite_error
-from labnote.utils import database, layout, fsentry, date
+from labnote.utils import database, layout, fsentry, date, pdftools
 from labnote.interface.library import Library
 
 
@@ -56,6 +59,12 @@ class Protocol(QDialog, Ui_Protocol):
         self.txt_search = SearchLineEdit()
         self.layout_search.insertWidget(2, self.txt_search)
 
+        # Setup export button
+        self.btn_export.setText("Share")
+        self.btn_export.setIcon(QIcon(":/Icons/MainWindow/icons/main-window/share.png"))
+        self.btn_export.setToolButtonStyle(Qt.ToolButtonTextUnderIcon)
+        self.btn_export.setEnabled(False)
+
         # Set stylesheet
         stylesheet.set_style_sheet(self, ":/StyleSheet/style-sheet/protocol.qss")
 
@@ -69,9 +78,45 @@ class Protocol(QDialog, Ui_Protocol):
         self.category_frame.list_displayed.connect(self.restore_treeview_state)
         self.category_frame.entry_selected.connect(self.show_protocol_details)
         self.category_frame.btn_add.clicked.connect(self.start_creating_protocol)
-        self.category_frame.view_tree.clicked.connect(self.clear_form)
         self.category_frame.delete.connect(self.delete_protocol)
         self.category_frame.view_tree.drop_finished.connect(self.drop_finished)
+        self.btn_export.clicked.connect(self.share)
+        self.category_frame.view_tree.clicked.connect(self.selection_change)
+
+    def share(self):
+        """ Share the protocol """
+
+        dialog = QFileDialog()
+        key = self.editor.txt_key.text()
+        default_filename = QDir().cleanPath(QDir().homePath() + QDir().separator() + "{}".format(key))
+        filename = dialog.getSaveFileName(self, "Export Protocol PDF", default_filename, "PDF Files (*.pdf)")
+
+        if filename[0]:
+            title = self.editor.txt_title.toPlainText()
+            date = self.editor.lbl_created.text()
+            update = data.prepare_string(self.editor.lbl_updated.text())
+            body = self.editor.txt_body.toHtml()
+
+            html = pdftools.prepare_html_pdf(title=title, key=key, date=date, update=update, body=body)
+
+            printer = QPrinter(QPrinter.HighResolution)
+            printer.setOutputFormat(QPrinter.PdfFormat)
+            printer.setOutputFileName(filename[0])
+            document = QTextDocument()
+            document.setHtml(html)
+            document.print(printer)
+
+            os.system("open {}".format(filename[0]))
+
+    def selection_change(self, index):
+        """ Handle selection change in the category frame """
+        self.clear_form()
+
+        if self.category_frame.is_category(index) or self.category_frame.is_subcategory(index):
+            self.btn_export.setEnabled(False)
+        else:
+            self.show_protocol_details(index.data(Qt.UserRole))
+            self.btn_export.setEnabled(True)
 
     def show_protocol(self, prt_uuid):
         """ Show the protocol with the given uuid

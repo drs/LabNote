@@ -697,9 +697,9 @@ class TextEditor(QWidget, Ui_TextEditor):
         self.act_subsection = QAction("Subsection", self)
         self.act_subsection.setFont(QFont(self.font().family(), 14, 75))
         self.act_subsubsection = QAction("Subsubsection", self)
-        self.act_subsubsection.setFont(QFont(self.font().family(), 13, 75))
+        self.act_subsubsection.setFont(QFont(self.font().family(), 12, 75))
         self.act_body = QAction("Body", self)
-        self.act_body.setFont(QFont(self.font().family(), 13, 50))
+        self.act_body.setFont(QFont(self.font().family(), 12, 50))
         self.act_note = QAction("Note", self)
         self.act_note.setFont(QFont(self.font().family(), 11, 50))
 

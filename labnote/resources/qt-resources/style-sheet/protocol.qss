@@ -9,3 +9,20 @@ QFrame#frame {
     border-right: none;
     background-color: rgb(236, 236, 236)
 }
+
+/*
+Tool button
+*/
+
+QToolButton {
+    text-align:left;
+    background-color: none;
+    border: none;
+    color: black;
+    image-position: left;
+}
+
+QToolButton:pressed {
+    background-color: none;
+    border: none;
+}
