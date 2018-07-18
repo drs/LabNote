@@ -206,7 +206,7 @@ class Library(QDialog, Ui_Library):
         self.pdf_deleted.connect(self.pdf_widget.remove_pdf)
         self.category_frame.delete.connect(self.delete_reference)
         self.category_frame.list_displayed.connect(self.restore_treeview_state)
-        self.category_frame.view_tree.activated.connect(self.selection_change)
+        self.category_frame.view_tree.clicked.connect(self.selection_change)
 
         self.txt_key.textChanged.connect(self.set_window_modified)
         self.txt_author.textChanged.connect(self.set_window_modified)
@@ -252,6 +252,7 @@ class Library(QDialog, Ui_Library):
         if match:
             self.category_frame.view_tree.selectionModel().setCurrentIndex(match[0],
                                                                            QItemSelectionModel.ClearAndSelect)
+            self.selection_change(match[0])
             self.category_frame.view_tree.repaint()
 
     def get_tag_list(self):
