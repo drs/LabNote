@@ -37,9 +37,9 @@ def prepare_html_pdf(title, key, date, update, body):
     table.mergeCells(1, 0, 1, 2)
     cursor.insertText("Document : {}".format(key))
     cursor.movePosition(cursor.NextCell)
-    cursor.insertText("Created : {}".format(format_datetime(date)))
+    cursor.insertText("Created : {}".format(date))
     if update:
-        cursor.insertText("\nLast update : {}".format(format_datetime(update)))
+        cursor.insertText("\nLast update : {}".format(update))
     cursor.movePosition(cursor.NextCell)
     cursor.insertText("Author : Samuel Drouin - Lallemand Animal Nutrition")
 
@@ -50,9 +50,3 @@ def prepare_html_pdf(title, key, date, update, body):
     cursor.insertHtml(body)
 
     return cursor.document().toHtml()
-
-
-def format_datetime(dt):
-    """ Format datetime """
-    date = datetime.strptime(dt, '%Y-%m-%d %H:%M')
-    return date.strftime('%B %e, %Y')
