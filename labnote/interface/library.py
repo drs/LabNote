@@ -436,7 +436,7 @@ class Library(QDialog, Ui_Library):
                 anchor = self.txt_description.anchors()
 
                 author = data.prepare_string(self.txt_author.text())
-                title = data.prepare_string(self.txt_title.text())
+                title = data.prepare_string(self.txt_title.text()).replace('\r', ' ')
                 year = data.prepare_string_number(self.txt_year.text())
                 chapter = data.prepare_string(self.txt_chapter.text())
                 school = data.prepare_string(self.txt_school.text())
