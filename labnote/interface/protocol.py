@@ -149,14 +149,8 @@ class Protocol(QDialog, Ui_Protocol):
 
         self.category_frame.show_list()
 
-    def show_reference(self, ref_key):
-        try:
-            ref_uuid = database.select_reference_uuid_key(ref_key)
-        except sqlite3.Error:
-            pass
-
-        if ref_uuid:
-            Library(self.tag_list, ref_uuid=data.uuid_string(ref_uuid), parent=self)
+    def show_reference(self, ref_uuid):
+        Library(self.tag_list, ref_uuid=ref_uuid, parent=self)
 
     def get_tag_list(self):
         """ Get the list of all tag """
