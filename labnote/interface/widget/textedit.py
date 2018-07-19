@@ -242,8 +242,13 @@ class CompleterTextEdit(TextEdit):
         # Handle all other key events normally
         QTextEdit.keyPressEvent(self, event)
 
-        # Show the tag completer
+        # Show the completer
         completion_prefix = self.text_under_cursor()
+
+        # Do not show the completer if the prefix is under 3 letters
+        #if len(completion_prefix) < 2:
+        #    self.completer.popup().hide()
+        #    return
 
         if completion_prefix != self.completer.completionPrefix():
             self.completer.setCompletionPrefix(completion_prefix)
@@ -359,9 +364,12 @@ class CompleterTextEdit(TextEdit):
             self.stop_completer()
 
     def start_completer(self, completer_list, completer_type):
+        model = QStringListModel()
+        model.setStringList(list(completer_list))
+
         completer = QCompleter()
-        completer.setModel(QStringListModel(list(completer_list)))
-        completer.setModelSorting(QCompleter.CaseInsensitivelySortedModel)
+        completer.setModel(model)
+        completer.setModelSorting(QCompleter.CaseSensitivelySortedModel)
         completer.setCaseSensitivity(Qt.CaseInsensitive)
         completer.setWrapAround(False)
         completer.setCompletionMode(QCompleter.PopupCompletion)
